@@ -211,6 +211,7 @@ function webcomponentchat(data, optionmenuchat = [], additionaldata = {}) {
             photo: data.profilePictureUrl,
             value: data.comment,
             data: data,
+            ...data
         },
         content: [
             { type: 'text', value: data.uniqueId },

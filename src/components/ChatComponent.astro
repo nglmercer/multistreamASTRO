@@ -178,7 +178,7 @@ class ChatMessage extends HTMLElement {
     }
     setMessageData(data) {
         const { user, content, menu } = data;
-        this._data = { user, content };
+        this._data = { ...data };
         this._menuOptions = menu?.options || [];
         this.renderMessage(user, content);
         this.setupMenu();
@@ -187,7 +187,8 @@ class ChatMessage extends HTMLElement {
     renderMessage(user, content) {
         const bgColor = user.photo ? '' : this.getRandomColor();
         const initial = user.photo ? '' : user.name.charAt(0).toUpperCase();
-
+        const userBadgeshtml = renderUserBadges(user.userBadges);
+        console.log("userBadgeshtml",userBadgeshtml, user);
         this.shadowRoot.innerHTML = `
         <style>
           :host {
@@ -243,6 +244,7 @@ class ChatMessage extends HTMLElement {
           }
         </style>
         <div class="avatar" role="img" aria-label="User avatar">${initial}</div>
+        ${userBadgeshtml ? userBadgeshtml : ''}
         <div class="message-content"></div>
         <button class="menu-button" role="button" aria-haspopup="true" aria-expanded="false">⋮</button>
       `;
@@ -285,8 +287,25 @@ class ChatMessage extends HTMLElement {
 
             messageContent.appendChild(messageItem);
         });
+        //messageContent click derecho menu eventlistener
+        messageContent.addEventListener('click',(event)=>{
+            if(event.target.className.includes('message-text')){
+                const menuButton = this.shadowRoot.querySelector('.menu-button');
+                menuButton.click();
+                this.EventEmit();
+            }
+        });
     }
-
+    EventEmit(){
+      const dataMessage = this._data;
+      console.log("dataMessage",dataMessage);
+      const event = new CustomEvent('message-clicked', {
+        detail: dataMessage,
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(event);
+    }
     setupMenu() {
         const menuButton = this.shadowRoot.querySelector('.menu-button');
         const menuOptions = this._menuPortal.querySelector('.menu-options');
@@ -388,6 +407,95 @@ customElements.define('chat-message', ChatMessage);
 if (!customElements.get('message-container')) {
 customElements.define('message-container', MessageContainer);
 }
+function getBadgeDetails(sceneType,level) {
+            // Scene Type 8: Level (Blue, Star Symbol)
+            if (sceneType === 8) {
+                return {
+                    name: 'Level',
+                    iconSymbol: '⭐'+ level, // Star symbol
+                    cssClass: 'badge-level' // CSS class for styling
+                };
+            }
+            // Scene Type 10: Team Level (Red, Heart Symbol)
+            else if (sceneType === 10) {
+                return {
+                    name: 'Team Level',
+                    iconSymbol: '❤️' + level, // Heart symbol
+                    cssClass: 'badge-team' // CSS class for styling
+                };
+            }
+            // sceneType 6: Top Ranker is a special case and includes image
+            else if (sceneType === 6){
+                return {
+                    name: 'TopRanker',
+                    iconSymbol: '🏆', // Trophy symbol
+                    cssClass: 'badge-subscriber' // CSS class for styling
+                };
+            }
+            // Default for unknown types (Gray, Question Mark Symbol)
+            else {
+                return {
+                    name: 'Unknown Badge',
+                    iconSymbol: '❓', // Question mark symbol
+                    cssClass: 'badge-unknown' // CSS class for styling
+                };
+            }
+        }
+
+        // --- Rendering Function ---
+        /**
+         * Renders user badges into the specified container.
+         * @param {Array} userBadges - Array of badge objects.
+         * @param {string} containerId - The ID of the HTML element to render into.
+         */
+        function renderUserBadges(userBadges) {
+
+
+            // Check if userBadges is a valid array
+            if (!Array.isArray(userBadges)) {
+                return;
+            }
+
+            // Handle empty badge array
+            if (userBadges.length === 0) {
+                return;
+            }
+
+            // Create a container div for the badges with CSS class for layout
+            const badgesContainer = document.createElement('div');
+            badgesContainer.className = 'badges-container'; // Apply layout styles
+
+            // Generate HTML for each badge
+            userBadges.forEach(badge => {
+                const details = getBadgeDetails(badge.badgeSceneType, badge.level);
+
+                // Create the main badge element
+                const badgeElement = document.createElement('div');
+                // Apply base badge class and specific type class
+                badgeElement.className = `badge ${details.cssClass}`;
+
+                // Add icon symbol
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'badge-icon'; // Class for potential icon-specific styling
+                iconSpan.textContent = details.iconSymbol;
+                iconSpan.setAttribute('aria-hidden', 'true'); // Hide decorative icon from screen readers
+                badgeElement.appendChild(iconSpan);
+
+                // Add level text
+                const levelSpan = document.createElement('span');
+                levelSpan.textContent = badge.level;
+                badgeElement.appendChild(levelSpan);
+
+                // Add a title attribute for accessibility/hover info
+                badgeElement.setAttribute('title', `${details.name} - Level ${badge.level}`);
+
+                // Append the complete badge to the container
+                badgesContainer.appendChild(badgeElement);
+            });
+
+            // Append the container with all badges to the main output div
+            return badgesContainer.outerHTML;
+        }
 
 </script>
 <div  id="chat-container" class="chat1 chatcontainer">

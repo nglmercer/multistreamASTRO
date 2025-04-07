@@ -90,10 +90,8 @@ class TopViewersList extends HTMLElement {
           :host {
               display: block; /* Comportamiento por defecto de elementos custom */
               font-family: sans-serif;
-              border: 1px solid #ccc;
               padding: 15px;
               border-radius: 8px;
-              background-color: #f9f9f9;
               margin: 10px auto;
           }
           h3 {
