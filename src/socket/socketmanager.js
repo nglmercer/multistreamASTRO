@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import Emitter from './Emitter.js';
+import Emitter, { emitter } from './Emitter.js';
 const baseUrl = 'http://localhost:9001';
 const socket = io(baseUrl);
 const TiktokEmitter = new Emitter();
@@ -15,6 +15,10 @@ const tiktokLiveEvents = [
   ];
 tiktokLiveEvents.forEach(event => {
     socket.on(event, async (data) => {
+    if (event === 'roomUser'){
+        emitter.emit(event,data);
+        localStorage.setItem('lastRoomUser',JSON.stringify(data));
+    }
       tiktokhandlerdata(event,data)
  });
 });
@@ -23,6 +27,6 @@ function tiktokhandlerdata(event,data){
     TiktokEmitter.emit(event,data);
 }
 // temporal test joinRoom
-socket.emit('joinRoom', { uniqueId: 'foxsabe1', platform: 'tiktok' });
+socket.emit('joinRoom', { uniqueId: 'kurapikak_k', platform: 'tiktok' });
 export { Emitter, TiktokEmitter, socket };
 export default socket;

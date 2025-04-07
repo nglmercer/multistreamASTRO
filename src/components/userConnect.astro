@@ -594,7 +594,7 @@ class UserProfile extends HTMLElement {
         <user-profile></user-profile>
 </div>
 <script type="module">
-    import socket from '../socket/socketmanager.js';
+    import socket from '/src/socket/socketmanager.js';
     const allElements = document.querySelectorAll('user-profile');
     allElements.forEach(element => {
         element.addEventListener('userConnected', event => {

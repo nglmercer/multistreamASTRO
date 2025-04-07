@@ -60,4 +60,6 @@ class Emitter {
         }
     }
 }
+const emitter = new Emitter();
+export { emitter };
 export default Emitter;
