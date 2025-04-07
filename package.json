@@ -1,5 +1,5 @@
 {
-  "name": "absolute-astronaut",
+  "name": "multistreamf",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -9,6 +9,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.6.1"
+    "@astrojs/lit": "^4.3.0",
+    "@webcomponents/template-shadowroot": "^0.2.1",
+    "astro": "^5.6.1",
+    "lit": "^3.2.1",
+    "socket.io-client": "^4.8.1",
+    "sweetalert2": "^11.17.2"
   }
 }

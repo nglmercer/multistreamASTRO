@@ -1,0 +1,611 @@
+---
+
+---
+<script is:inline>
+function hexToRgb(hex) {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  
+  // Handle 3-digit hex
+  if (hex.length === 3) {
+    hex = hex.split('').map(char => char + char).join('');
+  }
+  
+  // Convert to RGB
+  const bigint = parseInt(hex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  
+  return `${r}, ${g}, ${b}`;
+}
+const platformIcons = {
+  twitch: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>',
+  
+  youtube: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
+  
+  tiktok: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>',
+  
+  kick: '<svg viewBox="0 0 933 300" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M0 0H100V66.6667H133.333V33.3333H166.667V0H266.667V100H233.333V133.333H200V166.667H233.333V200H266.667V300H166.667V266.667H133.333V233.333H100V300H0V0ZM666.667 0H766.667V66.6667H800V33.3333H833.333V0H933.333V100H900V133.333H866.667V166.667H900V200H933.333V300H833.333V266.667H800V233.333H766.667V300H666.667V0ZM300 0H400V300H300V0ZM533.333 0H466.667V33.3333H433.333V266.667H466.667V300H533.333H633.333V200H533.333V100H633.333V0H533.333Z"/></svg>',
+  
+  facebook: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'
+};
+const platformThemes = {
+  twitch: {
+    color: '#9146FF',
+    hoverColor: '#7C2BFF',
+    textColor: '#FFFFFF',
+    states: {
+      online: 'live on Twitch!',
+      offline: 'Go live on Twitch',
+      away: 'Stream Paused',
+      busy: 'Stream Ending Soon'
+    }
+  },
+  youtube: {
+    color: '#FF0000',
+    hoverColor: '#CC0000',
+    textColor: '#FFFFFF',
+    states: {
+      online: 'Live on YouTube!',
+      offline: 'Go Live on YouTube',
+      away: 'Stream Paused',
+      busy: 'Ending Stream'
+    }
+  },
+  tiktok: {
+    color: '#000000',
+    hoverColor: '#1a1a1a',
+    textColor: '#FFFFFF',
+    states: {
+      online: 'Live on TikTok!',
+      offline: 'Go Live on TikTok',
+      away: 'Stream Paused',
+      busy: 'Ending Stream'
+    }
+  },
+  kick: {
+    color: '#53FC18',
+    hoverColor: '#45D614',
+    textColor: '#000000',
+    states: {
+      online: 'live on Kick!',
+      offline: 'Start live on Kick',
+      away: 'Stream Paused',
+      busy: 'Stream Ending Soon'
+    }
+  },
+  facebook: {
+    color: '#1877F2',
+    hoverColor: '#0E5FC1',
+    textColor: '#FFFFFF',
+    states: {
+      online: 'Live on',
+      offline: 'Go Live',
+      away: 'Stream Paused',
+      busy: 'Ending Stream'
+    }
+  }
+};
+if (!customElements.get('user-profile')) {
+class UserProfile extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      
+      this.translations = {
+        es: {
+          connect: 'Conectar',
+          disconnect: 'Desconectar',
+          placeholder: 'Ingresa tu nombre',
+          status: {
+            offline: 'Desconectado',
+            online: 'En línea',
+            away: 'Ausente',
+            busy: 'Ocupado'
+          }
+        },
+        en: {
+          connect: 'Connect',
+          disconnect: 'Disconnect',
+          placeholder: 'Enter your name',
+          status: {
+            offline: 'Offline',
+            online: 'Online',
+            away: 'Away',
+            busy: 'Busy'
+          }
+        },
+        fr: {
+          connect: 'Se connecter',
+          disconnect: 'Se déconnecter',
+          placeholder: 'Entrezvotre nom',
+          status: {
+            offline: 'Hors ligne',
+            online: 'En ligne',
+            away: 'Absent',
+            busy: 'Occupé'
+          }
+        },
+        pt: {
+          connect: 'Conectar',
+          disconnect: 'Desconectar',
+          placeholder: 'Insira seu nome',
+          status: {
+            offline: 'Offline',
+            online: 'Online',
+            away: 'Ausente',
+            busy: 'Ocupado'
+          }
+        },
+      };
+  
+      // Initialize static instances map if it doesn't exist
+      if (!UserProfile.instances) {
+        UserProfile.instances = new Map();
+      }
+  
+      // Get the group identifier from the attribute
+      const groupId = this.getAttribute('group-id');
+  
+      // If no group-id is provided, create a unique instance
+      if (!groupId) {
+        this._state = this.createInitialState();
+        this.loadFromLocalStorage();
+      } else {
+        // Check if an instance for this group already exists
+        if (!UserProfile.instances.has(groupId)) {
+          // Create new instance for this group
+          UserProfile.instances.set(groupId, {
+            state: this.createInitialState(),
+            elements: new Set()
+          });
+        }
+        
+        // Add this element to the group
+        const group = UserProfile.instances.get(groupId);
+        group.elements.add(this);
+        
+        // Load state from localStorage if exists
+        this.loadFromLocalStorage();
+      }
+  
+      this.groupId = groupId;
+      this.activeListeners = new Set();
+      this.render();
+      return this;
+    }
+  
+    createInitialState() {
+      return {
+        connected: false,
+        username: '',
+        imageUrl: './favicon.svg',
+        language: 'es',
+        connectionStatus: 'offline',
+        platform: 'tiktok'
+      };
+    }
+  
+    static get observedAttributes() {
+      return ['minimal', 'group-id'];
+    }
+  
+    attributeChangedCallback(name, oldValue, newValue) {
+      if (name === 'minimal') {
+        this.render();
+      } else if (name === 'group-id' && oldValue !== newValue) {
+        // Handle group-id change
+        if (oldValue) {
+          const oldGroup = UserProfile.instances.get(oldValue);
+          if (oldGroup) {
+            oldGroup.elements.delete(this);
+            if (oldGroup.elements.size === 0) {
+              UserProfile.instances.delete(oldValue);
+            }
+          }
+        }
+  
+        if (newValue) {
+          if (!UserProfile.instances.has(newValue)) {
+            UserProfile.instances.set(newValue, {
+              state: this.createInitialState(),
+              elements: new Set()
+            });
+          }
+          UserProfile.instances.get(newValue).elements.add(this);
+          this.loadFromLocalStorage();
+        } else {
+          this._state = this.createInitialState();
+          this.loadFromLocalStorage();
+        }
+  
+        this.groupId = newValue;
+        this.render();
+      }
+    }
+  
+    get isMinimal() {
+      return this.hasAttribute('minimal');
+    }
+  
+    get state() {
+      return this.groupId ? 
+        UserProfile.instances.get(this.groupId).state : 
+        this._state;
+    }
+  
+    set state(value) {
+      if (this.groupId) {
+        UserProfile.instances.get(this.groupId).state = value;
+      } else {
+        this._state = value;
+      }
+    }
+  
+    render() {
+      const currentTranslations = this.translations[this.state.language];
+      
+      // Determine image URL or platform icon
+      let displayImage = this.state.imageUrl;
+      if (!displayImage || displayImage === './favicon.svg') {
+        // Check if platform exists in platformIcons
+        if (platformIcons[this.state.platform]) {
+          // Create an SVG-based image using platform icon
+          displayImage = `data:image/svg+xml;base64,${btoa(platformIcons[this.state.platform])}`;
+        } else {
+          // Fallback to default
+          displayImage = './favicon.svg';
+        }
+      }
+  
+      // Get platform theme for styling
+      const platformTheme = platformThemes[this.state.platform] || platformThemes.twitch;
+      this.shadowRoot.innerHTML = `
+        ${this.getStyles(platformTheme)}
+        <div class="container ${this.state.connected ? 'connected' : ''}">
+          <div class="profile-wrapper">
+            ${this.getimagegprofile()}
+            <div 
+              class="status-indicator" 
+              data-status="${this.state.connectionStatus}"
+              title="${currentTranslations.status[this.state.connectionStatus]}"
+            ></div>
+          </div>
+          <input 
+            type="text"
+            placeholder="${currentTranslations.placeholder}"
+            value="${this.state.username}"
+            ${this.state.connected ? 'disabled' : ''}
+          />
+          <button class="${this.state.connected ? 'connected' : ''}">
+            ${this.state.connected ? currentTranslations.disconnect : currentTranslations.connect}
+          </button>
+        </div>
+      `;
+  
+      this.setupEventListeners();
+    }
+    getimagegprofile(){
+      //           <img 
+  /*     class="profile-image" 
+      src="${displayImage}"
+      alt="Profile"
+    /> */
+    let displayImage = this.state.imageUrl;
+    if (!displayImage || displayImage === './favicon.svg') {
+      // Check if platform exists in platformIcons
+      if (platformIcons[this.state.platform])
+        displayImage = `data:image/svg+xml;base64,${btoa(platformIcons[this.state.platform])}`;
+        return `<div class='profile-image'>
+        ${platformIcons[this.state.platform]}</div>`
+      }
+      else {
+       return`<img class="profile-image" src="${displayImage}" alt="Profile"/>`
+      }
+      return displayImage;
+    }
+  
+  
+    setupEventListeners() {
+      this.activeListeners.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      this.activeListeners.clear();
+  
+      const button = this.shadowRoot.querySelector('button');
+      const input = this.shadowRoot.querySelector('input');
+  
+      const buttonHandler = () => {
+        if (this.state.connected) {
+          this.disconnect();
+        } else if (input.value.trim()) {
+          this.connect(input.value);
+        }
+      };
+  
+      const inputHandler = (e) => {
+        this.state.username = e.target.value;
+      };
+  
+      button.addEventListener('click', buttonHandler);
+      input.addEventListener('input', inputHandler);
+  
+      this.activeListeners.add({ element: button, type: 'click', handler: buttonHandler });
+      this.activeListeners.add({ element: input, type: 'input', handler: inputHandler });
+    }
+  
+    updateGroupElements() {
+      if (this.groupId) {
+        const group = UserProfile.instances.get(this.groupId);
+        group.elements.forEach(element => {
+          if (element !== this) {
+            element.render();
+          }
+        });
+      }
+    }
+  
+    getStyles(platformTheme) {
+      return `
+        <style>
+          .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: ${platformTheme.color || '#1a1a2e'};
+            border-radius: 8px; 
+            color: #fff;
+          }
+          .status-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #1a1a2e;
+            transition: all 0.3s ease;
+          }
+          .status-indicator[data-status="offline"] {
+            background-color: #808080;
+          }
+          .status-indicator[data-status="online"] {
+            background-color: #4CAF50;
+          }
+          .status-indicator[data-status="away"] {
+            background-color: #FFC107;
+          }
+          .status-indicator[data-status="busy"] {
+            background-color: #f44336;
+          }
+          :host([minimal]) .container {
+            flex-direction: row;
+            padding: 8px;
+            gap: 0px;
+            background-color: transparent;
+          }
+          :host([minimal]) .profile-image {
+            width: 36px;
+            height: 36px;
+            border-width: 2px;
+            display: flex;
+          }
+          :host([minimal]) .status-indicator {
+            width: 12px;
+            height: 12px;
+            bottom: 0;
+            right: 0;
+            border-width: 1px;
+          }
+          .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid  ${platformTheme.color || '#1a1a2e'};
+              box-shadow: 
+      0 5px 15px rgba(${platformTheme.color ? 
+        `${hexToRgb(platformTheme.color)}, 0.3` : 
+        '77, 124, 255, 0.3'}),
+      0 10px 25px rgba(${platformTheme.hoverColor ? 
+        `${hexToRgb(platformTheme.hoverColor)}, 0.2` : 
+        '77, 124, 255, 0.2'});
+            transition: all 0.3s ease;
+          }
+          .profile-image:hover {
+            transform: scale(1.05);
+            border-color:  ${platformTheme.hoverColor || '#4d7cff'};
+          }
+          input {
+            width: 100%;
+            padding: 12px;
+            background-color: #162447;
+            border: 3px solid ${platformTheme.color || '#1a1a2e'};
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+          }
+          :host([minimal]) input {
+            padding: 6px;
+          }
+          input:focus {
+            outline: none;
+            border-color: ${platformTheme.hoverColor || '#4d7cff'};
+              box-shadow: 
+      0 5px 15px rgba(${platformTheme.color ? 
+        `${hexToRgb(platformTheme.color)}, 0.3` : 
+        '77, 124, 255, 0.3'}),
+      0 10px 25px rgba(${platformTheme.hoverColor ? 
+        `${hexToRgb(platformTheme.hoverColor)}, 0.2` : 
+        '77, 124, 255, 0.2'});
+          }
+          input::placeholder {
+            color: #8a8a9e;
+          }
+          input:disabled {
+            background-color: #1f1f3d;
+            border-color: #404060;
+            cursor: not-allowed;
+          }
+          button {
+            width: 100%;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, ${platformTheme.color || '#4d7cff'} 0%, ${platformTheme.hoverColor || '#3b5998'} 100%);
+            color: ${platformTheme.textColor || 'white'};
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          :host([minimal]) button {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 12px;
+          }
+          button:hover {
+            background: linear-gradient(135deg, ${platformTheme.hoverColor || '#5a88ff'} 0%, ${platformTheme.color || '#4866ab'} 100%);
+            transform: translateY(-2px);
+                        box-shadow: 
+      0 5px 15px rgba(${platformTheme.color ? 
+        `${hexToRgb(platformTheme.color)}, 0.3` : 
+        '77, 124, 255, 0.3'}),
+      0 10px 25px rgba(${platformTheme.hoverColor ? 
+        `${hexToRgb(platformTheme.hoverColor)}, 0.2` : 
+        '77, 124, 255, 0.2'});
+          }
+  
+          button:active {
+            transform: translateY(0);
+          }
+          button.connected {
+            background: linear-gradient(135deg, #e94560 0%, #c23152 100%);
+          }
+          button.connected:hover {
+            background: linear-gradient(135deg, #f25672 0%, #d4405f 100%);
+          }
+          .profile-wrapper {
+            position: relative;
+            display: inline-block;
+          }
+        </style>
+      `;
+    }
+    
+    connect(username) {
+      this.state.connected = true;
+      this.state.username = username;
+      this.state.imageUrl = './favicon.svg';
+      this.state.connectionStatus = 'online';
+      this.saveToLocalStorage();
+      this.render();
+      this.updateGroupElements();
+      this.dispatchEvent(new CustomEvent('userConnected', { 
+        detail: { username: this.state.username, state: this.state }
+      }));
+    }
+  
+    disconnect() {
+      this.state.connected = false;
+      this.state.imageUrl = './favicon.svg';
+      this.state.connectionStatus = 'offline';
+      this.saveToLocalStorage();
+      this.render();
+      this.updateGroupElements();
+      this.dispatchEvent(new CustomEvent('userDisconnected'));
+    }
+    setPlatform(platform) {
+      this.state.platform = platform;
+      this.saveToLocalStorage();
+    }
+    setConnectionStatus(status) {
+      if (['offline', 'online', 'away', 'busy'].includes(status)) {
+        this.state.connectionStatus = status;
+        this.saveToLocalStorage();
+        this.render();
+        this.updateGroupElements();
+        this.dispatchEvent(new CustomEvent('connectionStatusChanged', { 
+          detail: { status: this.state.connectionStatus }
+        }));
+      }
+    }
+  
+    setLanguage(lang) {
+      if (this.translations[lang]) {
+        this.state.language = lang;
+        this.saveToLocalStorage();
+        this.render();
+        this.updateGroupElements();
+      }
+    }
+  
+    setProfileImage(url) {
+      this.state.imageUrl = url;
+      this.saveToLocalStorage();
+      this.render();
+      this.updateGroupElements();
+    }
+  
+    loadFromLocalStorage() {
+      const key = this.groupId ? `userProfileState_${this.groupId}` : 'userProfileState';
+      const savedState = localStorage.getItem(key);
+      if (savedState) {
+        this.state = { ...this.state, ...JSON.parse(savedState) };
+      }
+    }
+  
+    saveToLocalStorage() {
+      const key = this.groupId ? `userProfileState_${this.groupId}` : 'userProfileState';
+      localStorage.setItem(key, JSON.stringify(this.state));
+    }
+  
+    disconnectedCallback() {
+      if (this.groupId) {
+        const group = UserProfile.instances.get(this.groupId);
+        if (group) {
+          group.elements.delete(this);
+          if (group.elements.size === 0) {
+            UserProfile.instances.delete(this.groupId);
+          }
+        }
+      }
+      
+      // Clean up listeners
+      this.activeListeners.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+    }
+  }
+  
+
+    customElements.define('user-profile', UserProfile);
+  }
+  console.log('UserProfile imported',customElements.get('user-profile'));
+</script>
+<div id="UserProfile">
+        <user-profile></user-profile>
+</div>
+<script type="module">
+    import socket from '../socket/socketmanager.js';
+    const allElements = document.querySelectorAll('user-profile');
+    allElements.forEach(element => {
+        element.addEventListener('userConnected', event => {
+            console.log('User connected:', event.detail);
+            socket.emit('joinRoom', { uniqueId: event.detail.username, platform:event.detail.state.platform });
+        });
+        element.addEventListener('userDisconnected', event => {
+            console.log('User disconnected:', event.detail);
+        });
+        element.addEventListener('connectionStatusChanged', event => {
+            console.log('Connection status changed:', event.detail);
+        });
+    });
+</script>
