@@ -94,8 +94,6 @@ class TopViewersList extends HTMLElement {
           }
           h3 {
               margin-top: 0;
-              color: #333;
-              border-bottom: 1px solid #eee;
               padding-bottom: 5px;
           }
           ol {
@@ -107,7 +105,6 @@ class TopViewersList extends HTMLElement {
               display: flex;
               align-items: center;
               padding: 8px 0;
-              border-bottom: 1px solid #eee;
           }
           li:last-child {
               border-bottom: none;
@@ -191,7 +188,7 @@ class TopViewersList extends HTMLElement {
                   const profilePicUrl = user.profilePictureUrl ||
                                         (Array.isArray(user.userDetails?.profilePictureUrls) && user.userDetails.profilePictureUrls.length > 0
                                          ? user.userDetails.profilePictureUrls[0]
-                                         : 'placeholder.png'); // Añade una imagen placeholder si quieres
+                                         : 'favicon.svg'); // Añade una imagen placeholder si quieres
                   img.src = profilePicUrl;
                   img.alt = `Foto de perfil de ${user.nickname || user.uniqueId}`;
 

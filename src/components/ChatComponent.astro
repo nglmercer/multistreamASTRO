@@ -1,44 +1,9 @@
 ---
 ---
+<script src="/src/components/menu/menu.js" is:inline></script>
 <script is:inline>
- const globalMenuPortal = document.createElement('div');
-globalMenuPortal.className = 'menu-portal';
-Object.assign(globalMenuPortal.style, {
-    position: 'absolute',
-    zIndex: '10',
-    display: 'none',
-    pointerEvents: 'none',
-});
-globalMenuPortal.innerHTML = `
-  <style>
-    .menu-options {
-      position: absolute;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      min-width: 120px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      pointer-events: auto;
-    }
-    .menu-option {
-      padding: 8px 12px;
-      cursor: pointer;
-      background: none;
-      border: none;
-      text-align: left;
-      width: 100%;
-      font-family: inherit;
-      font-size: 14px;
-      color: #333;
-    }
-    .menu-option:hover {
-      background-color: #f0f0f0;
-    }
-  </style>
-  <div class="menu-options" role="menu"></div>
-`;
+
+
 function getRandomColor(string) {
     let randomChar = string || Math.random().toString(36).substring(2, 15);
     return getColorByChar(randomChar);
@@ -167,23 +132,17 @@ class ChatMessage extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this._menuOptions = [];
-        this._menuPortal = globalMenuPortal; // Usar el menuPortal global
         this._currentMessageData = null; // Almacena los datos del mensaje actual
     }
 
     connectedCallback() {
-        document.addEventListener('click', this._handleClickOutside.bind(this));
+        
     }
 
     disconnectedCallback() {
-        document.removeEventListener('click', this._handleClickOutside);
+        
     }
-    _handleClickOutside(event) {
-        if (!this._menuPortal.contains(event.target) &&
-            !this.shadowRoot.querySelector('.menu-button').contains(event.target)) {
-            this._hideMenu();
-        }
-    }
+
     setMessageData(data) {
         const { user, content, menu } = data;
         this._data = { ...data };
@@ -317,72 +276,10 @@ class ChatMessage extends HTMLElement {
     }
     setupMenu() {
         const menuButton = this.shadowRoot.querySelector('.menu-button');
-        const menuOptions = this._menuPortal.querySelector('.menu-options');
 
         menuButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            this._currentMessageData = this.getMessageData();
-            this._updateMenuOptions();
-            const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
-            isExpanded ? this._hideMenu() : this._showMenu();
-        });
-    }
-
-    _updateMenuOptions() {
-        const menuOptions = this._menuPortal.querySelector('.menu-options');
-
-        // Eliminar listeners de los elementos existentes
-        [...menuOptions.children].forEach(child => {
-            const oldListeners = child._listeners || [];
-            oldListeners.forEach(([event, handler]) => {
-                child.removeEventListener(event, handler);
-            });
-        });
-
-        // Vaciar el contenedor
-        menuOptions.innerHTML = '';
-
-        // Crear nuevos botones con sus eventos
-        this._menuOptions.forEach(option => {
-            if (typeof option.callback === 'function') {
-                const button = document.createElement('button');
-                button.textContent = option.text;
-                button.classList.add('menu-option');
-                button.setAttribute('role', 'menuitem');
-
-                // Asociar el evento y guardar referencia
-                const clickHandler = (e) => {
-                    e.stopPropagation();
-                    option.callback(this._currentMessageData);
-                    this._hideMenu();
-                };
-                button.addEventListener('click', clickHandler);
-                button._listeners = [['click', clickHandler]];
-
-                menuOptions.appendChild(button);
-            }
-        });
-    }
-
-
-    _showMenu() {
-        const menuButton = this.shadowRoot.querySelector('.menu-button');
-        menuButton.setAttribute('aria-expanded', 'true');
-        this._menuPortal.style.display = 'block';
-        this._updateMenuPosition();
-    }
-
-    _hideMenu() {
-        const menuButton = this.shadowRoot.querySelector('.menu-button');
-        menuButton.setAttribute('aria-expanded', 'false');
-        this._menuPortal.style.display = 'none';
-    }
-
-    _updateMenuPosition() {
-        const buttonRect = this.shadowRoot.querySelector('.menu-button').getBoundingClientRect();
-        Object.assign(this._menuPortal.style, {
-            top: `${buttonRect.bottom}px`,
-            left: `${buttonRect.left}px`,
+            this.EventEmit(event);
         });
     }
 
@@ -524,6 +421,7 @@ function getBadgeDetails(sceneType,{level,url}) {
 ]
  */
 </script>
+<custom-popup id="custom-popup" style="color: white;"></custom-popup>
 <div  id="chat-container" class="chat1 chatcontainer">
   <message-container id="chatcontainer" wrapper-classes="maxh-20rem"></message-container>
 </div>
@@ -536,6 +434,7 @@ function getBadgeDetails(sceneType,{level,url}) {
 <script type="module">
 import { webcomponentevent, appendMessage, handlechat, handlegift, mapEvent, arrayevents,lastElement } from '/src/utils/chat.js';
 import { Emitter, TiktokEmitter, socket } from '/src/socket/socketmanager.js';
+import { openPopup, returnexploreroptions, setPopupOptions,returnOptions } from '/src/components/menu/menuutils.js';
 TiktokEmitter.on('chat', async (data) => {
 //  console.log("TiktokEmitter",data);
   handlechat(data);
@@ -546,7 +445,21 @@ TiktokEmitter.on('gift', async (data) => {
 });
 const chatcontainer = document.getElementById('chatcontainer');
 chatcontainer.addEventListener('message-menu',(event)=>{
-    console.log("event",event.detail);
+    console.log("event chatcontainer",event.detail);
+    const messageData = event.detail;
+    const menuOptions = [
+        returnexploreroptions('explorer-1','Explorer 1','home',()=>{
+            console.log("Explorer 1");
+        }),
+        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
+            console.log("Explorer 2");
+        }),
+        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
+            console.log("Explorer 3");
+        }),
+    ];
+    setPopupOptions(returnOptions(menuOptions));
+    openPopup(messageData.element?.originalTarget);
 });
 /*
 [

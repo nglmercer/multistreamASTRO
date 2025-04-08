@@ -16,11 +16,12 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <meta name="color-scheme" content="light dark" /> {/* Important for auto-theming */}
     <title>{title}</title>
   </head>
   <body>
     <div class="layout">
-      <!-- Mobile Navbar -->
+      {/* Mobile Navbar */}
       <nav class="mobile-nav">
         <div class="nav-content">
           <div class="logo">
@@ -42,7 +43,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
         </div>
       </nav>
 
-      <!-- Desktop Sidebar -->
+      {/* Desktop Sidebar */}
       <aside class="sidebar">
         <div class="sidebar-content">
           <div class="logo">
@@ -64,7 +65,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
         </div>
       </aside>
 
-      <!-- Main Content -->
+      {/* Main Content */}
       <main class="main-content">
         <slot />
       </main>
@@ -75,13 +76,35 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
 <style>
   /* Reset and base styles */
   :root {
+    /* --- Light Theme Variables (Default) --- */
     --sidebar-width: 250px;
     --navbar-height: 60px;
-    --primary-bg: #ffffff;
-    --sidebar-bg: #f8f9fa;
-    --border-color: #e9ecef;
-    --text-color: #333;
-    --hover-bg: #e9ecef;
+
+    --primary-bg: #ffffff;         /* Body, Mobile Nav BG */
+    --secondary-bg: #f8f9fa;     /* Sidebar BG */
+    --border-color: #e9ecef;     /* Borders */
+    --text-color: #212529;       /* Main text */
+    --text-muted: #6c757d;      /* Muted text (optional) */
+    --link-color: #0d6efd;       /* Link color (optional, if needed) */
+    --hover-bg: #e9ecef;         /* Hover background for links */
+    --hover-text: #000000;       /* Hover text color (can be same as --text-color) */
+
+    /* Add transitions for smooth theme changes */
+    --theme-transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* --- Dark Theme Variables --- */
+      --primary-bg: #1a1a1a;         /* Darker body, mobile nav */
+      --secondary-bg: #2c2c2c;     /* Slightly lighter dark for sidebar */
+      --border-color: #444444;     /* Darker border */
+      --text-color: #e0e0e0;       /* Light text */
+      --text-muted: #aaaaaa;      /* Lighter muted text */
+      --link-color: #58a6ff;       /* Brighter link color for dark mode */
+      --hover-bg: #3f3f3f;         /* Darker hover background */
+      --hover-text: #ffffff;       /* White hover text */
+    }
   }
 
   * {
@@ -90,8 +113,16 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     box-sizing: border-box;
   }
 
+  html {
+     /* Applies the theme preference to the whole document */
+    color-scheme: light dark;
+  }
+
   body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    transition: var(--theme-transition);
   }
 
   .layout {
@@ -102,11 +133,13 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
   /* Sidebar Styles */
   .sidebar {
     width: var(--sidebar-width);
-    background-color: var(--sidebar-bg);
+    background-color: var(--secondary-bg);
     border-right: 1px solid var(--border-color);
     position: fixed;
     height: 100vh;
     padding: 1rem;
+    transition: var(--theme-transition);
+    border-right-color: var(--border-color); /* Explicitly set border color */
   }
 
   .sidebar-content {
@@ -118,6 +151,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
 
   .logo {
     padding: 1rem 0;
+    /* Add styles for logo if needed, e.g., filter for dark mode */
   }
 
   .nav-buttons {
@@ -133,23 +167,29 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     gap: 1rem;
     padding: 0.75rem 1rem;
     text-decoration: none;
-    color: var(--text-color);
+    color: var(--text-color); /* Use main text color for links */
     border-radius: 0.5rem;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s; /* Keep individual transition short */
   }
 
   .nav-link:hover {
     background-color: var(--hover-bg);
+    color: var(--hover-text);
   }
 
   .nav-link i {
     width: 1.5rem;
     text-align: center;
+    color: var(--text-muted); /* Use muted color for icons */
+    transition: color 0.2s;
   }
+   .nav-link:hover i {
+     color: var(--hover-text); /* Match icon color to text on hover */
+   }
 
   /* Mobile Navigation */
   .mobile-nav {
-    display: none;
+    display: none; /* Hidden by default, shown via media query */
     position: fixed;
     top: 0;
     left: 0;
@@ -159,6 +199,9 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     border-bottom: 1px solid var(--border-color);
     padding: 0 1rem;
     z-index: 1000;
+    transition: var(--theme-transition);
+    border-bottom-color: var(--border-color); /* Explicitly set border color */
+
   }
 
   .nav-content {
@@ -171,8 +214,10 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
   /* Main Content */
   .main-content {
     flex-grow: 1;
-    margin-left: var(--sidebar-width);
+    margin-left: var(--sidebar-width); /* Desktop */
     padding: 2rem;
+    background-color: var(--primary-bg); /* Ensure main content bg matches */
+    transition: var(--theme-transition);
   }
 
   /* Login sections */
@@ -180,6 +225,10 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     margin-top: auto;
     padding: 1rem 0;
   }
+  .login-mobile {
+      display: none; /* Hide by default on desktop */
+  }
+
 
   /* Responsive Design */
   @media (max-width: 768px) {
@@ -188,42 +237,54 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     }
 
     .mobile-nav {
-      display: block;
+      display: block; /* Show mobile nav */
     }
 
     .main-content {
       margin-left: 0;
-      margin-top: var(--navbar-height);
+      margin-top: var(--navbar-height); /* Adjust for fixed mobile nav */
       padding: 1rem;
     }
 
+    .login-desktop {
+        display: none; /* Hide desktop login on mobile */
+    }
     .login-mobile {
-      display: flex;
+      display: flex; /* Show mobile login */
       align-items: center;
     }
 
-    .nav-buttons {
-      flex-direction: row;
+    /* Adjust mobile nav buttons layout if needed */
+    .mobile-nav .nav-buttons {
+      flex-direction: row; /* Horizontal buttons */
+      flex-grow: 0; /* Don't let buttons take all space */
       gap: 0.5rem;
-      justify-content: space-between;
+      /* justify-content: space-around; /* Example spacing */
     }
 
-    .nav-link {
+    .mobile-nav .nav-link {
       flex-direction: column;
       font-size: 0.8rem;
       gap: 0.2rem;
-      padding: 0.2rem;
+      padding: 0.4rem 0.2rem; /* Adjust padding */
     }
 
-    .nav-link i {
+    .mobile-nav .nav-link i {
       font-size: 1.2rem;
+      width: auto; /* Reset fixed width */
     }
   }
+
   @media (max-width: 576px) {
-    .nav-link {
-      span {
+     /* Hide text on very small screens */
+    .mobile-nav .nav-link .nav-text {
         display: none;
       }
-    }
+     .mobile-nav .nav-link {
+        padding: 0.5rem; /* Adjust padding for icon only */
+     }
+     .mobile-nav .nav-content {
+        /* Maybe adjust spacing if logo + icons + login feels cramped */
+     }
   }
 </style>
