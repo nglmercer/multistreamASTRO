@@ -66,7 +66,6 @@ class TopViewersList extends HTMLElement {
            return;
        }
 
-      console.log('Actualizando datos de TopViewersList:', newData);
       this._data = newData;
       this._render(); // Volver a renderizar con los nuevos datos
   }
@@ -90,7 +89,6 @@ class TopViewersList extends HTMLElement {
           :host {
               display: block; /* Comportamiento por defecto de elementos custom */
               font-family: sans-serif;
-              padding: 15px;
               border-radius: 8px;
               margin: 10px auto;
           }
