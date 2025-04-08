@@ -180,7 +180,7 @@ class UserProfile extends HTMLElement {
       return {
         connected: false,
         username: '',
-        imageUrl: './favicon.svg',
+        imageUrl: '/favicon.svg',
         language: 'es',
         connectionStatus: 'offline',
         platform: 'tiktok'
@@ -248,14 +248,14 @@ class UserProfile extends HTMLElement {
       
       // Determine image URL or platform icon
       let displayImage = this.state.imageUrl;
-      if (!displayImage || displayImage === './favicon.svg') {
+      if (!displayImage || displayImage === '/favicon.svg') {
         // Check if platform exists in platformIcons
         if (platformIcons[this.state.platform]) {
           // Create an SVG-based image using platform icon
           displayImage = `data:image/svg+xml;base64,${btoa(platformIcons[this.state.platform])}`;
         } else {
           // Fallback to default
-          displayImage = './favicon.svg';
+          displayImage = '/favicon.svg';
         }
       }
   
@@ -293,7 +293,7 @@ class UserProfile extends HTMLElement {
       alt="Profile"
     /> */
     let displayImage = this.state.imageUrl;
-    if (!displayImage || displayImage === './favicon.svg') {
+    if (!displayImage || displayImage === '/favicon.svg') {
       // Check if platform exists in platformIcons
       if (platformIcons[this.state.platform])
         displayImage = `data:image/svg+xml;base64,${btoa(platformIcons[this.state.platform])}`;
@@ -503,7 +503,7 @@ class UserProfile extends HTMLElement {
     connect(username) {
       this.state.connected = true;
       this.state.username = username;
-      this.state.imageUrl = './favicon.svg';
+      this.state.imageUrl = '/favicon.svg';
       this.state.connectionStatus = 'online';
       this.saveToLocalStorage();
       this.render();
@@ -515,7 +515,7 @@ class UserProfile extends HTMLElement {
   
     disconnect() {
       this.state.connected = false;
-      this.state.imageUrl = './favicon.svg';
+      this.state.imageUrl = '/favicon.svg';
       this.state.connectionStatus = 'offline';
       this.saveToLocalStorage();
       this.render();
@@ -593,19 +593,19 @@ class UserProfile extends HTMLElement {
 <div id="UserProfile">
         <user-profile></user-profile>
 </div>
-<script type="module">
-    import socket from '/src/socket/socketmanager.js';
-    const allElements = document.querySelectorAll('user-profile');
-    allElements.forEach(element => {
-        element.addEventListener('userConnected', event => {
-            console.log('User connected:', event.detail);
-            socket.emit('joinRoom', { uniqueId: event.detail.username, platform:event.detail.state.platform });
-        });
-        element.addEventListener('userDisconnected', event => {
-            console.log('User disconnected:', event.detail);
-        });
-        element.addEventListener('connectionStatusChanged', event => {
-            console.log('Connection status changed:', event.detail);
-        });
-    });
+<script>
+  import socket from '../../utils/socketManager';
+  const allElements = document.querySelectorAll('user-profile');
+  allElements.forEach(element => {
+      element.addEventListener('userConnected', event => {
+          console.log('User connected:', event.detail);
+          socket.emit('joinRoom', { uniqueId: event.detail.username, platform:event.detail.state.platform });
+      });
+      element.addEventListener('userDisconnected', event => {
+          console.log('User disconnected:', event.detail);
+      });
+      element.addEventListener('connectionStatusChanged', event => {
+          console.log('Connection status changed:', event.detail);
+      });
+  });
 </script>

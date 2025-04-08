@@ -2,9 +2,9 @@ import { LitElement, html, css } from 'lit';
 
 // Definición de las páginas con nombres y números asociados
 const pages = {
-    0: { name: "Home", slot: "index.html" },
-    1: { name: "Search", slot: "chat.html" },
-    2: { name: "Recommended", slot: "chat.html" },
+    0: { name: "Home", slot: "index" },
+    1: { name: "Search", slot: "chat" },
+    2: { name: "Recommended", slot: "chat" },
     3: { name: "History", slot: "page-3" },
     4: { name: "Favorites", slot: "page-4" },
     5: { name: "Settings", slot: "page-5" },

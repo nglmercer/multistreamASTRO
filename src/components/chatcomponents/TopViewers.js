@@ -188,7 +188,7 @@ class TopViewersList extends HTMLElement {
                   const profilePicUrl = user.profilePictureUrl ||
                                         (Array.isArray(user.userDetails?.profilePictureUrls) && user.userDetails.profilePictureUrls.length > 0
                                          ? user.userDetails.profilePictureUrls[0]
-                                         : 'favicon.svg'); // Añade una imagen placeholder si quieres
+                                         : '/favicon.svg'); // Añade una imagen placeholder si quieres
                   img.src = profilePicUrl;
                   img.alt = `Foto de perfil de ${user.nickname || user.uniqueId}`;
 
