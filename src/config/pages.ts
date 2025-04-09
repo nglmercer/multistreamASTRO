@@ -2,7 +2,7 @@ export const pagesConfigA = {
     0: { name: "Home", slot: "index", icon: "fas fa-home" },
     1: { name: "Search",slot: "chat", icon: "fas fa-search" },
     2: { name: "Recommended", slot: "chat", icon: "fas fa-star" },
-    3: { name: "History", slot: "page-3", icon: "fas fa-history" },
+    3: { name: "volume", slot: "voice", icon: "fas fa-lg fa-volume-down" },
     4: { name: "Favorites", slot: "page-4", icon: "fas fa-heart" },
     5: { name: "Settings", slot: "page-5", icon: "fas fa-cog" },
   };

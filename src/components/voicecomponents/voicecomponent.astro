@@ -1,0 +1,38 @@
+---
+
+---
+<script src="/src/components/modal.js"></script>
+<script src="/src/components/table.js"></script>
+<script src="/src/components/voicecomponents/tts_provider.js"></script>
+<div class="config-section">
+    <h2>StreamElements Provider</h2>
+    <dynamic-object-display id="config-streamElements" header-key="defaultVoice" darkmode="true"></dynamic-object-display>
+</div>
+
+<div class="config-section">
+    <h2>ResponsiveVoice Provider</h2>
+    <dynamic-object-display id="config-responsiveVoice" header-key="defaultVoice" darkmode="true"></dynamic-object-display>
+</div>
+
+<div class="config-section">
+    <h2>WebSpeech Provider</h2>
+    <dynamic-object-display id="config-webSpeech" header-key="defaultVoice" darkmode="true"></dynamic-object-display>
+</div>
+<h2>Test TTS</h2>
+<div>
+    <label for="tts-text">Text:</label>
+    <input type="text" id="tts-text" value="Hello world, this is a test." size="50">
+</div>
+<div>
+    <label for="tts-provider-select">Provider:</label>
+    <select id="tts-provider-select">
+        <option value="streamElements">StreamElements</option>
+        <option value="responsiveVoice">ResponsiveVoice</option>
+        <option value="webSpeech">WebSpeech</option>
+    </select>
+    <button id="speak-button">Speak</button>
+    <button id="stop-button">Stop</button>
+</div>
+<div id="status"></div>
+<script src="/src/components/voicecomponents/tts_config.js"></script>
+<script src="/src/components/voicecomponents/initconfig.js"></script>

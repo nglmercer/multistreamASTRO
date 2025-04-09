@@ -169,7 +169,10 @@ class CustomPopup extends HTMLElement {
 }
 
 // Registrar el componente
-customElements.define('custom-popup', CustomPopup);
+if (!customElements.get('custom-popup')) {
+  customElements.define('custom-popup', CustomPopup);
+
+}
   function safeParse(value) {
     try {
         // Si ya es un array u objeto, lo devolvemos tal cual
@@ -499,8 +502,9 @@ class CDlg extends HTMLElement {
     });
   }
 }
-customElements.define('c-dlg', CDlg);
-
+if (!customElements.get('c-dlg')) {
+  customElements.define('c-dlg', CDlg);
+}
 class DlgCont extends HTMLElement {
   constructor() {
     super();
@@ -686,7 +690,9 @@ class DlgCont extends HTMLElement {
     // Could be added in _updVis or constructor/disconnectedCallback
   }
 }
-customElements.define('dlg-cont', DlgCont);
+if (!customElements.get('dlg-cont')) {
+  customElements.define('dlg-cont', DlgCont);
+}
 if (!customElements.get('c-inp')) {
   class CInp extends HTMLElement {
     constructor() {
