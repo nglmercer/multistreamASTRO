@@ -171,7 +171,7 @@ async function lastElement() {
         newWebComponentChat = webcomponentchat(newData, defaultMenuChat, {
             type: "text",
             value: timeNow(),
-            class: "bottom-right-0",
+            class: "absolute bottom-0 right-0",
         });
     }
 
@@ -195,13 +195,13 @@ function appendMessage(data, container, autoHide = false) {
 const arrayevents = ["like", "gift", "chat"];
 
 // Funciones de manejo específicas
-const handlechat = async (data, aditionaldata = { type: "text", value: timeNow(), class: "bottom-right-0" }) => {
+const handlechat = async (data, aditionaldata = { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" }) => {
     const newhtml = webcomponentchat(data, defaultMenuChat, aditionaldata);
     appendMessage(newhtml, "chatcontainer");
     console.log("chat", data)
 }
 const handlegift = async (data) => {
-    const newhtml = webcomponentgift(data, defaultMenuChat, { type: "text", value: timeNow(), class: "bottom-right-0" });
+    const newhtml = webcomponentgift(data, defaultMenuChat, { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" });
     appendMessage(newhtml, "giftcontainer");
 }
 function webcomponentchat(data, optionmenuchat = [], additionaldata = {}) {

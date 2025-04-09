@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import Emitter, { emitter } from './Emitter';
 import logger from './logger';
+import LocalStorageManager from './LocalStorageManager'
 
 interface RoomJoinData {
   uniqueId: string;
@@ -26,6 +27,13 @@ type TiktokEvent =
   | 'share'
   | 'streamEnd';
 
+// Define the type for the local storage manager
+interface TiktokEventsStorage {
+  [eventName: string]: any[];
+}
+
+const localStorageManager = new LocalStorageManager<TiktokEventsStorage>('TiktokEvents');
+
 class SocketManager {
   private baseUrl: string = 'http://localhost:9001';
   private wsBaseUrl: string = 'ws://localhost:21213/';
@@ -50,7 +58,7 @@ class SocketManager {
     this.initializeWebSocket();
     
     // temporal test joinRoom
-    this.joinRoom({ uniqueId: 'yayopio', platform: 'tiktok' });
+    this.joinRoom({ uniqueId: 'foxsabe1', platform: 'tiktok' });
   }
 
   private initializeSocketEvents(): void {
@@ -84,6 +92,12 @@ class SocketManager {
   private tiktokhandlerdata(event: TiktokEvent, data: any): void {
     logger.log("event", event, data, 'TiktokLive');
     this.TiktokEmitter.emit(event, data);
+    
+    // Fix: Use add instead of addItem
+    // Get current events array or initialize an empty array
+    // Add the new event data
+    // Store back to localStorage
+    localStorageManager.set(event, data);
   }
 
   public joinRoom(data: RoomJoinData): void {
