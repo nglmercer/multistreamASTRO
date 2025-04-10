@@ -614,7 +614,52 @@ chatcontainer.addEventListener('message-menu',(event)=>{
     setPopupOptions(returnOptions(menuOptions));
     openPopup(messageData.element?.originalTarget);
 });
-
+const giftcontainer = document.getElementById('giftcontainer');
+giftcontainer.addEventListener('message-menu',(event)=>{
+    console.log("event giftcontainer",event.detail);
+    const messageData = event.detail;
+    const optionsName = {
+      "play_arrow": returnexploreroptions('play_arrow','play_arrow','play_arrow',()=>{
+    }),
+      "explorer-2":"Explorer 2",
+      "explorer-3":"Explorer 3",
+    }
+    const menuOptions = [
+      // emit array and foreach
+      optionsName['play_arrow'],
+        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
+            console.log("optionschat", messageData);
+        }),
+        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
+            console.log("optionschat", messageData);
+        }),
+    ];
+    setPopupOptions(returnOptions(menuOptions));
+    openPopup(messageData.element?.originalTarget);
+});
+const eventscontainer = document.getElementById('eventscontainer');
+eventscontainer.addEventListener('message-menu',(event)=>{
+    console.log("event eventscontainer",event.detail);
+    const messageData = event.detail;
+    const optionsName = {
+      "play_arrow": returnexploreroptions('play_arrow','play_arrow','play_arrow',()=>{
+    }),
+      "explorer-2":"Explorer 2",
+      "explorer-3":"Explorer 3",
+    }
+    const menuOptions = [
+      // emit array and foreach
+      optionsName['play_arrow'],
+        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
+            console.log("optionschat", messageData);
+        }),
+        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
+            console.log("optionschat", messageData);
+        }),
+    ];
+    setPopupOptions(returnOptions(menuOptions));
+    openPopup(messageData.element?.originalTarget);
+});
 document.addEventListener('DOMContentLoaded', () => {
     lastElement();
 });

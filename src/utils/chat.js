@@ -160,6 +160,7 @@ const timeNow = () => {
 async function lastElement() {
     console.log("lastelement");
     const TiktokEvents = localStorage.getItem("TiktokEvents");
+    // descargar el string en json temporalmente usando una funcion
     if (TiktokEvents) {
         const OBJTiktokEvents = JSON.parse(TiktokEvents)
         console.log("TiktokEvents", OBJTiktokEvents);
@@ -187,7 +188,18 @@ async function lastElement() {
 
 
 }
-
+async function downloadJson(data, filename = 'data.json') {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 function appendMessage(data, container, autoHide = false) {
     const elementWebComponent = document.getElementById(container);
     //console.log("appendMessage", data, container, autoHide);
