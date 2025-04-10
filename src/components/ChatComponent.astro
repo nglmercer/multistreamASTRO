@@ -31,15 +31,21 @@ const chatcontainer = document.getElementById('chatcontainer');
 chatcontainer.addEventListener('message-menu',(event)=>{
     console.log("event chatcontainer",event.detail);
     const messageData = event.detail;
+    const optionsName = {
+      "explorer-1":"Explorer 1",
+      "explorer-2":"Explorer 2",
+      "explorer-3":"Explorer 3",
+    }
     const menuOptions = [
-        returnexploreroptions('explorer-1','Explorer 1','home',()=>{
-            console.log("Explorer 1");
+      // emit array and foreach
+        returnexploreroptions('home','home','home',()=>{
+            console.log("optionschat", messageData);
         }),
         returnexploreroptions('explorer-2','Explorer 2','search',()=>{
-            console.log("Explorer 2");
+            console.log("optionschat", messageData);
         }),
         returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
-            console.log("Explorer 3");
+            console.log("optionschat", messageData);
         }),
     ];
     setPopupOptions(returnOptions(menuOptions));

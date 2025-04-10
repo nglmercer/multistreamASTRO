@@ -539,7 +539,6 @@ function getBadgeDetails(sceneType,{level,url}) {
                 iconSpan.innerHTML = details.iconSymbol;
                 iconSpan.setAttribute('aria-hidden', 'true'); // Hide decorative icon from screen readers
                 badgeElement.appendChild(iconSpan);
-                console.log("badgeElement",badge , details);
                 const level = badge.displayType || badge.level;
                 badgeElement.setAttribute('title', `${details.name} - Level `+ level);
 

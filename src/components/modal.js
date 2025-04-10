@@ -5,7 +5,7 @@ class CustomPopup extends HTMLElement {
         this._options = [];
         this.container = document.createElement('div');
         this.lastFocusedElement = null;
-        
+
         this.container.style.cssText = `
             position: fixed;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -49,6 +49,33 @@ class CustomPopup extends HTMLElement {
                     background-color: rgba(255, 255, 255, 0.1);
                 }
             }
+                /* fallback */
+            @font-face {
+                font-family: 'Material Symbols Outlined';
+                font-style: normal;
+                font-weight: 400;
+                src: url(/material_icon_font.woff2) format('woff2');
+              }
+              .material-symbols-outlined {
+                font-family: 'Material Symbols Outlined';
+                font-weight: normal;
+                font-style: normal;
+                font-size: 24px;
+                line-height: 1;
+                letter-spacing: normal;
+                text-transform: none;
+                display: inline-block;
+                white-space: nowrap;
+                word-wrap: normal;
+                direction: ltr;
+                -moz-font-feature-settings: 'liga';
+                -moz-osx-font-smoothing: grayscale;
+              }
+              .material-symbols-rounded {
+                font-family: 'Material Symbols Outlined';
+                font-size: 1.5rem;
+              }
+  
         `;
     
         this.shadowRoot.appendChild(style);

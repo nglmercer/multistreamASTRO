@@ -1,13 +1,25 @@
-export const pagesConfigA = {
-    0: { name: "Home", slot: "", icon: "fas fa-home" },
-    1: { name: "Search",slot: "chat", icon: "fas fa-search" },
-    2: { name: "Recommended", slot: "chat", icon: "fas fa-star" },
-    3: { name: "volume", slot: "voice", icon: "fas fa-lg fa-volume-down" },
-    4: { name: "Favorites", slot: "page-4", icon: "fas fa-heart" },
-    5: { name: "Settings", slot: "page-5", icon: "fas fa-cog" },
-  };
+// ../config/pages.js (o como se llamen tus archivos)
 
-  export const pagesConfigB = {
-    0: { name: "infoPlayer", slot: "page-info", icon: "fas fa-info-circle" },
-    1: { name: "videoPlayer", slot: "page-video", icon: "fas fa-play-circle" },
-  };
+export const pagesConfigA = {
+  // Mapeo de Font Awesome a Material Symbols:
+  // fas fa-home          -> home
+  // fas fa-search        -> search
+  // fas fa-star          -> star  (o grade si prefieres estrella rellena sólida)
+  // fas fa-volume-down   -> volume_down
+  // fas fa-heart         -> favorite (corazón relleno) o favorite_border (contorno)
+  // fas fa-cog           -> settings
+  0: { name: "Home", slot: "", icon: "home" },
+  1: { name: "Search", slot: "chat", icon: "search" },
+  2: { name: "Recommended", slot: "chat", icon: "star" },
+  3: { name: "Volume", slot: "voice", icon: "volume_down" }, // Nombre cambiado a "Volume" para claridad
+  4: { name: "Favorites", slot: "page-4", icon: "favorite" },
+  5: { name: "Settings", slot: "page-5", icon: "settings" },
+};
+
+export const pagesConfigB = {
+  // Mapeo de Font Awesome a Material Symbols:
+  // fas fa-info-circle   -> info
+  // fas fa-play-circle   -> play_circle
+  0: { name: "infoPlayer", slot: "page-info", icon: "info" },
+  1: { name: "videoPlayer", slot: "page-video", icon: "play_circle" },
+};
