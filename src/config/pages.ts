@@ -1,5 +1,5 @@
 export const pagesConfigA = {
-    0: { name: "Home", slot: "index", icon: "fas fa-home" },
+    0: { name: "Home", slot: "", icon: "fas fa-home" },
     1: { name: "Search",slot: "chat", icon: "fas fa-search" },
     2: { name: "Recommended", slot: "chat", icon: "fas fa-star" },
     3: { name: "volume", slot: "voice", icon: "fas fa-lg fa-volume-down" },

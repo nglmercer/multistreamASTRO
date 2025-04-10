@@ -77,7 +77,7 @@ async function mapChatMessagetochat(data) {
         nickname: data.sender?.slug,
         color: data.sender?.indentity?.color,
         emotes: data.emotes,// this is array of emotes
-        profilePictureUrl: await GetAvatarUrlKick.getProfilePic(data.sender?.username),
+        profilePictureUrl: data.profilePictureUrl //await GetAvatarUrlKick.getProfilePic(data.sender?.username),
     }
 }
 function getTranslation(text) {
@@ -159,30 +159,33 @@ const timeNow = () => {
 
 async function lastElement() {
     console.log("lastelement");
+    const TiktokEvents = localStorage.getItem("TiktokEvents");
+    if (TiktokEvents) {
+        const OBJTiktokEvents = JSON.parse(TiktokEvents)
+        console.log("TiktokEvents", OBJTiktokEvents);
+        const messageData = OBJTiktokEvents.chat
+        const giftData = OBJTiktokEvents.gift
+        const eventData = OBJTiktokEvents.like
+        if (messageData) {
+            const newData = handlechat(messageData);
+        } 
+        if (giftData) {
+            const newData = handlegift(giftData);
+        }
+        if (eventData) {
+            const newData = handlevent(eventData);
+        }
 
-    const messageData = JSON.parse(localStorage.getItem("lastChatMessage"));
-    let newWebComponentChat = null;
-
-    if (messageData) {
-        const newData = await mapChatMessagetochat(messageData);
-        HandleAccionEvent("chat", newData);
-        console.log("mapChatMessagetochat", newData);
-
-        newWebComponentChat = webcomponentchat(newData, defaultMenuChat, {
-            type: "text",
-            value: timeNow(),
-            class: "absolute bottom-0 right-0",
-        });
+    }else {
+        const newMessage1 = webcomponenttemplate(newtextcontent);
+        appendMessage(newMessage1, "chatcontainer");
+        const newMessage2 = webcomponenttemplate(newnumbercontent, giftMenu);
+        appendMessage(newMessage2, "giftcontainer");
+        const newMessage3 = webcomponenttemplate(neweventcontent, giftMenu);
+        appendMessage(newMessage3, "eventscontainer");
     }
 
-    const newMessage1 = webcomponenttemplate(newtextcontent);
-    const newMessage2 = webcomponenttemplate(newnumbercontent, giftMenu);
-    const newMessage3 = webcomponenttemplate(neweventcontent, giftMenu);
 
-    if (newWebComponentChat) appendMessage(newWebComponentChat, "chatcontainer");
-    appendMessage(newMessage1, "chatcontainer");
-    appendMessage(newMessage2, "giftcontainer");
-    appendMessage(newMessage3, "eventscontainer");
 }
 
 function appendMessage(data, container, autoHide = false) {
@@ -196,72 +199,109 @@ const arrayevents = ["like", "gift", "chat"];
 
 // Funciones de manejo específicas
 const handlechat = async (data, aditionaldata = { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" }) => {
-    const newhtml = webcomponentchat(data, defaultMenuChat, aditionaldata);
+    const newhtml = webcomponentchat(data, aditionaldata);
     appendMessage(newhtml, "chatcontainer");
     console.log("chat", data)
 }
 const handlegift = async (data) => {
-    const newhtml = webcomponentgift(data, defaultMenuChat, { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" });
+    const newhtml = webcomponentgift(data, { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" });
     appendMessage(newhtml, "giftcontainer");
 }
-function webcomponentchat(data, optionmenuchat = [], additionaldata = {}) {
+const handlevent = async (data) => {
+    const newhtml =webcomponentevent(data, { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" });
+    appendMessage(newhtml, "eventscontainer");
+}
+function webcomponentchat(data, additionaldata = {}) {
+    const content = [
+        { type: 'text', value: data.nickname, title: data.uniqueId, class: 'username-text' },
+        { type: 'text', value: data.comment, class: 'chat-message-text' },
+        // { type: 'image', value: data.profilePictureUrl } // Usually avatar is handled separately
+    ];
+
+    // Safely add additionaldata if it has a type (ensures it's a valid content item)
+    if (additionaldata && additionaldata.type) {
+        content.push(additionaldata);
+    }
+
     return {
         user: {
-            name: data.uniqueId,
+            name: data.uniqueId, // Keep uniqueId for potential use
+            nickname: data.nickname, // Add nickname here too if needed elsewhere
             photo: data.profilePictureUrl,
-            value: data.comment,
-            data: data,
-            ...data
+            // 'value' might not be needed here, user data is separate from displayed content
+            userBadges: data.userBadges || [], // Make sure badges are included
+            data: data, // Keep raw data if needed
+            // ...data // Avoid spreading raw data directly unless necessary
         },
-        content: [
-            { type: 'text', value: data.uniqueId },
-            { type: 'text', value: data.comment },
-            additionaldata
-            //  { type: 'image', value: data.profilePictureUrl }
-        ],
-        menu: {
-            options: optionmenuchat
-        }
+        content: content,
+        containerClass: 'grid-layout'
     };
 }
-function webcomponentgift(data, optionmenu = [], additionaldata = {}) {
+
+/**
+ * Creates data structure for a gift event message.
+ * @param {object} data - The raw gift event data.
+ * @param {object} [additionaldata={}] - Optional additional content item (e.g., timestamp).
+ * @returns {object} Data structure for ChatMessage component.
+ */
+function webcomponentgift(data, additionaldata = {}) {
+    const content = [
+        { type: 'text', value: data.nickname, title: data.uniqueId, class: 'username-text' },
+        { type: 'text', value: ' sent ', class: 'event-action-text' }, // Added "sent" text
+        { type: 'text', value: data.giftName, class: 'event-item-name' },
+        // Conditionally add gift image only if URL exists
+        ...(data.giftPictureUrl ? [{ type: 'image', value: data.giftPictureUrl, class: 'message-image event-item-icon' }] : []), // Added specific class + base class
+         // Conditionally add repeat count only if > 1 (or always display if needed)
+        ...(data.repeatCount > 0 ? [{ type: 'text', value: ` x${data.repeatCount}`, class: 'event-quantity-text' }] : []) // Format as " xN"
+    ];
+
+    // Safely add additionaldata if it has a type
+    if (additionaldata && additionaldata.type) {
+        content.push(additionaldata);
+    }
+
     return {
         user: {
             name: data.uniqueId,
+            nickname: data.nickname,
             photo: data.profilePictureUrl,
-            value: data.giftName,
+            value: data.giftName, // Primary value associated with the event
+            userBadges: data.userBadges || [],
             data: data,
         },
-        content: [
-            { type: 'text', value: data.uniqueId },
-            { type: 'text', value: data.repeatCount },
-            { type: 'text', value: data.giftName },
-            { type: 'image', value: data.giftPictureUrl },
-            additionaldata
-        ],
-        menu: {
-            options: optionmenu
-        }
+        content: content,
+        containerClass: 'message-content' // Use standard layout for gift messages
     }
 }
-function webcomponentevent(data, optionmenu = [], additionaldata = {}) {
-    return {
-        user: {
-            name: data.uniqueId,
-            photo: data.profilePictureUrl,
-            value: data.comment,
-            data: data,
-        },
-        content: [
-            { type: 'text', value: data.uniqueId },
-            additionaldata
-        ],
-        menu: {
-            options: optionmenu
-        }
-    }
+
+function webcomponentevent(data, additionaldata = {}) {
+    // Example: data.label could be "liked the LIVE", "joined", "shared the LIVE"
+    const clearLabel = data.label ? data.label.replace(/{0:user}/i, '').trim() : ''; // Remove {0:user} from label
+   const content = [
+       { type: 'text', value: data.nickname, title: data.uniqueId, class: 'username-text' },
+       // Add a space before the event label
+       { type: 'text', value: clearLabel, class: 'system-message-text' } // Use system class for these types of events
+   ];
+
+   // Safely add additionaldata if it has a type
+   if (additionaldata && additionaldata.type) {
+       content.push(additionaldata);
+   }
+
+   return {
+       user: {
+           name: data.uniqueId,
+           nickname: data.nickname,
+           photo: data.profilePictureUrl,
+            // 'value' might be the label or comment depending on event type
+           value: data.label || data.comment || '',
+           userBadges: data.userBadges || [],
+           data: data,
+       },
+       content: content
+   }
 }
-function webcomponenttemplate(template = {}, optionmenuchat = defaultMenuChat, newdata = {}, additionaldata = {}) {
+function webcomponenttemplate(template = {}, newdata = {}, additionaldata = {}) {
     if (template && template.user && template.content && template.content.length > 0) {
         return { ...template, menu: { options: optionmenuchat } };
     }
@@ -271,10 +311,7 @@ function webcomponenttemplate(template = {}, optionmenuchat = defaultMenuChat, n
             { type: 'text', value: data.comment },
             additionaldata
             //  { type: 'image', value: data.profilePictureUrl }
-        ],
-        menu: {
-            options: optionmenuchat
-        }
+        ]
     };
 }
 export { 

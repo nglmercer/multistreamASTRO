@@ -127,97 +127,30 @@ class ChatMessage extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._menuOptions = [];
         this._currentMessageData = null; // Almacena los datos del mensaje actual
     }
 
-    connectedCallback() {
-        
-    }
-
-    disconnectedCallback() {
-        
-    }
-
     setMessageData(data) {
-        const { user, content, menu } = data;
+        const { user, content, containerClass } = data;
         this._data = { ...data };
-        this._menuOptions = menu?.options || [];
-        this.renderMessage(user, content);
-        this.setupMenu();
+        this.renderMessage(user, content, containerClass);
     }
 
-    renderMessage(user, content) {
+    renderMessage(user, content, containerClass) {
         const bgColor = user.photo ? '' : this.getRandomColor();
         const initial = user.photo ? '' : user.name.charAt(0).toUpperCase();
+        // --- Render badges FIRST ---
         const userBadgeshtml = renderUserBadges(user.userBadges);
-        console.log("userBadgeshtml",userBadgeshtml, user);
+        // console.log("userBadgeshtml", userBadgeshtml, user);
+        const classContainer = 'message-content' + (containerClass ? ' ' + containerClass : '');
         this.shadowRoot.innerHTML = `
         <style>
-                  .absolute {
-            position: absolute;
-          }
-          .bottom-0 {
-            bottom: 0;
-          }
-          .right-0 {
-            right: 0;
-          }
-          :host {
-            display: flex;
-            margin-bottom: 10px;
-            position: relative;
-          }
-          img {
-            max-width: 100%;
-            max-height: min(250px,100%);
-            height: auto;
-            width: auto;
-            display: block;
-            margin-bottom: 5px;
-          }
-          .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            flex-shrink: 0;
-          }
-          .message-content {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            margin-right: 30px;
-            gap: 0;
-          }
-          p {
-            margin: 0;
-            padding: 0;
-          }
-          .menu-button {
-            position: absolute;
-            right: 0;
-            top: 0;
-            cursor: pointer;
-            padding: 5px;
-            background: none;
-            border: none;
-            font-size: 16px;
-            color: #666;
-            transition: color 0.2s;
-          }
-          .menu-button:hover {
-            color: #333;
-          }
+        ${this.getStyles()}
         </style>
         <div class="avatar" role="img" aria-label="User avatar">${initial}</div>
-        ${userBadgeshtml ? userBadgeshtml : ''}
-        <div class="message-content"></div>
+        <div class="${classContainer}">
+            ${userBadgeshtml ? userBadgeshtml : ''}
+            </div>
         <button class="menu-button" role="button" aria-haspopup="true" aria-expanded="false">⋮</button>
       `;
 
@@ -225,50 +158,63 @@ class ChatMessage extends HTMLElement {
         if (user.photo) {
             avatar.style.backgroundImage = `url(${user.photo})`;
             avatar.style.backgroundSize = 'cover';
+            avatar.setAttribute('title', user.name);
         } else {
             avatar.style.backgroundColor = bgColor;
         }
 
-        const messageContent = this.shadowRoot.querySelector('.message-content');
+        const messageContentContainer = this.shadowRoot.querySelector(`.message-content`); // Get the main container
+        // console.log("messageContent", content);
+
+        // --- Render content items AFTER badges ---
         content.forEach(item => {
-            const messageItem = document.createElement('div');
-            const classNameItem = item.class || 'message-item';
-            messageItem.className = classNameItem;
+            // Create a container for each logical item (optional but can help layout)
+            const classNameItem = item.class || ''; // e.g., "username-text", "event-item-name", "timestamp-text absolute bottom-0 right-0"
+
+            let element; // The actual p, img, a element
 
             if (item.type === 'image') {
-                const img = document.createElement('img');
-                img.src = item.value;
-                img.alt = 'message image';
-                messageItem.appendChild(img);
+                element = document.createElement('img');
+                element.src = item.value;
+                element.alt = item.alt || 'message image';
+                // Apply specific class if needed, e.g., for icon styling
+                element.className = `message-image ${classNameItem}`;
+            } else if (item.type === 'url') {
+                element = document.createElement('a');
+                element.href = item.url;
+                element.textContent = item.value;
+                // Apply base text class and specific classes
+                element.className = `message-text message-link ${classNameItem}`;
+            } else { // Default to text
+                element = document.createElement('p');
+                element.textContent = item.value;
+                // Apply base text class and specific classes
+                element.className = `message-text ${classNameItem}`;
             }
 
-            if (item.type === 'text') {
-                const p = document.createElement('p');
-                p.textContent = item.value;
-                p.className = `message-text ${classNameItem}`;
-                messageItem.appendChild(p);
-            }
-
-            if (item.type === 'url') {
-                const a = document.createElement('a');
-                a.href = item.url;
-                a.textContent = item.value;
-                a.className = `message-text ${classNameItem}`;
-                messageItem.appendChild(a);
-            }
-
-            messageContent.appendChild(messageItem);
+            this.setAttribute(element, { name: 'title', value: item.title });
+            this.setAttribute(element, { name: 'label', value: item.label });
+            element.classList.add('message-item'); // Add a container class too
+            messageContentContainer.appendChild(element); // Add container to flex parent
         });
 
-        //contextmenu
-        messageContent.addEventListener('contextmenu',(event)=>{
-            if(event.target.className.includes('message-text')){
+        //contextmenu (ensure it's added after content is rendered)
+         messageContentContainer.addEventListener('contextmenu',(event)=>{
+            // Target the specific text/link elements if needed
+            if(event.target.classList.contains('message-text')){
                 const menuButton = this.shadowRoot.querySelector('.menu-button');
                 menuButton.click();
                 this.EventEmit(event);
                 event.preventDefault();
             }
         });
+
+         this.setupMenu(); // Setup menu after rendering
+    }
+    setAttribute(element, { name, value }) {
+        if (name && value) {
+            element.setAttribute(name, value);
+        }
     }
     EventEmit(e){
       const dataMessage = { ...this._data, element: e };
@@ -279,6 +225,198 @@ class ChatMessage extends HTMLElement {
       });
       this.dispatchEvent(event);
     }
+    getStyles() {
+        return /*css*/ `
+          .absolute { position: absolute; }
+          .relative { position: relative; }
+          .bottom-0 { bottom: 0; }
+          .right-0 { right: 0; }
+          .ml-1 { margin-left: 4px; }
+          .mr-1 { margin-right: 4px; }
+          .mx-1 { margin-left: 4px; margin-right: 4px; }
+
+          :host {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 4px;
+            padding: 5px 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            position: relative;
+            color: #e0e0e0;
+            font-family: sans-serif;
+            line-height: 1.4;
+          }
+
+          .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
+            background-color: #555;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+          }
+
+          .message-content {
+            flex-grow: 1;
+            display: flex;
+            margin-right: 0.5rem;
+            padding-bottom: 10px;
+            position: relative;
+          }
+
+          .message-content .badges-container {
+             display: inline-flex;
+             vertical-align: middle;
+             margin-right: 5px;
+          }
+
+          .message-content .message-item {
+             display: inline;
+             margin-right: 4px;
+             vertical-align: middle;
+          }
+           .message-content .message-item:last-child {
+             margin-right: 0;
+           }
+          .message-content .message-item .message-text,
+          .message-content .message-item .message-link {
+             display: inline;
+             white-space: normal;
+             word-break: break-word;
+          }
+          .message-content .message-item .message-image {
+             display: inline;
+             vertical-align: middle;
+          }
+          .message-content .timestamp-text.absolute {
+              position: absolute;
+              bottom: -2px;
+              right: 0px;
+          }
+
+          .grid-layout {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto;
+            align-items: center;
+            row-gap: 3px;
+            column-gap: 6px;
+            margin-right: 1rem;
+            padding-bottom: 10px;
+            position: relative;
+          }
+
+          .grid-layout .badges-container {
+            grid-row: 1;
+            grid-column: 1;
+            display: inline-flex;
+            align-items: center;
+            height: 18px;
+          }
+
+          .grid-layout .message-item:nth-of-type(1) {
+            grid-row: 1;
+            grid-column: 2;
+            display: inline;
+            vertical-align: baseline;
+          }
+
+          .grid-layout .message-item:nth-of-type(n+2) {
+             grid-row: 2;
+             grid-column: 1 / -1;
+             display: inline;
+             margin-right: 4px;
+             vertical-align: middle;
+          }
+           .grid-layout .message-item:nth-of-type(n+2):last-child {
+              margin-right: 0;
+           }
+           .grid-layout .message-item:nth-of-type(n+2) .message-text,
+           .grid-layout .message-item:nth-of-type(n+2) .message-link {
+                display: inline;
+                white-space: normal;
+                word-break: break-word;
+           }
+            .grid-layout .message-item:nth-of-type(n+2) .message-image {
+                display: inline;
+                vertical-align: middle;
+           }
+
+          .grid-layout .timestamp-text.absolute {
+             position: absolute;
+             bottom: -2px;
+             right: 0;
+          }
+
+          .message-text {
+            margin: 0; padding: 0; color: inherit;
+          }
+          .message-link {
+            color: #64b5f6; text-decoration: none;
+          }
+          .message-link:hover { text-decoration: underline; }
+
+          .message-image {
+            height: 18px; width: 18px; object-fit: contain; margin: 0 2px;
+          }
+
+          .username-text { font-weight: bold; color: #ffffff; }
+          .chat-message-text { color: #e0e0e0; }
+          .event-action-text { color: #b0b0b0; font-size: 0.95em; }
+          .event-item-name { color: #e0e0e0; font-weight: 500; }
+          .event-quantity-text { font-weight: bold; color: #b0b0b0; font-size: 0.95em; }
+          .system-message-text { font-style: italic; color: #a0a0a0; font-size: 0.9em; }
+          .timestamp-text { font-size: 0.8em; color: #999; pointer-events: none; line-height: 1; }
+
+
+          .badges-container {
+             align-items: center;
+             gap: 3px;
+             vertical-align: middle;
+             height: 18px;
+          }
+          .badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 1px 4px; border-radius: 3px; font-size: 0.8em;
+            font-weight: bold; color: white; height: 16px; line-height: 1;
+          }
+          .badge-level { background-color: #1E88E5; }
+          .badge-team { background-color: #E53935; }
+          .badge-subscriber { background-color: transparent; padding: 0; height: 18px; }
+          .badge-subscriber img { height: 100%; width: auto; display: block; }
+          .badge-unknown { background-color: #757575; }
+          .badge-icon { margin-right: 2px; display: inline-block; }
+
+
+          .menu-button {
+            position: absolute; right: 4px; top: 4px; cursor: pointer;
+            padding: 3px; background: none; border: none; font-size: 16px;
+            color: #aaa; transition: color 0.2s; line-height: 1; z-index: 1;
+          }
+          .menu-button:hover { color: #fff; }
+
+          :host(.highlighted-message) { background-color: #6A1B9A; color: #ffffff; }
+          :host(.highlighted-message) .username-text,
+          :host(.highlighted-message) .chat-message-text,
+          :host(.highlighted-message) .event-item-name { color: #ffffff; }
+          :host(.highlighted-message) .event-action-text,
+          :host(.highlighted-message) .event-quantity-text { color: #e0e0e0; }
+          :host(.highlighted-message) .timestamp-text { color: #c0c0c0; }
+          :host(.highlighted-message) .menu-button { color: #e0e0e0; }
+          :host(.highlighted-message) .menu-button:hover { color: #ffffff; }
+          :host(.highlighted-message) .badge {}
+        `;
+    }
+
     setupMenu() {
         const menuButton = this.shadowRoot.querySelector('.menu-button');
 
@@ -339,7 +477,7 @@ function getBadgeDetails(sceneType,{level,url}) {
             else if (sceneType === 6){
                 return {
                     name: 'TopRanker',
-                    iconSymbol: `<img src='${url}' alt='Top Ranker'/>`, 
+                    iconSymbol: `<img src='${url}' alt='Top Ranker' style='height: min(24px,100dvh);width: min(24px,100dvw);content-box: fill-box;object-fit: cover;'/>`,
                     cssClass: 'badge-subscriber' // CSS class for styling
                 };
             }
@@ -375,6 +513,7 @@ function getBadgeDetails(sceneType,{level,url}) {
             // Create a container div for the badges with CSS class for layout
             const badgesContainer = document.createElement('div');
             badgesContainer.className = 'badges-container'; // Apply layout styles
+            badgesContainer.style.display = 'flex';
 
             // Generate HTML for each badge
             userBadges.forEach(badge => {
@@ -391,9 +530,9 @@ function getBadgeDetails(sceneType,{level,url}) {
                 iconSpan.innerHTML = details.iconSymbol;
                 iconSpan.setAttribute('aria-hidden', 'true'); // Hide decorative icon from screen readers
                 badgeElement.appendChild(iconSpan);
-
-                // Add a title attribute for accessibility/hover info
-                badgeElement.setAttribute('title', `${details.name} - Level ${badge.level}`);
+                console.log("badgeElement",badge , details);
+                const level = badge.displayType || badge.level;
+                badgeElement.setAttribute('title', `${details.name} - Level `+ level);
 
                 // Append the complete badge to the container
                 badgesContainer.appendChild(badgeElement);
