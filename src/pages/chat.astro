@@ -2,6 +2,8 @@
 import SidebarLayout from '../layouts/SidebarLayout.astro';
 import ChatComponent from '../components/ChatComponent.astro';
 import TopViewersList from '../components/chatcomponents/topViewer.astro';
+import UserProfile from '../components/user/userConnect.astro';
+
 ---
 
 
@@ -12,9 +14,11 @@ import TopViewersList from '../components/chatcomponents/topViewer.astro';
 	</div>
 
 	<div slot="login" class="login-container">
+    <UserProfile></UserProfile>
 		<button class="login-button">
 		<i class="fas fa-sign-in-alt"></i>
 		<span>Iniciar Sesión</span>
+
 		</button>
 	</div>
 

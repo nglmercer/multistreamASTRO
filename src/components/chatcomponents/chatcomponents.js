@@ -366,14 +366,14 @@ class ChatMessage extends HTMLElement {
           .message-link:hover { text-decoration: underline; }
 
           .message-image {
-            height: 18px; width: 18px; object-fit: contain; margin: 0 2px;
+            height: 3rem; width: 3rem; object-fit: contain; margin: 0 2px;
           }
 
           .username-text { font-weight: bold; color: #ffffff; }
           .chat-message-text { color: #e0e0e0; }
           .event-action-text { color: #b0b0b0; font-size: 0.95em; }
           .event-item-name { color: #e0e0e0; font-weight: 500; }
-          .event-quantity-text { font-weight: bold; color: #b0b0b0; font-size: 0.95em; }
+          .event-quantity-text { font-weight: bold; color: #b0b0b0; font-size: 1.95em; }
           .system-message-text { font-style: italic; color: #a0a0a0; font-size: 0.9em; }
           .timestamp-text { font-size: 0.8em; color: #999; pointer-events: none; line-height: 1; }
 
@@ -474,10 +474,19 @@ function getBadgeDetails(sceneType,{level,url}) {
                 };
             }
             // sceneType 6: Top Ranker is a special case only return img element
-            else if (sceneType === 6){
+            // badgeSceneType: 4 is image and suscriber
+            else if (sceneType === 6 || sceneType === 4){
                 return {
-                    name: 'TopRanker',
+                    name: sceneType === 6 ? 'Top Ranker' : 'Subscriber',
                     iconSymbol: `<img src='${url}' alt='Top Ranker' style='height: min(24px,100dvh);width: min(24px,100dvw);content-box: fill-box;object-fit: cover;'/>`,
+                    cssClass: 'badge-subscriber' // CSS class for styling
+                };
+            }
+            // badgeSceneType 1 is moderator
+            else if (sceneType === 1){
+                return {
+                    name: 'Moderator',
+                    iconSymbol: `⚔️`,
                     cssClass: 'badge-subscriber' // CSS class for styling
                 };
             }
