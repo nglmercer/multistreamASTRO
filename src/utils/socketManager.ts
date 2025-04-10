@@ -2,6 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import Emitter, { emitter } from './Emitter';
 import logger from './logger';
 import LocalStorageManager from './LocalStorageManager'
+import {setupData} from '../utils/userdata/UserProcessor.js';
 
 interface RoomJoinData {
   uniqueId: string;
@@ -72,6 +73,7 @@ class SocketManager {
           emitter.emit(event, data);
           localStorage.setItem('lastRoomUser', JSON.stringify(data));
         }
+        setupData(event,data);
         this.tiktokhandlerdata(event, data);
       });
     });

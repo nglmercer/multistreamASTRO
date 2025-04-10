@@ -3,17 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Baneos</title>
-    <style> body { font-family: sans-serif; padding: 1em; } </style>
-    <!-- Importa el componente principal -->
+    <title>Modal con Formulario (HTML Declarativo)</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; line-height: 1.6; background-color: black; color: white; }
+        button { padding: 0.6em 1.2em; cursor: pointer; margin-right: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        button.primary { background-color: #007bff; color: white; border-color: #007bff; }
+        #modal-container-html dlg-cont::part(overlay) { /* Ejemplo para estilizar el overlay via ::part si dlg-cont lo expone */
+           /* background-color: rgba(0, 50, 100, 0.6); */
+        }
+        #modal-container-html dyn-obj-disp {
+            min-width: 400px; /* Dale un tamaño mínimo al contenido del modal */
+            max-width: 90vw;
+        }
+        .output { margin-top: 1rem; padding: 1rem; border-radius: 5px; white-space: pre-wrap; }
+    </style>
+    <!-- 1. Importa los Módulos de los Componentes -->
     <script type="module" src="/src/pages/test/modal.js"></script>
-
+    <!-- obj-edit-frm y c-inp son importados por dyn-obj-disp -->
 </head>
 <body>
-    <h1>Panel de Administración</h1>
 
-    <!-- Añade el componente de gestión de baneos -->
-    <ban-manager></ban-manager>
+    <h1>Ejemplo: Modal de Formulario (HTML)</h1>
+    <p>El modal y el componente de display/edición están declarados en el HTML.</p>
+
+    <button id="open-modal-html-btn" class="primary">Editar Usuario (HTML)</button>
+
+    <!-- 2. Declara el Contenedor del Modal -->
+    <dlg-cont id="modal-container-html"> <!-- 'required' evita cerrar al hacer clic fuera -->
+        <!-- 3. Declara el Componente de Display/Edición dentro del Modal -->
+        <dyn-obj-disp id="user-editor-html" hdr-key="name" mode="edit" darkmode>
+            <!-- Configuración y datos se pasarán via JS -->
+        </dyn-obj-disp>
+    </dlg-cont>
+
+    <div class="output" id="output-html">Esperando acciones...</div>
+
+    <script type="module">
+        // Espera a que los elementos estén definidos y el DOM listo
+        // await customElements.whenDefined('dyn-obj-disp'); // Alternativa robusta si hay problemas de timing
+
+        const btn = document.getElementById('open-modal-html-btn');
+        const modal = document.getElementById('modal-container-html');
+        const editor = document.getElementById('user-editor-html');
+        const output = document.getElementById('output-html');
+        const today = new Date();
+        const formattedToday = today.toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
+        console.log("formattedToday:", formattedToday);
+        // --- Datos y Configuración de Ejemplo ---
+        const userData = {
+            id: '',
+            name: 'nombre del evento',
+            isActive: true,
+            role: 'any',
+            value: Math.random() * 1000,
+        };
+
+        const userFieldConfig = {
+            name: { label: 'Nombre', type: 'text', required: true },
+            isActive: { label: 'Activo', type: 'switch', trueLabel: 'Sí', falseLabel: 'No' },
+            role: {
+                label: 'Rol', type: 'select', options: [
+                    { value: 'any', label: 'cualquiera' },
+                    { value: 'sub', label: 'suscriptor' },
+                    { value: 'admin', label: 'Administrador' }
+                ]
+            },
+            comparator: {
+                label: 'Comparador', type: 'select', options: [
+                    { value: 'any', label: 'Cualquiera' },
+                    { value: 'equal', label: 'Igual a' },
+                    { value: 'startsWith', label: 'Comienza con' },
+                    { value: 'endsWith', label: 'Termina con' },
+                    { value: 'contains', label: 'Contiene' }
+                ]
+            },
+            value: { label: 'Valor', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
+             // Campo completamente oculto en el form
+            id: { hidden: false, type: 'number' },
+        };
+
+        // --- Configurar el Componente Editor ---
+        if (editor) {
+            editor.fCfg = userFieldConfig; // Establece la configuración de campos
+            // --- Manejadores de Eventos del Editor ---
+            editor.addEventListener('item-upd', (e) => {
+                console.log('Evento item-upd recibido:', e.detail);
+                output.textContent = `Usuario Guardado:\n${JSON.stringify(e.detail, null, 2)}`;
+                // Podrías actualizar tu "base de datos" local aquí
+                // userData = e.detail; // Actualiza la variable local si es necesario
+                modal.hide(); // Cierra el modal al guardar
+            });
+
+            editor.addEventListener('del-item', (e) => {
+                console.log('Evento del-item recibido:', e.detail);
+                if (confirm(`¿Seguro que quieres eliminar a ${e.detail.name}?`)) {
+                    output.textContent = `Usuario Eliminado:\n${JSON.stringify(e.detail, null, 2)}`;
+                     // Aquí harías la llamada para eliminar el usuario real
+                    modal.hide();
+                }
+            });
+
+        } else {
+            console.error("El elemento 'user-editor-html' no se encontró.");
+        }
+
+        // --- Control del Modal ---
+        if (btn && modal) {
+            btn.addEventListener('click', () => {
+                // Opcional: Asegurarse que el editor tenga los datos más recientes antes de mostrar
+                // if (editor) editor.setItem(userData);
+                modal.show();
+                editor.itm = userData;      // Establece los datos iniciales
+                editor.mode = 'edit';       // Cambia el modo a 'edit'
+                editor.hiddenAct('delete'); // Ocultar el botón de eliminar
+
+            });
+             // Opcional: Escuchar cuando el modal se oculta (p.ej. por botón Cancelar interno)
+            // modal.addEventListener('cuando-se-oculte', () => { console.log('Modal HTML cerrado'); });
+
+        } else {
+             console.error("El botón o el modal no se encontraron.");
+        }
+
+    </script>
 
 </body>
 </html>

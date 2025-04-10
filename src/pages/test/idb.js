@@ -1,10 +1,12 @@
 const databases = {
+    chatEventsDB: { name: 'ChatEvents', version: 1, store: 'chatEvents' },
+    giftEventsDB: { name: 'GiftEvents', version: 1, store: 'giftEvents' },
+    bitsEventsDB: { name: 'bitsEvents', version: 1, store: 'bitsEvents' },
     eventsDB: { name: 'Events', version: 1, store: 'events' },
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
-    banDB: { name: 'BanManagement', version: 1, store: 'bannedItems' }
-  };
-
-  class IndexedDBManager {
+    banDB: { name: 'Bans', version: 1, store: 'bans' },
+};
+class IndexedDBManager {
     constructor(dbConfig, idbObserver) {
         this.dbConfig = dbConfig;
         this.idbObserver = idbObserver;
@@ -16,20 +18,20 @@ const databases = {
             return new Promise((resolve, reject) => {
                 // Convertir el id a número si es necesario y es requerido por la clave
                 const numericId = typeof id === 'number' ? id : Number(id);
-    
+
                 if (isNaN(numericId)) {
                     return reject(new Error(`Invalid id: ${id}. The id must be a valid number.`));
                 }
-    
+
                 // Intentar obtener el registro con el id especificado
                 const getRequest = store.get(numericId);
-    
+
                 getRequest.onsuccess = () => {
                     if (getRequest.result) {
                         // Mezcla los datos existentes con los nuevos datos, manteniendo el id original
                         const newData = { ...getRequest.result, ...updatedData, id: numericId };
                         const putRequest = store.put(newData);
-    
+
                         putRequest.onsuccess = () => {
                             this.idbObserver?.notify('update', newData);
                             resolve(newData);
@@ -39,17 +41,17 @@ const databases = {
                         reject(new Error(`No data found with id ${numericId}`));
                     }
                 };
-    
+
                 getRequest.onerror = () => reject(getRequest.error);
             });
         });
-    } 
+    }
     async getDataById(id) {
         return this.executeTransaction(this.dbConfig.store, 'readonly', (store) => {
             return new Promise((resolve, reject) => {
                 // Convertir el id a número si es necesario
                 const numericId = typeof id === 'number' ? id : Number(id);
-                
+
                 if (isNaN(numericId)) {
                     return reject(new Error(`Invalid id: ${id}. The id must be a valid number.`));
                 }
@@ -78,9 +80,9 @@ const databases = {
                 if (!db.objectStoreNames.contains(this.dbConfig.store)) {
                     // Siempre usar 'id' como keyPath
                     const objectStore = db.createObjectStore(this.dbConfig.store, { keyPath: 'id', autoIncrement: false }); // autoIncrement: false porque asignaremos IDs
-                     this.defaultIndexes.forEach(index => {
+                    this.defaultIndexes.forEach(index => {
                         if (!objectStore.indexNames.contains(index.name)) {
-                             // Manejar keyPath de array para índices compuestos
+                            // Manejar keyPath de array para índices compuestos
                             objectStore.createIndex(index.name, index.keyPath, { unique: index.unique });
                         }
                     });
@@ -90,30 +92,30 @@ const databases = {
                     const transaction = event.target.transaction;
                     const objectStore = transaction.objectStore(this.dbConfig.store);
                     this.defaultIndexes.forEach(index => {
-                         if (!objectStore.indexNames.contains(index.name)) {
-                             objectStore.createIndex(index.name, index.keyPath, { unique: index.unique });
-                             console.log(`Index ${index.name} created for existing store ${this.dbConfig.store}.`);
-                         }
+                        if (!objectStore.indexNames.contains(index.name)) {
+                            objectStore.createIndex(index.name, index.keyPath, { unique: index.unique });
+                            console.log(`Index ${index.name} created for existing store ${this.dbConfig.store}.`);
+                        }
                     });
                 }
             };
             request.onsuccess = () => { this.db = request.result; resolve(this.db); };
-            request.onerror = (e) => { console.error(`IDB Error opening ${this.dbConfig.name}:`, request.error); reject(request.error);};
+            request.onerror = (e) => { console.error(`IDB Error opening ${this.dbConfig.name}:`, request.error); reject(request.error); };
         });
     }
 
-    
+
 
     async executeTransaction(storeName, mode, callback) {
         // Asegurarse que la BD está abierta ANTES de la transacción
         try {
             const db = await this.openDatabase();
-             return new Promise((resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 // Prevenir errores si la DB se cerró inesperadamente
                 if (!db || !db.objectStoreNames.contains(storeName)) {
                     console.error(`DB not open or store ${storeName} not found`);
                     return reject(new Error(`DB not open or store ${storeName} not found`));
-                 }
+                }
 
                 const transaction = db.transaction([storeName], mode);
                 const store = transaction.objectStore(storeName);
@@ -121,33 +123,33 @@ const databases = {
 
                 transaction.oncomplete = () => resolve(result !== undefined ? result : true); // Resolve con resultado o true
                 transaction.onerror = () => { console.error('IDB Transaction Error:', transaction.error); reject(transaction.error); };
-                transaction.onabort = () => { console.warn('IDB Transaction Aborted:', transaction.error); reject(transaction.error || new Error('Transaction aborted'));};
+                transaction.onabort = () => { console.warn('IDB Transaction Aborted:', transaction.error); reject(transaction.error || new Error('Transaction aborted')); };
 
                 try {
                     const promise = callback(store); // Callback ahora puede devolver una promesa
                     if (promise instanceof Promise) {
-                         promise.then(res => { result = res; /* No resolver aquí, esperar oncomplete */ })
-                                .catch(err => {
-                                     console.error("Error inside transaction callback promise:", err);
-                                     if (!transaction.error) { // Evitar abortar si ya hubo error
-                                         transaction.abort();
-                                     }
-                                     reject(err); // Rechazar la promesa externa
-                                 });
+                        promise.then(res => { result = res; /* No resolver aquí, esperar oncomplete */ })
+                            .catch(err => {
+                                console.error("Error inside transaction callback promise:", err);
+                                if (!transaction.error) { // Evitar abortar si ya hubo error
+                                    transaction.abort();
+                                }
+                                reject(err); // Rechazar la promesa externa
+                            });
                     } else {
-                         result = promise; // Si no devuelve promesa, guarda resultado sincrónicamente
+                        result = promise; // Si no devuelve promesa, guarda resultado sincrónicamente
                     }
                 } catch (error) {
-                     console.error("Error inside transaction callback sync:", error);
-                     if (!transaction.error) {
-                         transaction.abort();
-                     }
-                     reject(error);
+                    console.error("Error inside transaction callback sync:", error);
+                    if (!transaction.error) {
+                        transaction.abort();
+                    }
+                    reject(error);
                 }
             });
         } catch (dbOpenError) {
-             console.error("Failed to open DB for transaction:", dbOpenError);
-             return Promise.reject(dbOpenError);
+            console.error("Failed to open DB for transaction:", dbOpenError);
+            return Promise.reject(dbOpenError);
         }
     }
 
@@ -188,9 +190,9 @@ const databases = {
         // Verifica si se proporcionó un ID válido
         const providedId = Number(data.id);
         if (!isNaN(providedId) && providedId >= 0) {
-             targetId = providedId;
-             // Verifica si este ID ya existe para determinar si es una actualización
-             isUpdate = allData.some(item => Number(item.id) === targetId);
+            targetId = providedId;
+            // Verifica si este ID ya existe para determinar si es una actualización
+            isUpdate = allData.some(item => Number(item.id) === targetId);
         } else {
             const missingIds = this.findMissingIds(allData);
             if (missingIds.length > 0) {
@@ -208,22 +210,22 @@ const databases = {
         // console.log("Action:", actionType, "Data:", newData);
 
         return this.executeTransaction(this.dbConfig.store, 'readwrite', (store) => {
-             // No necesita devolver promesa explícita, executeTransaction la maneja
+            // No necesita devolver promesa explícita, executeTransaction la maneja
             const request = store.put(newData);
             // El resultado que se resuelve será `newData`
-             request.onsuccess = () => {
+            request.onsuccess = () => {
                 // Notificar DESPUÉS de que la transacción tenga éxito (en oncomplete)
-                 // Guardamos el resultado para resolverlo en oncomplete
-                 // Esto se maneja ahora en executeTransaction
-             };
-             request.onerror = (e) => {
+                // Guardamos el resultado para resolverlo en oncomplete
+                // Esto se maneja ahora en executeTransaction
+            };
+            request.onerror = (e) => {
                 console.error("Error in store.put:", request.error);
-                 // El error se propaga a transaction.onerror
-             };
-             return newData; // Devuelve el dato para que executeTransaction lo resuelva
+                // El error se propaga a transaction.onerror
+            };
+            return newData; // Devuelve el dato para que executeTransaction lo resuelva
         }).then(savedData => {
-             this.idbObserver?.notify(actionType, savedData); // Notificar fuera/después de la transacción
-             return savedData;
+            this.idbObserver?.notify(actionType, savedData); // Notificar fuera/después de la transacción
+            return savedData;
         });
     }
 
@@ -233,11 +235,11 @@ const databases = {
             return Promise.reject(new Error(`Invalid id for delete: ${id}`));
         }
         return this.executeTransaction(this.dbConfig.store, 'readwrite', (store) => {
-             // Devuelve la promesa de la operación delete
+            // Devuelve la promesa de la operación delete
             return new Promise((resolve, reject) => {
-               const request = store.delete(numericId);
-               request.onsuccess = () => resolve(numericId); // Resolvemos con el ID eliminado
-               request.onerror = () => reject(request.error);
+                const request = store.delete(numericId);
+                request.onsuccess = () => resolve(numericId); // Resolvemos con el ID eliminado
+                request.onerror = () => reject(request.error);
             });
         }).then(deletedId => {
             this.idbObserver?.notify('delete', deletedId); // Notificar después
@@ -350,9 +352,8 @@ class DBObserver {
     unsubscribe(cb) { this.listeners = this.listeners.filter(l => l !== cb); }
     notify(act, data) { this.listeners.forEach(l => l(act, data)); }
 }
-export { databases, IndexedDBManager, DBObserver, getAllDataFromDatabase } 
-  
-  // Usage example
-  // IndexedDBManager.updateData({ name: 'User 1', points: 100 }, 'name');
-  // IndexedDBManager.saveData({ na,additionalDatame: 'User 1', points: 100 }, 'name');
-  
+export { databases, IndexedDBManager, DBObserver, getAllDataFromDatabase }
+
+// Usage example
+// IndexedDBManager.updateData({ name: 'User 1', points: 100 }, 'name');
+// IndexedDBManager.saveData({ na,additionalDatame: 'User 1', points: 100 }, 'name');

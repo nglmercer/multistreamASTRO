@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js'; // Para atributos opcionales
 import { map } from 'lit/directives/map.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { IndexedDBManager, DBObserver, databases } from './idb.js';
 function safeParse(value) {
   try {
@@ -446,7 +447,11 @@ export class CInp extends LitElement {
         box-sizing: border-box; /* Importante para consistencia de tamaño */
         margin: 0; /* Resetea márgenes por defecto */
       }
-
+      option {
+        color: slategray;
+        background-color: #fff;
+        text-indent: 0;
+      }
       textarea { resize: vertical; min-height: 80px; } /* Ajustado min-height */
 
       input:disabled, textarea:disabled, select:disabled {
@@ -742,484 +747,516 @@ customElements.define('c-inp', CInp);
 
 
 class ObjEditFrm extends LitElement {
-    static styles = css`
-        /* Tus estilos (sin cambios) */
-        :host {
-            display: block;
-            font-family: sans-serif;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            margin-bottom: 15px;
-        }
-        .ef-cont { display: flex; flex-direction: column; gap: 15px; }
-        .flds-cont {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 10px 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        .fld-wrp { display: flex; flex-direction: column; gap: 4px; }
-        label { font-weight: 500; font-size: 0.9em; color: #333; text-transform: capitalize; }
-        c-inp { margin: 0; padding: 0; }
-        .fld-wrp.inv label { color: #dc3545; }
-        .acts { display: flex; justify-content: flex-end; gap: 10px; }
-        button {
-            padding: 8px 16px; cursor: pointer; border: 1px solid #ccc;
-            border-radius: 4px; font-size: 0.95em; transition: all 0.2s;
-            background-color: #fff;
-        }
-        button:hover { filter: brightness(0.95); }
-        .sv-btn { background-color: #28a745; color: white; border-color: #28a745; }
-        .sv-btn:hover { background-color: #218838; border-color: #1e7e34; }
-        .cncl-btn { background-color: #6c757d; color: white; border-color: #6c757d; }
-        .cncl-btn:hover { background-color: #5a6268; border-color: #545b62; }
-        :host([darkmode]) { background-color: #333; border-color: #555; }
-        :host([darkmode]) label { color: #eee; }
-        :host([darkmode]) .flds-cont { border-bottom-color: #555; }
-        :host([darkmode]) button { background-color: #555; border-color: #777; color: #eee; }
-        :host([darkmode]) button:hover { filter: brightness(1.1); }
-        :host([darkmode]) c-inp { color-scheme: dark; }
-    `;
+  static styles = css`
+      /* Tus estilos existentes */
+      :host {
+          display: block; font-family: sans-serif; padding: 15px;
+          border: 1px solid #eee; border-radius: 8px;
+          background-color: #f9f9f9; margin-bottom: 15px;
+      }
+      .ef-cont { display: flex; flex-direction: column; gap: 15px; }
+      .flds-cont {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 10px 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;
+      }
+      .fld-wrp { display: flex; flex-direction: column; gap: 4px; }
+      label { font-weight: 500; font-size: 0.9em; color: #333; text-transform: capitalize; }
+      c-inp { margin: 0; padding: 0; }
+      .fld-wrp.inv label { color: #dc3545; }
+      .acts { display: flex; justify-content: flex-end; gap: 10px; }
+      button {
+          padding: 8px 16px; cursor: pointer; border: 1px solid #ccc;
+          border-radius: 4px; font-size: 0.95em; transition: all 0.2s;
+          background-color: #fff;
+      }
+      button:hover { filter: brightness(0.95); }
+      .sv-btn { background-color: #28a745; color: white; border-color: #28a745; }
+      .sv-btn:hover { background-color: #218838; border-color: #1e7e34; }
+      .cncl-btn { background-color: #6c757d; color: white; border-color: #6c757d; }
+      .cncl-btn:hover { background-color: #5a6268; border-color: #545b62; }
+      :host([darkmode]) { background-color: #333; border-color: #555; }
+      :host([darkmode]) label { color: #eee; }
+      :host([darkmode]) .flds-cont { border-bottom-color: #555; }
+      :host([darkmode]) button { background-color: #555; border-color: #777; color: #eee; }
+      :host([darkmode]) button:hover { filter: brightness(1.1); }
+      :host([darkmode]) c-inp { color-scheme: dark; }
 
-    static properties = {
-        // Propiedad PÚBLICA para recibir el item del padre
-        itm: { type: Object },
-        fCfg: { type: Object },
-        cActs: { type: Array },
-        darkmode: { type: Boolean, reflect: true },
-        // Estado interno para manejo y reseteo
-        _iItm: { state: true }, // Estado inicial (para reset)
-        _cItm: { state: true }, // Estado actual editable
-    };
+      /* NUEVO: Estilo para ocultar el wrapper del campo */
+      .fld-wrp.hidden { display: none; }
+  `;
 
-    constructor() {
-        super();
-        this.itm = {}; // Inicializa la propiedad pública
-        this._iItm = {};
-        this._cItm = {};
-        this.fCfg = {};
-        this.cActs = [];
-        this.darkmode = false;
-    }
+  static properties = {
+      itm: { type: Object },
+      fCfg: { type: Object },
+      cActs: { type: Array },
+      darkmode: { type: Boolean, reflect: true },
+      _iItm: { state: true },
+      _cItm: { state: true },
+  };
 
-    // --- NUEVO: Lifecycle Hook para reaccionar a cambios en `itm` ---
-    willUpdate(changedProperties) {
-        // Si la propiedad 'itm' (pasada desde el padre) ha cambiado...
-        if (changedProperties.has('itm')) {
-            // ...actualiza los estados internos _cItm y _iItm.
-            const newItemCopy = this._deepCopy(this.itm);
-            this._cItm = newItemCopy;
-            // Establece _iItm también para que reset funcione correctamente
-            // con los datos actuales pasados al entrar en modo edición.
-            this._iItm = this._deepCopy(newItemCopy);
-             // console.log('ObjEditFrm: willUpdate detected itm change, _cItm updated:', this._cItm);
-        }
-    }
-    // ---------------------------------------------------------------
+  constructor() {
+      super();
+      this.itm = {};
+      this._iItm = {};
+      this._cItm = {};
+      this.fCfg = {};
+      this.cActs = [];
+      this.darkmode = false;
+  }
 
-    _deepCopy(o) {
-        try { return JSON.parse(JSON.stringify(o || {})); }
-        catch (e) { console.error('Err deep copy', e); return {}; }
-    }
+  willUpdate(changedProperties) {
+      if (changedProperties.has('itm')) {
+          const newItemCopy = this._deepCopy(this.itm);
+          // Solo actualiza si el nuevo item es diferente al actual _cItm
+          // Evita bucles si el padre pasa el mismo objeto modificado
+          if (JSON.stringify(newItemCopy) !== JSON.stringify(this._cItm)) {
+               this._cItm = newItemCopy;
+               this._iItm = this._deepCopy(newItemCopy);
+               // console.log('ObjEditFrm: willUpdate updated _cItm from itm prop', this._cItm);
+          }
+      }
+  }
 
-    // setConfig y setItem ahora son menos necesarios si se usa la propiedad `itm`
-    // pero pueden mantenerse como API alternativa si se desea.
-    setConfig(itm = {}, cfg = {}) {
-        this.itm = this._deepCopy(itm); // Actualiza la propiedad pública
-        // willUpdate se encargará de actualizar _cItm y _iItm
-        this.fCfg = cfg || {};
-        this.requestUpdate(); // Asegura re-render si se llama externamente
-    }
+  _deepCopy(o) {
+      try { return JSON.parse(JSON.stringify(o || {})); }
+      catch (e) { console.error('Err deep copy', e); return {}; }
+  }
 
-    setItem(itm = {}) {
-        this.itm = this._deepCopy(itm); // Actualiza la propiedad pública
-        // willUpdate se encargará de actualizar _cItm y _iItm
-        this.requestUpdate(); // Asegura re-render si se llama externamente
-    }
+  setConfig(itm = {}, cfg = {}) {
+      this.itm = this._deepCopy(itm);
+      this.fCfg = cfg || {};
+      this.requestUpdate();
+  }
+
+  setItem(itm = {}) {
+      this.itm = this._deepCopy(itm);
+      this.requestUpdate();
+  }
+
+  addAct(nm, lbl, cls = '') {
+      if (!nm || typeof nm !== 'string' || typeof lbl !== 'string') return;
+      this.cActs = [...this.cActs.filter(a => a.nm !== nm), { nm, lbl, cls }];
+  }
+
+  validate() {
+      let ok = true;
+      this.shadowRoot.querySelectorAll('c-inp').forEach(f => {
+          const wrp = f.closest('.fld-wrp');
+          // *** NUEVO: No validar campos ocultos ***
+          if (wrp?.classList.contains('hidden')) {
+              wrp?.classList.remove('inv'); // Asegura que no quede marcado como inválido si se oculta
+              return;
+          }
+
+          let fOk = true;
+          if (typeof f.isValid === 'function') fOk = f.isValid();
+          else { /* ... fallback ... */ }
+          wrp?.classList.toggle('inv', !fOk);
+          if (!fOk) ok = false;
+      });
+      return ok;
+  }
+
+  getData() {
+      return this._deepCopy(this._cItm);
+  }
+
+  reset() {
+      this._cItm = this._deepCopy(this._iItm);
+      this.requestUpdate();
+      this.shadowRoot.querySelectorAll('.fld-wrp.inv').forEach(wrp => wrp.classList.remove('inv'));
+       // Limpiar validación de todos los campos (incluso los que ahora estarán ocultos)
+       this.shadowRoot.querySelectorAll('c-inp').forEach(f => {
+           if(typeof f.isValid === 'function') f.isValid(); // Re-evalúa para quitar error visual si aplica
+       });
+  }
+
+  _hInpChg(e) {
+      if (e.target.tagName !== 'C-INP') return;
+      let n, v;
+      if (e.detail?.name !== undefined) ({ name: n, value: v } = e.detail);
+      else { /* ... fallback ... */
+           n = e.target.name;
+           if (n && typeof e.target.getVal === 'function') v = e.target.getVal();
+      }
+
+      if (n !== undefined) {
+           // Comprobar si el valor realmente cambió para evitar re-renders innecesarios
+           if (this._cItm[n] !== v) {
+              this._cItm = { ...this._cItm, [n]: v };
+              // console.log('ObjEditFrm: _cItm updated by input change:', this._cItm);
+              // Solo despachar evento si el valor cambió
+              this.dispatchEvent(new CustomEvent('fld-chg', { detail: { n, v } }));
+           }
+           // Siempre limpiar error visual al interactuar
+           e.target.closest('.fld-wrp')?.classList.remove('inv');
+      }
+  }
+
+  _hSub(e) { e.preventDefault(); this._hSave(); }
+  _hActClk(e) { /* ... sin cambios ... */
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const act = btn.dataset.act;
+      if (act === 'save') { /* handled by submit */ }
+      else if (act === 'cancel') {
+          this.dispatchEvent(new CustomEvent('cancel-edit'));
+          this.reset();
+      } else {
+          this.dispatchEvent(new CustomEvent(act, { detail: this.getData() }));
+      }
+  }
+  _hSave() { /* ... sin cambios ... */
+      if (this.validate()) {
+          const d = this.getData();
+          this._iItm = this._deepCopy(d); // Update initial state on successful save
+          this.dispatchEvent(new CustomEvent('save-item', { detail: d }));
+      } else {
+          const fInv = this.shadowRoot.querySelector('.fld-wrp:not(.hidden).inv c-inp'); // Enfocar primer inválido VISIBLE
+          if (fInv) {
+              try {
+                  if (typeof fInv.focus === 'function') fInv.focus();
+                  else fInv.shadowRoot?.querySelector('input, select, textarea')?.focus();
+              } catch (e) { console.warn('Cant focus inv fld', e); }
+          }
+      }
+  }
+
+  // --- NUEVO: Helper para comparar valores (maneja booleanos y strings) ---
+  _compareValues(actual, expected) {
+      if (typeof expected === 'boolean') {
+          // Convierte actual a booleano de forma segura ('false', 0, null, undefined son false)
+          const actualBool = !(['false', '0', '', null, undefined].includes(String(actual).toLowerCase()) || !actual);
+          return actualBool === expected;
+      }
+       if (actual === null || actual === undefined) {
+          return expected === null || expected === undefined || expected === '';
+      }
+      // Comparación como strings para otros casos (select, radio, text)
+      return String(actual) === String(expected);
+  }
+
+  // --- NUEVO: Helper para determinar visibilidad ---
+    _shouldFieldBeVisible(key, config) {
+      const condition = config.showIf;
+      if (!condition || !condition.field) {
+          return true; // Visible si no hay condición válida
+      }
+
+      const triggerField = condition.field;
+      const triggerValue = this._cItm?.[triggerField];
+      const requiredValue = condition.value;
+      const negateCondition = condition.negate === true; // Verifica si se debe negar
+
+      let matchesCondition; // Resultado de la comparación (igualdad)
+
+      if (Array.isArray(requiredValue)) {
+          // Verdadero si triggerValue coincide con ALGUNO de los valores requeridos
+          matchesCondition = requiredValue.some(val => this._compareValues(triggerValue, val));
+      } else {
+          // Verdadero si triggerValue coincide con el valor requerido único
+          matchesCondition = this._compareValues(triggerValue, requiredValue);
+      }
+
+      // Si negate es true, la visibilidad es lo opuesto a la coincidencia
+      // Si negate es false, la visibilidad es igual a la coincidencia
+      const shouldBeVisible = negateCondition ? !matchesCondition : matchesCondition;
+
+      // console.log(`Field: ${key}, Trigger: ${triggerField}=${triggerValue}, Required: ${JSON.stringify(requiredValue)}, Negate: ${negateCondition}, Matches: ${matchesCondition}, Visible: ${shouldBeVisible}`);
+
+      return shouldBeVisible;
+  }
 
 
-    addAct(nm, lbl, cls = '') {
-        if (!nm || typeof nm !== 'string' || typeof lbl !== 'string') return;
-        // Asegura inmutabilidad al actualizar el array
-        this.cActs = [...this.cActs.filter(a => a.nm !== nm), { nm, lbl, cls }];
-    }
+  render() {
+      return html`
+          <form class="ef-cont" @submit=${this._hSub} novalidate>
+              <div class="flds-cont">
+                  ${map(Object.entries(this.fCfg || {}), ([k, c]) => {
+                      if (c.hidden) return ''; // Sigue respetando hidden global
 
-    validate() {
-        let ok = true;
-        this.shadowRoot.querySelectorAll('c-inp').forEach(f => {
-            const wrp = f.closest('.fld-wrp');
-            let fOk = true;
-            if (typeof f.isValid === 'function') {
-                fOk = f.isValid();
-            } else {
-                // Fallback si c-inp no tiene isValid
-                const iInp = f.shadowRoot?.querySelector('input, select, textarea');
-                if (iInp?.checkValidity) {
-                    fOk = iInp.checkValidity();
-                } else {
-                    console.warn(`Cannot validate field ${f.name}`);
-                }
-            }
-            wrp?.classList.toggle('inv', !fOk);
-            if (!fOk) ok = false;
-        });
-        return ok;
-    }
+                      // *** NUEVO: Determinar visibilidad y aplicar clase ***
+                      const isVisible = this._shouldFieldBeVisible(k, c);
+                      const wrapperClasses = {
+                          'fld-wrp': true,
+                          hidden: !isVisible
+                      };
 
-    // getData ahora puede leer directamente de _cItm, es más simple
-    getData() {
-        // Devuelve una copia del estado actual interno
-        return this._deepCopy(this._cItm);
-    }
+                      const id = `ef-${k}-${Date.now()}`;
+                      const val = this._cItm?.[k];
+                      // let valueToPass = val; // c-inp debería manejar tipos via .value
 
-    reset() {
-        // Resetea _cItm al estado guardado en _iItm
-        this._cItm = this._deepCopy(this._iItm);
-        // Es importante forzar un re-render para que los inputs reflejen el reseteo
-        this.requestUpdate();
-         // Opcional: Limpiar visualmente errores de validación al resetear
-         this.shadowRoot.querySelectorAll('.fld-wrp.inv').forEach(wrp => wrp.classList.remove('inv'));
-    }
+                      // *** NUEVO: Hacer 'required' condicional si el campo es visible ***
+                      const isRequired = c.required && isVisible;
 
-    _hInpChg(e) {
-        if (e.target.tagName !== 'C-INP') return;
-        let n, v;
-        // Prioriza el detalle del evento si está bien formado
-        if (e.detail?.name !== undefined) {
-            ({ name: n, value: v } = e.detail);
-        } else {
-            // Fallback si el evento no tiene detail esperado
-            n = e.target.name;
-            if (n && typeof e.target.getVal === 'function') {
-                 v = e.target.getVal();
-            } else if (n) {
-                 // Último recurso: leer valor de checkbox si es el caso
-                 if(e.target.type === 'checkbox' || e.target.type === 'switch' || e.target.type === 'boolean') {
-                    v = e.target.checked;
-                 } else {
-                     v = e.target.value; // O el atributo value
-                 }
-                 console.warn(`ObjEditFrm: Using fallback value retrieval for ${n}`);
-            }
-        }
-
-        if (n !== undefined) {
-            // Actualiza el estado _cItm de forma inmutable
-            this._cItm = { ...this._cItm, [n]: v };
-             // console.log('ObjEditFrm: _cItm updated by input change:', this._cItm);
-
-            // Limpia el error de validación visual del wrapper al cambiar
-            e.target.closest('.fld-wrp')?.classList.remove('inv');
-
-            // Despacha el evento de cambio de campo
-            this.dispatchEvent(new CustomEvent('fld-chg', { detail: { n, v } }));
-        }
-    }
-
-
-    _hSub(e) {
-        e.preventDefault();
-        this._hSave();
-    }
-
-    _hActClk(e) {
-        const btn = e.target.closest('button[data-act]');
-        if (!btn) return;
-        const act = btn.dataset.act;
-
-        if (act === 'save') {
-            // El evento submit se encarga de llamar a _hSave
-        } else if (act === 'cancel') {
-            this.dispatchEvent(new CustomEvent('cancel-edit'));
-            // El reset ahora funciona correctamente con _iItm
-            this.reset();
-        } else {
-            // Para acciones personalizadas, enviar los datos actuales
-            this.dispatchEvent(new CustomEvent(act, { detail: this.getData() }));
-        }
-    }
-
-    _hSave() {
-        if (this.validate()) {
-            const currentData = this.getData(); // Obtiene los datos actuales de _cItm
-            // Actualiza _iItm para que un futuro reset refleje el estado guardado
-            this._iItm = this._deepCopy(currentData);
-            // Despacha el evento con los datos guardados
-            this.dispatchEvent(new CustomEvent('save-item', { detail: currentData }));
-        } else {
-             console.warn('ObjEditFrm: Validation failed.');
-            // Intenta enfocar el primer campo inválido
-            const fInv = this.shadowRoot.querySelector('.fld-wrp.inv c-inp');
-            if (fInv) {
-                try {
-                    if (typeof fInv.focus === 'function') {
-                        fInv.focus();
-                    } else {
-                        fInv.shadowRoot?.querySelector('input, select, textarea')?.focus();
-                    }
-                } catch (err) { console.warn('Cant focus inv fld', err); }
-            }
-        }
-    }
-
-    render() {
-        // Render ahora lee de _cItm, que se actualiza via willUpdate
-        // console.log('ObjEditFrm rendering with _cItm:', this._cItm);
-        return html`
-            <form class="ef-cont" @submit=${this._hSub} novalidate>
-                <div class="flds-cont">
-                    ${map(Object.entries(this.fCfg || {}), ([k, c]) => {
-                        if (c.hidden) return '';
-                        const id = `ef-${k}-${Date.now()}`;
-                        // *** LEER EL VALOR DE _cItm ***
-                        const val = this._cItm?.[k];
-                        const isBool = c.type === 'checkbox' || c.type === 'switch' || c.type === 'boolean';
-
-                        // Determina el valor a pasar a c-inp.value
-                        // c-inp debe ser capaz de manejar el tipo correcto (boolean, number, string)
-                        let valueToPass = val;
-                        // Si c-inp.value espera estrictamente un string (excepto para booleanos?)
-                        // podríamos necesitar convertirlo, pero idealmente c-inp maneja tipos.
-                        // if (!isBool && val !== null && val !== undefined) {
-                        //    valueToPass = String(val);
-                        // } else if (isBool) {
-                        //    valueToPass = Boolean(val); // Asegura que sea booleano
-                        // }
-
-                        return html`
-                            <div class="fld-wrp">
-                                <label for=${id}>${c.label || k}</label>
-                                <c-inp
-                                    id=${id}
-                                    name=${k}
-                                    type=${c.type || 'text'}
-                                    .value=${valueToPass} /* Pasa el valor directamente */
-                                    placeholder=${ifDefined(c.placeholder)}
-                                    ?required=${c.required}
-                                    ?disabled=${c.disabled}
-                                    ?readonly=${c.readonly}
-                                    pattern=${ifDefined(c.pattern)}
-                                    title=${ifDefined(c.title)}
-                                    min=${ifDefined(c.min)}
-                                    max=${ifDefined(c.max)}
-                                    step=${ifDefined(c.step)}
-                                    rows=${ifDefined(c.rows)}
-                                    cols=${ifDefined(c.cols)}
-                                    .options=${(c.type === 'select' || c.type === 'radio') && Array.isArray(c.options) ? c.options : undefined}
-                                    ?darkmode=${this.darkmode}
-                                    @change=${this._hInpChg}
-                                ></c-inp>
-                            </div>
-                        `;
-                    })}
-                </div>
-                <div class="acts" @click=${this._hActClk}>
-                    <button type="button" class="cncl-btn" data-act="cancel">Cancel</button>
-                    <button type="submit" class="sv-btn" data-act="save">Save</button>
-                    ${map(this.cActs || [], act => html`
-                        <button type="button" data-act=${act.nm} class=${ifDefined(act.cls)}>${act.lbl}</button>
-                    `)}
-                </div>
-            </form>
-        `;
-    }
+                      return html`
+                          <div class=${classMap(wrapperClasses)}> 
+                              <label for=${id}>${c.label || k}</label>
+                              <c-inp
+                                  id=${id}
+                                  name=${k}
+                                  type=${c.type || 'text'}
+                                  .value=${val} /* Pasa el valor directamente */
+                                  placeholder=${ifDefined(c.placeholder)}
+                                  ?required=${isRequired} /* Required condicional */
+                                  ?disabled=${c.disabled}
+                                  ?readonly=${c.readonly}
+                                  pattern=${ifDefined(c.pattern)}
+                                  title=${ifDefined(c.title)}
+                                  min=${ifDefined(c.min)}
+                                  max=${ifDefined(c.max)}
+                                  step=${ifDefined(c.step)}
+                                  rows=${ifDefined(c.rows)}
+                                  cols=${ifDefined(c.cols)}
+                                  .options=${(c.type === 'select' || c.type === 'radio') && Array.isArray(c.options) ? c.options : undefined}
+                                  ?darkmode=${this.darkmode}
+                                  @change=${this._hInpChg}
+                              ></c-inp>
+                          </div>
+                      `;
+                  })}
+              </div>
+              <div class="acts" @click=${this._hActClk}>
+                  <button type="button" class="cncl-btn" data-act="cancel">Cancel</button>
+                  <button type="submit" class="sv-btn" data-act="save">Save</button>
+                  ${map(this.cActs || [], act => html`
+                      <button type="button" data-act=${act.nm} class=${ifDefined(act.cls)}>${act.lbl}</button>
+                  `)}
+              </div>
+          </form>
+      `;
+  }
 }
 customElements.define('obj-edit-frm', ObjEditFrm);
 
 
-// --- DynObjDisp (SIN CAMBIOS, ya pasaba .itm correctamente) ---
-// (El código de DynObjDisp de la respuesta anterior es correcto
-// y no necesita cambios para que esta corrección funcione)
+// --- DynObjDisp (No necesita cambios) ---
 class DynObjDisp extends LitElement {
-    // ... (Código completo de DynObjDisp sin cambios) ...
-    static styles = css`
-        /* Estilos (sin cambios) */
-        :host { display: block; font-family: sans-serif; margin-bottom: 15px; }
-        .dyn-cont { position: relative; }
-        .d-card {
-            background-color: #fff; border: 1px solid #eee; border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
-            display: flex; flex-direction: column; transition: box-shadow 0.2s;
-        }
-        :host([darkmode]) .d-card { background-color: #333; border-color: #555; color: #eee; }
-        .d-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-        :host([darkmode]) .d-card:hover { box-shadow: 0 2px 8px rgba(255,255,255,0.1); }
-        .d-hdr {
-            background-color: #f5f5f5; padding: 12px 16px; font-weight: bold;
-            border-bottom: 1px solid #eee; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
-        :host([darkmode]) .d-hdr { background-color: #444; border-bottom-color: #555; }
-        .d-cont {
-            padding: 16px; flex-grow: 1; display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px 15px;
-        }
-        .d-prop { margin-bottom: 8px; display: flex; flex-direction: column; gap: 2px; }
-        .d-prop-lbl {
-            font-weight: 500; color: #666; font-size: 0.8em;
-            text-transform: capitalize; margin-bottom: 2px;
-        }
-        :host([darkmode]) .d-prop-lbl { color: #bbb; }
-        .d-prop-val { word-break: break-word; font-size: 0.95em; }
-        .d-prop-val[data-type="boolean"], .d-prop-val[data-type="switch"], .d-prop-val[data-type="checkbox"] {
-            font-style: italic; color: #333;
-        }
-        :host([darkmode]) .d-prop-val[data-type="boolean"], :host([darkmode]) .d-prop-val[data-type="switch"], :host([darkmode]) .d-prop-val[data-type="checkbox"] {
-             color: #ddd;
-        }
-        .d-acts {
-            padding: 10px 16px; display: flex; justify-content: flex-end;
-            gap: 8px; background-color: #fafafa; border-top: 1px solid #eee;
-        }
-        :host([darkmode]) .d-acts { background-color: #3a3a3a; border-top-color: #555; }
-        .d-acts button {
-            padding: 6px 12px; cursor: pointer; border: 1px solid #ccc;
-            border-radius: 4px; font-size: 0.9em; transition: all 0.2s;
-            background-color: #fff;
-        }
-        .d-acts button:hover { filter: brightness(0.95); }
-        :host([darkmode]) .d-acts button { background-color: #555; border-color: #777; color: #eee; }
-        :host([darkmode]) .d-acts button:hover { filter: brightness(1.1); }
-        .ed-btn { background-color: #CCE5FF; border-color: #b8daff; color: #004085; }
-        .del-btn { background-color: #F8D7DA; color: #721c24; border-color: #f5c6cb; }
-        :host([darkmode]) .ed-btn { background-color: #0056b3; border-color: #0056b3; color: white; }
-        :host([darkmode]) .del-btn { background-color: #b81c2c; border-color: #b81c2c; color: white; }
-        obj-edit-frm { display: block; }
+  // ... (Código completo de DynObjDisp sin cambios de la respuesta anterior) ...
+   static styles = css`
+      /* Estilos (sin cambios) */
+      :host { display: block; font-family: sans-serif; margin-bottom: 15px; }
+      .dyn-cont { position: relative; }
+      .d-card {
+          background-color: #fff; border: 1px solid #eee; border-radius: 8px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
+          display: flex; flex-direction: column; transition: box-shadow 0.2s;
+      }
+      :host([darkmode]) .d-card { background-color: #333; border-color: #555; color: #eee; }
+      .d-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+      :host([darkmode]) .d-card:hover { box-shadow: 0 2px 8px rgba(255,255,255,0.1); }
+      .d-hdr {
+          background-color: #f5f5f5; padding: 12px 16px; font-weight: bold;
+          border-bottom: 1px solid #eee; white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis;
+      }
+      :host([darkmode]) .d-hdr { background-color: #444; border-bottom-color: #555; }
+      .d-cont {
+          padding: 16px; flex-grow: 1; display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 10px 15px;
+      }
+      .d-prop { margin-bottom: 8px; display: flex; flex-direction: column; gap: 2px; }
+      .d-prop-lbl {
+          font-weight: 500; color: #666; font-size: 0.8em;
+          text-transform: capitalize; margin-bottom: 2px;
+      }
+      :host([darkmode]) .d-prop-lbl { color: #bbb; }
+      .d-prop-val { word-break: break-word; font-size: 0.95em; }
+      .d-prop-val[data-type="boolean"], .d-prop-val[data-type="switch"], .d-prop-val[data-type="checkbox"] {
+          font-style: italic; color: #333;
+      }
+      :host([darkmode]) .d-prop-val[data-type="boolean"], :host([darkmode]) .d-prop-val[data-type="switch"], :host([darkmode]) .d-prop-val[data-type="checkbox"] {
+           color: #ddd;
+      }
+      .d-acts {
+          padding: 10px 16px; display: flex; justify-content: flex-end;
+          gap: 8px; background-color: #fafafa; border-top: 1px solid #eee;
+      }
+      :host([darkmode]) .d-acts { background-color: #3a3a3a; border-top-color: #555; }
+      .d-acts button {
+          padding: 6px 12px; cursor: pointer; border: 1px solid #ccc;
+          border-radius: 4px; font-size: 0.9em; transition: all 0.2s;
+          background-color: #fff;
+      }
+      .d-acts button:hover { filter: brightness(0.95); }
+      :host([darkmode]) .d-acts button { background-color: #555; border-color: #777; color: #eee; }
+      :host([darkmode]) .d-acts button:hover { filter: brightness(1.1); }
+      .ed-btn { background-color: #CCE5FF; border-color: #b8daff; color: #004085; }
+      .del-btn { background-color: #F8D7DA; color: #721c24; border-color: #f5c6cb; }
+      :host([darkmode]) .ed-btn { background-color: #0056b3; border-color: #0056b3; color: white; }
+      :host([darkmode]) .del-btn { background-color: #b81c2c; border-color: #b81c2c; color: white; }
+      obj-edit-frm { display: block; }
+  `;
+
+  static properties = {
+      mode: { type: String }, // display | edit
+      itm: { type: Object },
+      fCfg: { type: Object },
+      hdrKey: { type: String, attribute: 'hdr-key', reflect: true },
+      cActs: { type: Array }, // display mode actions
+      darkmode: { type: Boolean, reflect: true },
+  };
+
+  constructor() {
+      super();
+      this.mode = 'display';
+      this.itm = {};
+      this.fCfg = {};
+      // Revisa si quieres el botón delete por defecto o si se añade externamente
+      this.cActs = [
+           { nm: 'delete', lbl: 'Eliminar', cls: 'del-btn' }
+      ];
+      this.darkmode = false;
+  }
+
+  _deepCopy(o) {
+      try { return JSON.parse(JSON.stringify(o || {})); }
+      catch (e) { console.error('Err deep copy', e); return {}; }
+  }
+
+  setConfig(i = {}, f = {}) {
+      this.itm = this._deepCopy(i);
+      this.fCfg = f || {};
+      this.mode = 'display';
+  }
+
+  setItem(i = {}) {
+      this.itm = this._deepCopy(i);
+       if (this.mode === 'edit') {
+          this.requestUpdate();
+      }
+  }
+
+  addAct(nm, lbl, cls = '') {
+      if (!nm || typeof nm !== 'string' || typeof lbl !== 'string') return;
+      this.cActs = [...this.cActs.filter(a => a.nm !== nm), { nm, lbl, cls }];
+  }
+
+  hiddenAct(nm) { // Corregido nombre función
+      if (!nm || typeof nm !== 'string') return;
+      this.cActs = this.cActs.filter(a => a.nm !== nm);
+  }
+
+  _formatVal(v, c) {
+      const typ = c.type || 'text';
+      if (typ === 'boolean' || typ === 'switch' || typ === 'checkbox') {
+          return Boolean(v) ? (c.trueLabel || 'Yes') : (c.falseLabel || 'No');
+      } else if (typ === 'select' && Array.isArray(c.options)) {
+          const opt = c.options.find(o => String(o.value) === String(v));
+          return opt ? opt.label : (v ?? '');
+      }
+      return (v === undefined || v === null) ? '' : String(v);
+  }
+
+  _hDispActClk(e) {
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const act = btn.dataset.act;
+      const detail = this._deepCopy(this.itm);
+
+      if (act === 'edit') {
+          this.mode = 'edit';
+      } else if (act === 'delete') {
+          this.dispatchEvent(new CustomEvent('del-item', { detail }));
+      } else {
+          this.dispatchEvent(new CustomEvent(act, { detail }));
+      }
+  }
+
+  _hSave(e) {
+      this.itm = this._deepCopy(e.detail);
+      this.dispatchEvent(new CustomEvent('item-upd', { detail: this._deepCopy(this.itm) }));
+      this.mode = 'display';
+  }
+
+  _hCancel() {
+      this.mode = 'display';
+  }
+  _compareValues(actual, expected) {
+    if (typeof expected === 'boolean') {
+        const actualBool = !(['false', '0', '', null, undefined].includes(String(actual).toLowerCase()) || !actual);
+        return actualBool === expected;
+    }
+     if (actual === null || actual === undefined) {
+        return expected === null || expected === undefined || expected === '';
+    }
+    return String(actual) === String(expected);
+}
+
+// --- Helper de visibilidad (duplicado o importado/compartido) ---
+ _shouldFieldBeVisible(key, config, currentItem) { // Recibe el item actual
+    const condition = config.showIf;
+    if (!condition || !condition.field) {
+        return true;
+    }
+    const triggerField = condition.field;
+    const triggerValue = currentItem?.[triggerField]; // Usa el item pasado
+    const requiredValue = condition.value;
+    const negateCondition = condition.negate === true;
+
+    let matchesCondition;
+    if (Array.isArray(requiredValue)) {
+        matchesCondition = requiredValue.some(val => this._compareValues(triggerValue, val));
+    } else {
+        matchesCondition = this._compareValues(triggerValue, requiredValue);
+    }
+    return negateCondition ? !matchesCondition : matchesCondition;
+}
+  _renderDisp() {
+    const hdr = this.hdrKey && this.itm[this.hdrKey] !== undefined ? this.itm[this.hdrKey] : null;
+    return html`
+        <div class="d-card">
+            ${hdr !== null ? html`<div class="d-hdr">${hdr}</div>` : ''}
+            <div class="d-cont">
+                ${map(Object.entries(this.fCfg || {}), ([k, c]) => {
+                    // *** Aplicar lógica de visibilidad también en display ***
+                    const isVisible = this._shouldFieldBeVisible(k, c, this.itm);
+
+                    if (c.hidden || k === this.hdrKey || !isVisible) return ''; // Ocultar si no es visible
+
+                    return html`
+                        <div class="d-prop">
+                            <div class="d-prop-lbl">${c.label || k}</div>
+                            <div class="d-prop-val" data-type=${c.type || 'text'}>${this._formatVal(this.itm[k], c)}</div>
+                        </div>
+                    `;
+                })}
+            </div>
+            <div class="d-acts" @click=${this._hDispActClk}>
+                 <button type="button" class="ed-btn" data-act="edit">Edit</button>
+                 ${map(this.cActs || [], act => html`
+                    <button type="button" data-act=${act.nm} class=${ifDefined(act.cls)}>${act.lbl}</button>
+                 `)}
+            </div>
+        </div>
     `;
+}
 
-    static properties = {
-        mode: { type: String }, // display | edit
-        itm: { type: Object },
-        fCfg: { type: Object },
-        hdrKey: { type: String, attribute: 'hdr-key', reflect: true },
-        cActs: { type: Array }, // display mode actions
-        darkmode: { type: Boolean, reflect: true },
-    };
+  _renderEdit() {
+      return html`
+          <obj-edit-frm
+              .fCfg=${this.fCfg}
+              .itm=${this.itm}
+              .cActs=${[]}
+              ?darkmode=${this.darkmode}
+              @save-item=${this._hSave}
+              @cancel-edit=${this._hCancel}
+          ></obj-edit-frm>
+      `;
+  }
 
-    constructor() {
-        super();
-        this.mode = 'display';
-        this.itm = {};
-        this.fCfg = {};
-        this.cActs = [];
-        this.darkmode = false;
-    }
-
-    _deepCopy(o) {
-        try { return JSON.parse(JSON.stringify(o || {})); }
-        catch (e) { console.error('Err deep copy', e); return {}; }
-    }
-
-    setConfig(i = {}, f = {}) {
-        this.itm = this._deepCopy(i);
-        this.fCfg = f || {};
-        this.mode = 'display';
-    }
-
-    setItem(i = {}) {
-        this.itm = this._deepCopy(i);
-         // Si ya está en modo edición, forza un re-render para pasar el nuevo item
-         if (this.mode === 'edit') {
-            this.requestUpdate();
-        }
-    }
-
-    addAct(nm, lbl, cls = '') {
-        if (!nm || typeof nm !== 'string' || typeof lbl !== 'string') return;
-        this.cActs = [...this.cActs.filter(a => a.nm !== nm), { nm, lbl, cls }];
-    }
-
-    _formatVal(v, c) {
-        const typ = c.type || 'text';
-        if (typ === 'boolean' || typ === 'switch' || typ === 'checkbox') {
-            return Boolean(v) ? (c.trueLabel || 'Yes') : (c.falseLabel || 'No');
-        } else if (typ === 'select' && Array.isArray(c.options)) {
-            const opt = c.options.find(o => String(o.value) === String(v));
-            return opt ? opt.label : (v ?? '');
-        }
-        return (v === undefined || v === null) ? '' : String(v);
-    }
-
-    _hDispActClk(e) {
-        const btn = e.target.closest('button[data-act]');
-        if (!btn) return;
-        const act = btn.dataset.act;
-        const detail = this._deepCopy(this.itm); // Send copy
-
-        if (act === 'edit') {
-            this.mode = 'edit'; // Cambia el modo, Lit re-renderizará
-        } else if (act === 'delete') {
-            this.dispatchEvent(new CustomEvent('del-item', { detail }));
-        } else {
-            this.dispatchEvent(new CustomEvent(act, { detail }));
-        }
-    }
-
-    _hSave(e) {
-        this.itm = this._deepCopy(e.detail); // Update internal item from saved data
-        this.dispatchEvent(new CustomEvent('item-upd', { detail: this._deepCopy(this.itm) }));
-        this.mode = 'display'; // Cambia modo, Lit re-renderizará
-    }
-
-    _hCancel() {
-        this.mode = 'display'; // Cambia modo, Lit re-renderizará
-    }
-
-    _renderDisp() {
-        const hdr = this.hdrKey && this.itm[this.hdrKey] !== undefined ? this.itm[this.hdrKey] : null;
-        return html`
-            <div class="d-card">
-                ${hdr !== null ? html`<div class="d-hdr">${hdr}</div>` : ''}
-                <div class="d-cont">
-                    ${map(Object.entries(this.fCfg || {}), ([k, c]) => {
-                        if (c.hidden || k === this.hdrKey) return '';
-                        return html`
-                            <div class="d-prop">
-                                <div class="d-prop-lbl">${c.label || k}</div>
-                                <div class="d-prop-val" data-type=${c.type || 'text'}>${this._formatVal(this.itm[k], c)}</div>
-                            </div>
-                        `;
-                    })}
-                </div>
-                <div class="d-acts" @click=${this._hDispActClk}>
-                     <button type="button" class="ed-btn" data-act="edit">Edit</button>
-                     <button type="button" class="del-btn" data-act="delete">Delete</button>
-                     ${map(this.cActs || [], act => html`
-                        <button type="button" data-act=${act.nm} class=${ifDefined(act.cls)}>${act.lbl}</button>
-                     `)}
-                </div>
-            </div>
-        `;
-    }
-
-    _renderEdit() {
-         // console.log('DynObjDisp rendering edit form with item:', this.itm);
-        return html`
-            <obj-edit-frm
-                .fCfg=${this.fCfg}
-                .itm=${this.itm} /* Pasa el item directamente (willUpdate en ObjEditFrm lo copiará) */
-                .cActs=${[]}
-                ?darkmode=${this.darkmode}
-                @save-item=${this._hSave}
-                @cancel-edit=${this._hCancel}
-            ></obj-edit-frm>
-        `;
-    }
-
-    render() {
-        if (!this.itm || !this.fCfg || Object.keys(this.fCfg).length === 0) {
-            return html`<p>No item/config.</p>`;
-        }
-        return html`
-            <div class="dyn-cont">
-                ${this.mode === 'display' ? this._renderDisp() : this._renderEdit()}
-            </div>
-        `;
-    }
+  render() {
+      if (!this.itm || !this.fCfg || Object.keys(this.fCfg).length === 0) {
+          return html`<p>No item/config.</p>`;
+      }
+      return html`
+          <div class="dyn-cont">
+              ${this.mode === 'display' ? this._renderDisp() : this._renderEdit()}
+          </div>
+      `;
+  }
 }
 customElements.define('dyn-obj-disp', DynObjDisp);
 
