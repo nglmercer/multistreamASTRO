@@ -572,3 +572,49 @@ function getBadgeDetails(sceneType,{level,url}) {
   }
 ]
  */
+import { webcomponentevent, appendMessage, handlechat, handlegift, mapEvent, arrayevents,lastElement } from '/src/utils/chat.js';
+
+import { TiktokEmitter, socket } from '/src/utils/socketManager';
+import { openPopup, returnexploreroptions, setPopupOptions,returnOptions } from '/src/components/menu/menuutils.js';
+import {
+    playTextwithproviderInfo
+} from '/src/components/voicecomponents/initconfig.js';	
+TiktokEmitter.on('chat', async (data) => {
+//  console.log("TiktokEmitter",data);
+  handlechat(data);
+});
+TiktokEmitter.on('gift', async (data) => {
+//  console.log("TiktokEmitter",data);
+  handlegift(data);
+});
+TiktokEmitter.on('play_arrow', async (data) => {
+//  console.log("TiktokEmitter",data);
+});
+const chatcontainer = document.getElementById('chatcontainer');
+chatcontainer.addEventListener('message-menu',(event)=>{
+    console.log("event chatcontainer",event.detail);
+    const messageData = event.detail;
+    const optionsName = {
+      "play_arrow": returnexploreroptions('play_arrow','play_arrow','play_arrow',()=>{
+        TiktokEmitter.emit('play_arrow',messageData);
+    }),
+      "explorer-2":"Explorer 2",
+      "explorer-3":"Explorer 3",
+    }
+    const menuOptions = [
+      // emit array and foreach
+      optionsName['play_arrow'],
+        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
+            console.log("optionschat", messageData);
+        }),
+        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
+            console.log("optionschat", messageData);
+        }),
+    ];
+    setPopupOptions(returnOptions(menuOptions));
+    openPopup(messageData.element?.originalTarget);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    lastElement();
+});

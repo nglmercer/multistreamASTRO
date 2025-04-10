@@ -1,18 +1,22 @@
 import { buildTTSConfigData,TTSConfigManager  } from './tts_config.js';
 import { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeechProvider } from './tts_provider.js';
+import { TiktokEmitter } from '/src/utils/socketManager';
+TiktokEmitter.on('play_arrow', async (data) => {
+  console.log("TiktokEmitter",data);
+  playTextwithproviderInfo(data.user.data.comment);
+});
+let activeProviderName = null;
+let providerInfo;
+let ttsConfigData;
+let currentProviders = {}; // Para instancias de proveedores
+let selectedProviderName;
+function updateStatus(message) {
+    console.log(`Status: ${message}`);
+}
 document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
-    let statusDiv;
-    statusDiv = document.getElementById('status'); // Asignar después de que el DOM esté listo
-
-    function updateStatus(message) {
-        if (statusDiv) statusDiv.textContent = `Status: ${message}`;
-        console.log(`Status: ${message}`);
-    }
-
     updateStatus("Initializing...");
 
     // --- 1. Construir Datos de Configuración (Async) ---
-    let ttsConfigData;
     try {
         updateStatus("Building configuration (loading voices)...");
         // ¡Esperar a que las voces y la estructura de configuración estén listas!
@@ -30,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
     // --- 3. Inicializar el resto (Ahora puede usar ttsConfigManager) ---
     const providerNames = ['streamElements', 'responsiveVoice', 'webSpeech'];
     const displayElements = {};
-    let currentProviders = {}; // Para instancias de proveedores
 
     // --- Initialize Config Forms ---
     providerNames.forEach(name => {
@@ -69,23 +72,6 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
             console.warn(`Could not find display element for ${name}`);
         }
     });
-
-    // --- Dark Mode Toggle ---
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    const applyDarkMode = (isDark) => {
-        document.body.style.backgroundColor = isDark ? '#222' : '#fff';
-        document.body.style.color = isDark ? '#eee' : '#000';
-        Object.values(displayElements).forEach(el => {
-            if (isDark) el.setAttribute('darkmode', '');
-            else el.removeAttribute('darkmode');
-        });
-    };
-    if (darkModeToggle)     darkModeToggle.addEventListener('change', (event) => {
-        applyDarkMode(event.target.checked);
-    });
-
-    // applyDarkMode(darkModeToggle.checked); // Aplicar estado inicial si es necesario
-
     // --- Instantiate Providers ---
     function instantiateProvider(name) {
         const config = ttsConfigManager.loadConfig(name); // Usa la instancia
@@ -147,20 +133,58 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
 
     // --- Example Usage ---
     const textInput = document.getElementById('tts-text');
-    const providerSelect = document.getElementById('tts-provider-select');
+    const providerSelect = document.getElementById('tts-provider-select') || {value: getselectedProviderName()};
     const speakButton = document.getElementById('speak-button');
     const stopButton = document.getElementById('stop-button');
-    let activeProviderName = null;
+    providerInfo =  currentProviders[providerSelect.value];
+    if (providerSelect) {
+        providerSelect.value = getselectedProviderName();
+    }
+    console.log("providerSelect.value",providerSelect.value);
+    if (speakButton) {
+        speakButton.addEventListener('click', async () => {
+            selectedProviderName = providerSelect.value;
+           const textToSpeak = textInput.value;
+            providerInfo = currentProviders[selectedProviderName];
+           playTextwithproviderInfo(textToSpeak,{currentProviders, selectedProviderName});
+           getselectedProviderName(selectedProviderName);
+       });
+    }
+    if (stopButton) {
+    stopButton.addEventListener('click', () => {
+        if (activeProviderName && currentProviders[activeProviderName]?.instance) {
+            currentProviders[activeProviderName].instance.stop();
+            updateStatus(`Stopped ${activeProviderName}.`);
+        } else {
+            Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
+            updateStatus("Stopped any active speech.");
+        }
+        activeProviderName = null;
+    });
+    }
 
-    speakButton.addEventListener('click', async () => {
-        const selectedProviderName = providerSelect.value;
-        const textToSpeak = textInput.value;
-        const providerInfo = currentProviders[selectedProviderName];
-
-        if (!textToSpeak) { updateStatus("Enter text to speak."); return; }
-        if (!providerInfo || !providerInfo.instance) { updateStatus(`${selectedProviderName} provider not available.`); return; }
-        if (!providerInfo.initialized) { updateStatus(`${selectedProviderName} provider not yet initialized.`); return; }
-
+}); 
+function getselectedProviderName(value) {
+    if (value) {
+        localStorage.setItem('selectedProviderName', value);
+    }
+    if (!selectedProviderName) {
+        const selectedProviderNamestorage = localStorage.getItem('selectedProviderName');
+        if (selectedProviderNamestorage) {
+            selectedProviderName = selectedProviderNamestorage;
+        } else {
+            selectedProviderName = value
+        }
+    }
+    if (!selectedProviderName && !value) {
+        return "webSpeech";
+    }
+    return selectedProviderName || value;
+}
+async  function playTextwithproviderInfo(textToSpeak) {
+    if (!providerInfo.initialized) { updateStatus(`${selectedProviderName} provider not yet initialized.`); return; }
+    if (providerInfo && providerInfo.instance) {
+        console.log("rawdata",textToSpeak,providerInfo,providerInfo,selectedProviderName);
         Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
         activeProviderName = selectedProviderName;
         updateStatus(`Speaking with ${selectedProviderName}...`);
@@ -174,17 +198,8 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
             updateStatus(`Error with ${selectedProviderName}: ${error.message}`);
             activeProviderName = null;
         }
-    });
-
-    stopButton.addEventListener('click', () => {
-        if (activeProviderName && currentProviders[activeProviderName]?.instance) {
-            currentProviders[activeProviderName].instance.stop();
-            updateStatus(`Stopped ${activeProviderName}.`);
-        } else {
-            Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
-            updateStatus("Stopped any active speech.");
-        }
-        activeProviderName = null;
-    });
-
-}); 
+    }
+}
+export {
+    playTextwithproviderInfo
+}
