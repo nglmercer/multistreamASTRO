@@ -167,6 +167,7 @@ async function openModalForType(formType, data) {
         editor.hdrKey = configGenerator.title || `Editar ${formType}`; // Establece título
         editor.mode = 'edit'; // Asegura que esté en modo edición
         // Ocultar botón delete para formularios de "Añadir"
+        editor.addAct('cancel', 'Cancelar', "fas fa-times"); // Asegúrate que dyn-obj-disp tenga hideAct
         if (editor.hideAct) editor.hideAct('delete'); // Asegúrate que dyn-obj-disp tenga hideAct
 
         console.log(
@@ -223,7 +224,10 @@ editor.addEventListener('del-item', (e) => {
          modal.hide();
      }
 });
-
+editor.addEventListener('cancel', () => {
+    console.log("Cancel Edit");
+    modal.hide();
+});
 
  modal.addEventListener('close', () => { 
      console.log("Modal cerrado");

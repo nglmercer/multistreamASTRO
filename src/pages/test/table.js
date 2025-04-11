@@ -584,7 +584,6 @@ class GridManagerLit extends LitElement {
     static styles = css`
         :host {
             display: block;
-            padding: 10px;
             /* Definir variables aquí si se quiere un control AÚN MÁS global,
                pero por ahora las heredamos de BaseLitElement a través de los hijos */
             /* background-color: var(--manager-bg, #f0f0f0); */ /* Ejemplo */
@@ -598,7 +597,6 @@ class GridManagerLit extends LitElement {
             /* Usamos variables definidas en BaseLitElement */
             border: 1px solid var(--border-color-primary);
             border-radius: 6px;
-            padding: 15px;
             background-color: var(--bg-color-primary); /* Fondo principal */
             box-shadow: 0 1px 3px var(--shadow-color-soft);
             color: var(--text-color-primary); /* Color texto general */
