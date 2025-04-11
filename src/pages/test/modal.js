@@ -1031,9 +1031,7 @@ class ObjEditFrm extends LitElement {
 customElements.define('obj-edit-frm', ObjEditFrm);
 
 
-// --- DynObjDisp (No necesita cambios) ---
 class DynObjDisp extends LitElement {
-  // ... (Código completo de DynObjDisp sin cambios de la respuesta anterior) ...
    static styles = css`
       /* Estilos (sin cambios) */
       :host { display: block; font-family: sans-serif; margin-bottom: 15px; }

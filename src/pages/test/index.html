@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modal con Formulario (HTML Declarativo)</title>
+    <title>Modal Múltiples Formularios</title>
     <style>
         body { font-family: sans-serif; padding: 2rem; line-height: 1.6; background-color: black; color: white; }
-        button { padding: 0.6em 1.2em; cursor: pointer; margin-right: 10px; border-radius: 4px; border: 1px solid #ccc; }
-        button.primary { background-color: #007bff; color: white; border-color: #007bff; }
-        #modal-container-html dlg-cont::part(overlay) { /* Ejemplo para estilizar el overlay via ::part si dlg-cont lo expone */
-           /* background-color: rgba(0, 50, 100, 0.6); */
-        }
-        #modal-container-html dyn-obj-disp {
-            min-width: 400px; /* Dale un tamaño mínimo al contenido del modal */
+        button { padding: 0.6em 1.2em; cursor: pointer; margin: 5px; border-radius: 4px; border: 1px solid #555; background-color: #333; color: white; }
+        button.primary { background-color: #007bff; border-color: #007bff; }
+        button:hover { filter: brightness(1.2); }
+        .button-group { margin-bottom: 1.5rem; border-bottom: 1px solid #444; padding-bottom: 1rem; }
+        #modal-container dyn-obj-disp { /* Estilo más general */
+            min-width: 400px;
             max-width: 90vw;
+            display: block; /* Asegurar que toma espacio */
+            background-color: #222; /* Fondo para el contenido del modal */
+            border-radius: 8px;
+             /* obj-edit-form dentro no necesita borde/padding extra */
         }
-        .output { margin-top: 1rem; padding: 1rem; border-radius: 5px; white-space: pre-wrap; }
+         #modal-container dyn-obj-disp obj-edit-frm {
+             border: none;
+             padding: 0;
+             background: transparent;
+         }
+        .output { margin-top: 1rem; padding: 1rem; background-color: #1a1a1a; border: 1px solid #333; border-radius: 5px; white-space: pre-wrap; font-family: monospace; min-height: 50px;}
+        .loading { font-style: italic; color: #aaa; }
     </style>
     <!-- 1. Importa los Módulos de los Componentes -->
     <script type="module" src="/src/pages/test/modal.js"></script>
@@ -23,107 +32,263 @@
 </head>
 <body>
 
-    <h1>Ejemplo: Modal de Formulario (HTML)</h1>
-    <p>El modal y el componente de display/edición están declarados en el HTML.</p>
+    <h1>Ejemplo: Modal con Múltiples Formularios</h1>
+    <p>Haz clic en un botón para abrir el formulario correspondiente en el mismo modal.</p>
 
-    <button id="open-modal-html-btn" class="primary">Editar Usuario (HTML)</button>
+    <!-- Grupo de Botones -->
+    <div class="button-group">
+        <button data-form-type="comment" class="primary">Evento Comentario</button>
+        <button data-form-type="bits" class="primary">Evento Bits</button>
+        <button data-form-type="likes" class="primary">Evento Likes</button>
+        <button data-form-type="gift" class="primary">Evento Regalo</button>
+        <button data-form-type="banUser" class="primary">Banear Usuario</button> <!-- Ejemplo Adicional -->
+    </div>
 
-    <!-- 2. Declara el Contenedor del Modal -->
-    <dlg-cont id="modal-container-html"> <!-- 'required' evita cerrar al hacer clic fuera -->
-        <!-- 3. Declara el Componente de Display/Edición dentro del Modal -->
-        <dyn-obj-disp id="user-editor-html" hdr-key="name" mode="edit" darkmode>
-            <!-- Configuración y datos se pasarán via JS -->
+    <!-- 2. Declara el Contenedor ÚNICO del Modal -->
+    <dlg-cont id="modal-container">
+        <!-- 3. Declara el Componente ÚNICO de Display/Edición -->
+        <!-- hdr-key se establecerá dinámicamente si es necesario -->
+        <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode>
+            <!-- El contenido se configura totalmente vía JS -->
         </dyn-obj-disp>
     </dlg-cont>
 
-    <div class="output" id="output-html">Esperando acciones...</div>
+    <div class="output" id="output-log">Esperando acciones...</div>
 
     <script type="module">
-        // Espera a que los elementos estén definidos y el DOM listo
-        // await customElements.whenDefined('dyn-obj-disp'); // Alternativa robusta si hay problemas de timing
+        const modal = document.getElementById('modal-container');
+        const editor = document.getElementById('dynamic-editor');
+        const output = document.getElementById('output-log');
 
-        const btn = document.getElementById('open-modal-html-btn');
-        const modal = document.getElementById('modal-container-html');
-        const editor = document.getElementById('user-editor-html');
-        const output = document.getElementById('output-html');
-        const today = new Date();
-        const formattedToday = today.toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
-        console.log("formattedToday:", formattedToday);
-        // --- Datos y Configuración de Ejemplo ---
-        const userData = {
-            id: '',
-            name: 'nombre del evento',
-            isActive: true,
-            role: 'any',
-            value: Math.random() * 1000,
+        // --- Simulación de carga asíncrona de opciones ---
+        async function fetchGiftOptions() {
+            console.log("Fetching gift options...");
+            // Simula delay de red
+            await new Promise(resolve => setTimeout(resolve, 700));
+            console.log("Gift options fetched.");
+            return [
+                { value: '5565', label: 'Rose (Async)' },
+                { value: '5566', label: 'Rose Red (Async)' },
+                { value: '5567', label: 'Rose Violet (Async)' },
+                { value: '5568', label: 'Rose Yellow (Async)' },
+                { value: '5569', label: 'Rose White (Async)' },
+            ];
+        }
+         async function fetchUserRoles() {
+            await new Promise(resolve => setTimeout(resolve, 300));
+            return [
+                { value: 'any', label: 'Cualquiera' },
+                { value: 'sub', label: 'Suscriptor (Async)' },
+                { value: 'mod', label: 'Moderador (Async)' },
+                { value: 'admin', label: 'Administrador' }
+            ];
+         }
+
+        // --- CONFIGURACIONES CENTRALIZADAS POR TIPO ---
+        const formConfigurations = {
+            comment: {
+                title: "Configurar Evento de Comentario",
+                getInitialData: () => ({
+                    id: '', name: 'Nuevo Evento Comentario', isActive: true,
+                    role: 'any', comparator: 'any', value: '', type: 'comment' // Añadir tipo
+                }),
+                getFieldConfig: async () => ({
+                    name: { label: 'Nombre', type: 'text', required: true },
+                    isActive: { label: 'Activo', type: 'switch' },
+                    role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
+                    comparator: { label: 'Comparador', type: 'select', options: [
+                        { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Igual a' },
+                        { value: 'startsWith', label: 'Comienza con' }, { value: 'endsWith', label: 'Termina con' },
+                        { value: 'contains', label: 'Contiene' }
+                    ]},
+                    value: { label: 'Valor Comentario', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
+                    id: { hidden: true }, // Ocultar ID para nuevos
+                    type: { hidden: true }
+                })
+            },
+            bits: {
+                title: "Configurar Evento de Bits",
+                 getInitialData: () => ({
+                    id: '', name: 'Nuevo Evento Bits', isActive: true, role: 'any',
+                    comparator: 'InRange', value: null, lessThan: 0, greaterThan: 100, type: 'bits'
+                }),
+                getFieldConfig: async () => ({
+                    name: { label: 'Nombre', type: 'text', required: true },
+                    isActive: { label: 'Activo', type: 'switch' },
+                    role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
+                    comparator: { label: 'Comparador Bits', type: 'select', options: [
+                         { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Igual a' },
+                         { value: 'InRange', label: 'En rango' }
+                    ]},
+                    value: { label: 'Valor Exacto', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
+                    lessThan: { label: 'Mínimo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+                    greaterThan: { label: 'Máximo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+                    id: { hidden: true },
+                    type: { hidden: true }
+                })
+            },
+            likes: {
+                 title: "Configurar Evento de Likes",
+                 getInitialData: () => ({
+                     id: '', name: 'Nuevo Evento Likes', isActive: true, role: 'any',
+                     comparator: 'any', value: null, lessThan: 0, greaterThan: 1000, type: 'likes'
+                 }),
+                 getFieldConfig: async () => ({ // Similar a bits, ajusta labels/defaults si es necesario
+                    name: { label: 'Nombre', type: 'text', required: true },
+                    isActive: { label: 'Activo', type: 'switch' },
+                    role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
+                    comparator: { label: 'Comparador Likes', type: 'select', options: [
+                         { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Igual a' },
+                         { value: 'InRange', label: 'En rango' }
+                    ]},
+                    value: { label: 'Likes Exactos', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
+                    lessThan: { label: 'Mínimo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+                    greaterThan: { label: 'Máximo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+                    id: { hidden: true },
+                    type: { hidden: true }
+                })
+            },
+            gift: {
+                 title: "Configurar Evento de Regalo",
+                 getInitialData: () => ({
+                    id: '', name: 'Nuevo Evento Regalo', isActive: true, role: 'any',
+                    comparator: 'equal', value: '', type: 'gift'
+                 }),
+                 getFieldConfig: async () => ({
+                    name: { label: 'Nombre', type: 'text', required: true },
+                    isActive: { label: 'Activo', type: 'switch' },
+                    role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
+                    comparator: { label: 'Comparador Regalo', type: 'select', options: [
+                        { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Regalo Específico' }
+                    ]},
+                    // *** Opciones cargadas asíncronamente ***
+                    value: {
+                        label: 'Tipo Regalo', type: 'select',
+                        options: await fetchGiftOptions(), // Llama a la función async
+                        showIf: { field: 'comparator', value: 'equal' }
+                    },
+                    id: { hidden: true },
+                    type: { hidden: true }
+                 })
+            },
+             banUser: { // Ejemplo para el ban manager
+                title: "Banear Usuario/IP",
+                 getInitialData: () => ({
+                     id: '', type: 'user', value: '', banType: 'temporary',
+                     durationValue: 1, durationUnit: 'days', reason: ''
+                 }),
+                 getFieldConfig: async () => ({ // Configuración similar a ban-manager
+                     type: { label: 'Tipo', type: 'select', required: true, options: [
+                         { value: 'user', label: 'Usuario (ID)' }, { value: 'ip', label: 'Dirección IP' }
+                         // Añadir más si es necesario
+                     ]},
+                     value: { label: 'Valor', type: 'text', required: true },
+                     banType: { label: 'Tipo Baneo', type: 'select', required: true, options: [
+                         { value: 'temporary', label: 'Temporal' }, { value: 'permanent', label: 'Permanente' }
+                     ]},
+                     durationValue: { label: 'Duración', type: 'number', min: 1, showIf: { field: 'banType', value: 'temporary'} },
+                     durationUnit: { label: 'Unidad', type: 'select', options: [
+                          { value: 'seconds', label: 'Segundos' }, { value: 'minutes', label: 'Minutos' },
+                          { value: 'hours', label: 'Horas' }, { value: 'days', label: 'Días' }
+                      ], showIf: { field: 'banType', value: 'temporary'} },
+                     reason: { label: 'Motivo', type: 'textarea' },
+                     id: { hidden: true }
+                 })
+            }
+            // Añade más configuraciones aquí (likes, shares, etc.)
         };
 
-        const userFieldConfig = {
-            name: { label: 'Nombre', type: 'text', required: true },
-            isActive: { label: 'Activo', type: 'switch', trueLabel: 'Sí', falseLabel: 'No' },
-            role: {
-                label: 'Rol', type: 'select', options: [
-                    { value: 'any', label: 'cualquiera' },
-                    { value: 'sub', label: 'suscriptor' },
-                    { value: 'admin', label: 'Administrador' }
-                ]
-            },
-            comparator: {
-                label: 'Comparador', type: 'select', options: [
-                    { value: 'any', label: 'Cualquiera' },
-                    { value: 'equal', label: 'Igual a' },
-                    { value: 'startsWith', label: 'Comienza con' },
-                    { value: 'endsWith', label: 'Termina con' },
-                    { value: 'contains', label: 'Contiene' }
-                ]
-            },
-            value: { label: 'Valor', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
-             // Campo completamente oculto en el form
-            id: { hidden: false, type: 'number' },
-        };
+        // --- FUNCIÓN PARA ABRIR EL MODAL ---
+        async function openModalForType(formType) {
+            const configGenerator = formConfigurations[formType];
+            if (!configGenerator) {
+                console.error(`Configuración no encontrada para el tipo: ${formType}`);
+                output.textContent = `Error: Configuración no encontrada para ${formType}`;
+                return;
+            }
 
-        // --- Configurar el Componente Editor ---
-        if (editor) {
-            editor.fCfg = userFieldConfig; // Establece la configuración de campos
-            // --- Manejadores de Eventos del Editor ---
-            editor.addEventListener('item-upd', (e) => {
-                console.log('Evento item-upd recibido:', e.detail);
-                output.textContent = `Usuario Guardado:\n${JSON.stringify(e.detail, null, 2)}`;
-                // Podrías actualizar tu "base de datos" local aquí
-                // userData = e.detail; // Actualiza la variable local si es necesario
-                modal.hide(); // Cierra el modal al guardar
-            });
+            // Almacena el tipo actual para usarlo al guardar/eliminar
+            modal.dataset.currentFormType = formType;
+            output.textContent = `Cargando configuración para ${formType}...`;
+            editor.itm = {}; // Limpia datos anteriores mientras carga
+            editor.fCfg = {}; // Limpia config anterior mientras carga
+            modal.show(); // Muestra modal (podría estar vacío o con loading)
 
-            editor.addEventListener('del-item', (e) => {
-                console.log('Evento del-item recibido:', e.detail);
-                if (confirm(`¿Seguro que quieres eliminar a ${e.detail.name}?`)) {
-                    output.textContent = `Usuario Eliminado:\n${JSON.stringify(e.detail, null, 2)}`;
-                     // Aquí harías la llamada para eliminar el usuario real
-                    modal.hide();
-                }
-            });
+            try {
+                // Carga configuración y datos iniciales en paralelo
+                 // Usamos Promise.all para esperar ambas (aunque getInitialData sea síncrono)
+                const [fCfg, itm] = await Promise.all([
+                    configGenerator.getFieldConfig(),
+                    Promise.resolve(configGenerator.getInitialData()) // Asegura que sea promesa
+                ]);
 
-        } else {
-            console.error("El elemento 'user-editor-html' no se encontró.");
+                console.log(`Configuración cargada para ${formType}:`, fCfg);
+                console.log(`Datos iniciales para ${formType}:`, itm);
+
+                // Configura el editor DENTRO del modal
+                editor.fCfg = fCfg;
+                editor.itm = itm;
+                editor.hdrKey = configGenerator.title || `Editar ${formType}`; // Establece título
+                editor.mode = 'edit'; // Asegura que esté en modo edición
+                // Ocultar botón delete para formularios de "Añadir"
+                if (editor.hideAct) editor.hideAct('delete'); // Asegúrate que dyn-obj-disp tenga hideAct
+
+                output.textContent = `Editando ${formType}...`; // Actualiza estado
+
+            } catch (error) {
+                console.error(`Error al cargar configuración para ${formType}:`, error);
+                output.textContent = `Error al cargar ${formType}: ${error.message}`;
+                // Considera ocultar el modal si la carga falla: modal.hide();
+            }
         }
 
-        // --- Control del Modal ---
-        if (btn && modal) {
-            btn.addEventListener('click', () => {
-                // Opcional: Asegurarse que el editor tenga los datos más recientes antes de mostrar
-                // if (editor) editor.setItem(userData);
-                modal.show();
-                editor.itm = userData;      // Establece los datos iniciales
-                editor.mode = 'edit';       // Cambia el modo a 'edit'
-                editor.hiddenAct('delete'); // Ocultar el botón de eliminar
+        // --- MANEJADOR DE EVENTOS PARA LOS BOTONES (DELEGACIÓN) ---
+        document.body.addEventListener('click', (event) => {
+            // Busca un botón con data-form-type que sea ancestro del elemento clickeado
+            const button = event.target.closest('button[data-form-type]');
+            if (button) {
+                const formType = button.dataset.formType;
+                openModalForType(formType);
+            }
+        });
 
-            });
-             // Opcional: Escuchar cuando el modal se oculta (p.ej. por botón Cancelar interno)
-            // modal.addEventListener('cuando-se-oculte', () => { console.log('Modal HTML cerrado'); });
+        // --- MANEJADORES DE EVENTOS DEL EDITOR ---
+        editor.addEventListener('item-upd', (e) => {
+            const savedData = e.detail;
+            const formType = modal.dataset.currentFormType || 'desconocido'; // Recupera el tipo
+            console.log(`Evento item-upd (${formType}) recibido:`, savedData);
+            output.textContent = `Guardado (${formType}):\n${JSON.stringify(savedData, null, 2)}`;
+            // AQUÍ: Llama a la función de guardado específica según 'formType'
+            // Ejemplo: if (formType === 'comment') saveCommentToDB(savedData);
+            // Ejemplo: if (formType === 'banUser') saveBanToDB(savedData);
+            modal.hide(); // Cierra el modal al guardar
+        });
 
-        } else {
-             console.error("El botón o el modal no se encontraron.");
-        }
+        // El evento 'del-item' no se usará si ocultamos el botón, pero lo dejamos por si acaso
+        editor.addEventListener('del-item', (e) => {
+            const itemToDelete = e.detail;
+            const formType = modal.dataset.currentFormType || 'desconocido';
+            console.log(`Evento del-item (${formType}) recibido:`, itemToDelete);
+             if (confirm(`¿Seguro que quieres eliminar este item de tipo "${formType}"?`)) {
+                 output.textContent = `Eliminado (${formType}):\n${JSON.stringify(itemToDelete, null, 2)}`;
+                 // AQUÍ: Llama a la función de eliminación específica según 'formType'
+                 modal.hide();
+             }
+        });
+
+         // Manejar el cierre del modal si el usuario hace clic fuera (si no es 'required')
+         // o si el botón Cancelar interno de obj-edit-frm lo cierra
+         modal.addEventListener('close', () => { // Asumiendo que dlg-cont despacha 'close' o similar
+             console.log("Modal cerrado");
+             output.textContent = "Modal cerrado.";
+             modal.dataset.currentFormType = ''; // Limpia el tipo actual
+         });
+         // Si dlg-cont no despacha evento 'close', podrías observar el atributo 'visible'
+         // como en el ejemplo anterior, o manejar el botón Cancelar explícitamente
+         // si obj-edit-form/dyn-obj-disp despacharan 'cancel-edit'.
+
+         // Inicializa el output
+         output.textContent = "Haz clic en un botón para empezar.";
 
     </script>
 
