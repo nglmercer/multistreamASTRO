@@ -43,6 +43,7 @@
         <button data-form-type="bits" class="primary">Evento Bits</button>
         <button data-form-type="likes" class="primary">Evento Likes</button>
         <button data-form-type="gift" class="primary">Evento Regalo</button>
+        <button id="actionButton" class="primary">Acción</button>
     </div>
 
     <!-- 2. Declara el Contenedor ÚNICO del Modal -->
@@ -53,9 +54,15 @@
             <!-- El contenido se configura totalmente vía JS -->
         </dyn-obj-disp>
     </dlg-cont>
-
+    <dlg-cont id="Action-modal">
+        <!-- 3. Declara el Componente ÚNICO de Display/Edición -->
+        <!-- hdr-key se establecerá dinámicamente si es necesario -->
+        <dyn-obj-disp id="Action-editor" mode="edit" darkmode>
+            <!-- El contenido se configura totalmente vía JS -->
+        </dyn-obj-disp>
+    </dlg-cont>
 
 <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
-
+<script type="module" src="/src/pages/test/actions.js"></script>
 </body>
 </html>
