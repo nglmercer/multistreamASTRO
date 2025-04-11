@@ -135,6 +135,7 @@ const formConfigurations = {
 };
 
 async function openModalForType(formType, data) {
+    console.log("Open Modal", formType, data);
     const configGenerator = formConfigurations[formType];
     if (!configGenerator) {
         console.error(`Configuración no encontrada para el tipo: ${formType}`);
@@ -300,13 +301,13 @@ let manager
       const type = compId.replace('Events', '');
       const relevantDbManager = dbManagers[type];
       
-      openModalForType(type, item);
       if (!relevantDbManager) {
           console.error(`No se encontró DB Manager para el tipo: ${type}`);
           return;
       }
 
       if (action === 'edit') {
+        openModalForType(type, item);
           // Lógica para editar: Podrías abrir un modal/formulario
           // precargado con 'item' y usar formConfigurations[type]
           // para generar los campos del formulario.

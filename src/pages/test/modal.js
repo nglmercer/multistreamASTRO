@@ -1131,7 +1131,9 @@ class DynObjDisp extends LitElement {
       if (!nm || typeof nm !== 'string' || typeof lbl !== 'string') return;
       this.cActs = [...this.cActs.filter(a => a.nm !== nm), { nm, lbl, cls }];
   }
-
+  hideAct(nm) {
+    this.hiddenAct(nm);
+  }
   hiddenAct(nm) { // Corregido nombre función
       if (!nm || typeof nm !== 'string') return;
       this.cActs = this.cActs.filter(a => a.nm !== nm);
