@@ -652,7 +652,6 @@ class GridManagerLit extends LitElement {
         };
         if (!Array.isArray(nCfg.data)) nCfg.data = [];
         this.comps = { ...this.comps, [id]: nCfg };
-        console.log(`GM: Comp "${id}" (${nCfg.type}) added.`);
         return nCfg;
     }
     getCompCfg(id) { return this.comps?.[id] || null; }

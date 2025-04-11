@@ -1,19 +1,33 @@
-import { databases, IndexedDBManager, DBObserver, getAllDataFromDatabase } from '/src/pages/test/idb.js';
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/pages/test/idb.js';
 const modal = document.getElementById('modal-container');
 const editor = document.getElementById('dynamic-editor');
-const commentDbObserver = new DBObserver();
-const commentDbmanager = new IndexedDBManager(databases.commentEventsDB, commentDbObserver);
-const giftDbObserver = new DBObserver();
-const giftDbmanager = new IndexedDBManager(databases.giftEventsDB, giftDbObserver);
-const bitsDbObserver = new DBObserver();
-const bitsDbmanager = new IndexedDBManager(databases.bitsEventsDB, bitsDbObserver);
-const likesDbObserver = new DBObserver();
-const likesDbmanager = new IndexedDBManager(databases.likesEventsDB, likesDbObserver);
+const EventEmitter = new Emitter();
+const commentDbmanager = new IndexedDBManager(databases.commentEventsDB, EventEmitter);
+const giftDbmanager = new IndexedDBManager(databases.giftEventsDB, EventEmitter);
+const bitsDbmanager = new IndexedDBManager(databases.bitsEventsDB, EventEmitter);
+const likesDbmanager = new IndexedDBManager(databases.likesEventsDB, EventEmitter);
+EventEmitter.onAny((eventName, Data) => {
+    switch (eventName) {
+        case 'save':
+        case 'update':
+            const { config, data } = Data;
+            if (config) {
+                console.log(`Event received EventEmitter: update save`, Data);
+                renderizemanager(config.name);
+            }
+            break;
+        case 'delete':
+        case 'clear':
+            console.log(`Event received EventEmitter: clear delete`, Data);
+            break;
+        default:
+            console.log(`Event received EventEmitter: ${eventName}`, Data);
+            break;
+    }
+    // This listener will be automatically removed after execution
+  });
 async function fetchGiftOptions() {
-    console.log("Fetching gift options...");
-    // Simula delay de red
     await new Promise(resolve => setTimeout(resolve, 10));
-    console.log("Gift options fetched.");
     return [
         { value: '5565', label: 'Rose (Async)' },
         { value: '5566', label: 'Rose Red (Async)' },
@@ -49,7 +63,7 @@ const formConfigurations = {
                 { value: 'contains', label: 'Contiene' }
             ]},
             value: { label: 'Valor Comentario', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
-            id: { hidden: true }, // Ocultar ID para nuevos
+            id: { hidden: false, readOnly:"true" }, // Ocultar ID para nuevos
             type: { hidden: true }
         })
     },
@@ -70,7 +84,7 @@ const formConfigurations = {
             value: { label: 'Valor Exacto', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
-            id: { hidden: true },
+            id: { hidden: false, readOnly:"true" },
             type: { hidden: true }
         })
     },
@@ -91,7 +105,7 @@ const formConfigurations = {
             value: { label: 'Likes Exactos', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
-            id: { hidden: true },
+            id: { hidden: false, readOnly:"true" },
             type: { hidden: true }
         })
     },
@@ -114,13 +128,13 @@ const formConfigurations = {
                 options: await fetchGiftOptions(), // Llama a la función async
                 showIf: { field: 'comparator', value: 'equal' }
             },
-            id: { hidden: true },
+            id: { hidden: false, readOnly:"true" },
             type: { hidden: true }
          })
     }
 };
 
-async function openModalForType(formType) {
+async function openModalForType(formType, data) {
     const configGenerator = formConfigurations[formType];
     if (!configGenerator) {
         console.error(`Configuración no encontrada para el tipo: ${formType}`);
@@ -132,7 +146,6 @@ async function openModalForType(formType) {
 
     // Almacena el tipo actual para usarlo al guardar/eliminar
     modal.dataset.currentFormType = formType;
-    console.log(`Cargando configuración para ${formType}...`)
     editor.itm = {}; // Limpia datos anteriores mientras carga
     editor.fCfg = {}; // Limpia config anterior mientras carga
     modal.show(); // Muestra modal (podría estar vacío o con loading)
@@ -145,12 +158,11 @@ async function openModalForType(formType) {
             Promise.resolve(configGenerator.getInitialData()) // Asegura que sea promesa
         ]);
 
-        console.log(`Configuración cargada para ${formType}:`, fCfg);
-        console.log(`Datos iniciales para ${formType}:`, itm);
+        console.log(`Datos iniciales para ${formType}:`, { config: fCfg, data: itm });
 
         // Configura el editor DENTRO del modal
         editor.fCfg = fCfg;
-        editor.itm = itm;
+        editor.itm = data || itm;
         editor.hdrKey = configGenerator.title || `Editar ${formType}`; // Establece título
         editor.mode = 'edit'; // Asegura que esté en modo edición
         // Ocultar botón delete para formularios de "Añadir"
@@ -212,38 +224,37 @@ editor.addEventListener('del-item', (e) => {
 });
 
 
- modal.addEventListener('close', () => { // Asumiendo que dlg-cont despacha 'close' o similar
+ modal.addEventListener('close', () => { 
      console.log("Modal cerrado");
      console.log(
      "Modal cerrado."
      )
-     modal.dataset.currentFormType = ''; // Limpia el tipo actual
+     modal.dataset.currentFormType = ''; 
  });
  const dbConfigMap = {
   comment: databases.commentEventsDB,
-  gift: databases.giftEventsDB, // Ajustado para coincidir con tu objeto `databases`
+  gift: databases.giftEventsDB, 
   bits: databases.bitsEventsDB,
-  likes: databases.likesEventsDB   // Ajustado para coincidir con tu objeto `databases`
+  likes: databases.likesEventsDB   
 };
 
-// Instancias de los managers (necesarias si quieres usar save/delete/update después)
 const dbManagers = {
-  comment: new IndexedDBManager(dbConfigMap.comment, new DBObserver()),
-  gift: new IndexedDBManager(dbConfigMap.gift, new DBObserver()),
-  bits: new IndexedDBManager(dbConfigMap.bits, new DBObserver()),
-  likes: new IndexedDBManager(dbConfigMap.likes, new DBObserver())
+  comment: new IndexedDBManager(dbConfigMap.comment, EventEmitter),
+  gift: new IndexedDBManager(dbConfigMap.gift, EventEmitter),
+  bits: new IndexedDBManager(dbConfigMap.bits, EventEmitter),
+  likes: new IndexedDBManager(dbConfigMap.likes, EventEmitter)
 };
+let manager
  async function initializeEventManager() {
-  const manager = document.getElementById('eventConfigManager');
+    manager = document.getElementById('eventConfigManager');
   if (!manager) {
       console.error('Elemento grid-manager-lit con ID "eventConfigManager" no encontrado.');
       return;
   }
 
-  // Limpia componentes existentes si se llama de nuevo
   manager.clearAll();
 
-  const eventTypes = Object.keys(formConfigurations); // ['comment', 'bits', 'likes', 'gift']
+  const eventTypes = Object.keys(formConfigurations); 
 
   for (const type of eventTypes) {
       try {
@@ -255,21 +266,19 @@ const dbManagers = {
               continue; // Saltar al siguiente tipo
           }
 
-          console.log(`Cargando datos y configuración para: ${type}`);
-
           // 1. Obtener datos de IndexedDB
           const initialData = await getAllDataFromDatabase(dbConfig);
-          console.log(`Datos para ${type}:`, initialData);
 
           // 2. Obtener configuración de campos y filtrar claves visibles
           const fieldConfig = await formConfig.getFieldConfig();
           const displayKeys = Object.entries(fieldConfig)
               .filter(([key, field]) => !field.hidden) // Excluir campos ocultos
               .map(([key]) => key); // Obtener solo los nombres de las claves
-          console.log(`Claves visibles para ${type}:`, displayKeys);
+        console.log(`Datos para ${type}:`, { data: initialData, keys: displayKeys });
+
 
           // 3. Añadir el componente (tabla) al Grid Manager
-          manager.addComp(`${type}-table`, { // ID único para el componente
+          manager.addComp(`${type}Events`, { // ID único para el componente
               displayType: 'table',         // Mostrar como tabla
               title: formConfig.title,      // Título de la tabla
               keys: displayKeys,            // Columnas a mostrar
@@ -277,7 +286,6 @@ const dbManagers = {
               // actions: [], // Opcional: si no quieres los botones por defecto
               // displayOptions: {} // Opciones específicas de display si usas cards/flex
           });
-          console.log(`Tabla para ${type} añadida al manager.`);
 
       } catch (error) {
           console.error(`Error al configurar la tabla para el tipo "${type}":`, error);
@@ -285,15 +293,14 @@ const dbManagers = {
       }
   }
 
-  // Configurar el listener para las acciones (Edit, Delete, etc.)
   manager.addEventListener('comp-action', async (e) => {
       const { compId, action, item, index } = e.detail;
-      console.log('Acción recibida:', { compId, action, item, index });
-
-      // Extraer el tipo ('comment', 'bits', etc.) del compId ('comment-table')
-      const type = compId.replace('-table', '');
+      console.log('Acción recibida:', e.detail);
+    
+      const type = compId.replace('Events', '');
       const relevantDbManager = dbManagers[type];
-
+      
+      openModalForType(type, item);
       if (!relevantDbManager) {
           console.error(`No se encontró DB Manager para el tipo: ${type}`);
           return;
@@ -304,7 +311,6 @@ const dbManagers = {
           // precargado con 'item' y usar formConfigurations[type]
           // para generar los campos del formulario.
           console.log(`Editar ${type} con ID: ${item.id}`, item);
-          alert(`Editar ${type}: ${JSON.stringify(item)}`);
           // Ejemplo: showEditModal(type, item);
           // Después de editar y guardar en el modal, deberías llamar a:
           // const updatedItem = await relevantDbManager.saveData(newDataFromModal);
@@ -312,22 +318,34 @@ const dbManagers = {
           // manager.setCompData(compId, await getAllDataFromDatabase(dbConfigMap[type]));
 
       } else if (action === 'delete') {
-          // Lógica para eliminar
           if (confirm(`¿Seguro que quieres eliminar el evento "${item.name}" (ID: ${item.id}) de tipo ${type}?`)) {
-              try {
-                  await relevantDbManager.deleteData(item.id);
-                  console.log(`Elemento ${item.id} de tipo ${type} eliminado.`);
-                  // Actualizar la tabla en el manager para reflejar la eliminación
-                  manager.setCompData(compId, await getAllDataFromDatabase(dbConfigMap[type]));
-              } catch (error) {
-                  console.error(`Error al eliminar elemento ${item.id} de tipo ${type}:`, error);
-                  alert(`Error al eliminar: ${error.message}`);
-              }
+            managerdeleteData(compId, item);
           }
       } else {
           // Manejar otras acciones personalizadas si las añades
           console.log(`Acción personalizada "${action}" para ${type}:`, item);
       }
   });
+}
+async function managerdeleteData(compId, item) {
+    const type = compId.replace('Events', '');
+    const relevantDbManager = dbManagers[type];
+    if (!relevantDbManager) {
+        console.error(`No se encontró DB Manager para el tipo: ${type}`);
+        return;
+    }
+    try {
+        await relevantDbManager.deleteData(item.id);
+        console.log(`Elemento ${item.id} de tipo ${type} eliminado.`);
+        renderizemanager(compId);
+        // Actualizar la tabla en el manager para reflejar la eliminación
+    } catch (error) {
+        console.error(`Error al eliminar elemento ${item.id} de tipo ${type}:`, error);
+        alert(`Error al eliminar: ${error.message}`);
+    }
+}
+async function renderizemanager(compId) {
+    const type = compId.replace('Events', '');
+    manager.setCompData(compId, await getAllDataFromDatabase(dbConfigMap[type]));
 }
 initializeEventManager();

@@ -2,7 +2,6 @@ import { LitElement, html, css } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js'; // Para atributos opcionales
 import { map } from 'lit/directives/map.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { IndexedDBManager, DBObserver, databases } from './idb.js';
 function safeParse(value) {
   try {
     if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
@@ -892,6 +891,7 @@ class ObjEditFrm extends LitElement {
            // Siempre limpiar error visual al interactuar
            e.target.closest('.fld-wrp')?.classList.remove('inv');
       }
+      console.log("Input:", n, "Value:", v);
   }
 
   _hSub(e) { e.preventDefault(); this._hSave(); }

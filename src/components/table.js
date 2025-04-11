@@ -1722,6 +1722,7 @@ class ObjectEditForm extends HTMLElement {
                 // Check if c-inp has a getVal method
                 if (typeof field.getVal === 'function') {
                     formData[name] = field.getVal();
+                    console.log("Input:", formData[name], "Value:", field.getVal());
                 } else {
                     // Fallback to getting value from internal element if possible
                     const internalInput = field.shadowRoot?.querySelector('input, select, textarea');

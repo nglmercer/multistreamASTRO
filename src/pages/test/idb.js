@@ -1,16 +1,17 @@
 const databases = {
     commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
-    giftEventsDB: { name: 'GiftEvents', version: 1, store: 'giftEvents' },
+    giftEventsDB: { name: 'giftEvents', version: 1, store: 'giftEvents' },
     bitsEventsDB: { name: 'bitsEvents', version: 1, store: 'bitsEvents' },
-    likesEventsDB: { name: 'LikesEvents', version: 1, store: 'likesEvents' },
+    likesEventsDB: { name: 'likesEvents', version: 1, store: 'likesEvents' },
     eventsDB: { name: 'Events', version: 1, store: 'events' },
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
     banDB: { name: 'Bans', version: 1, store: 'bans' },
 };
+
 class IndexedDBManager {
-    constructor(dbConfig, idbObserver) {
+    constructor(dbConfig, emitter) {
         this.dbConfig = dbConfig;
-        this.idbObserver = idbObserver;
+        this.emitter = emitter;
         this.db = null;
         this.defaultIndexes = []
     }
@@ -34,7 +35,7 @@ class IndexedDBManager {
                         const putRequest = store.put(newData);
 
                         putRequest.onsuccess = () => {
-                            this.idbObserver?.notify('update', newData);
+                            this.emitter?.emit('update', { config: this.dbConfig, data: newData });
                             resolve(newData);
                         };
                         putRequest.onerror = () => reject(putRequest.error);
@@ -104,8 +105,6 @@ class IndexedDBManager {
             request.onerror = (e) => { console.error(`IDB Error opening ${this.dbConfig.name}:`, request.error); reject(request.error); };
         });
     }
-
-
 
     async executeTransaction(storeName, mode, callback) {
         // Asegurarse que la BD está abierta ANTES de la transacción
@@ -188,14 +187,22 @@ class IndexedDBManager {
         let targetId;
         let isUpdate = false;
 
-        // Verifica si se proporcionó un ID válido
+        // FIX: Verifica si se proporcionó un ID válido Y no es vacío o undefined
+        // Solo consideramos un ID válido si:
+        // 1. Es un número
+        // 2. No es NaN
+        // 3. Es mayor o igual a 0
+        // 4. Y el ID existe explícitamente en data (no undefined/null/"")
+        const hasExplicitId = data.id !== undefined && data.id !== null && data.id !== "";
         const providedId = Number(data.id);
-        if (!isNaN(providedId) && providedId >= 0) {
+        
+        if (hasExplicitId && !isNaN(providedId) && providedId >= 0) {
             targetId = providedId;
             // Verifica si este ID ya existe para determinar si es una actualización
             isUpdate = allData.some(item => Number(item.id) === targetId);
         } else {
-            const missingIds = this.findMissingIds(allData);
+            // Comportamiento original para asignar un nuevo ID
+            const missingIds = await this.findMissingIds(allData);
             if (missingIds.length > 0) {
                 targetId = missingIds[0];
             } else {
@@ -225,7 +232,7 @@ class IndexedDBManager {
             };
             return newData; // Devuelve el dato para que executeTransaction lo resuelva
         }).then(savedData => {
-            this.idbObserver?.notify(actionType, savedData); // Notificar fuera/después de la transacción
+            this.emitter?.emit(actionType, { config: this.dbConfig, data: savedData }); // Notificar fuera/después de la transacción
             return savedData;
         });
     }
@@ -243,7 +250,7 @@ class IndexedDBManager {
                 request.onerror = () => reject(request.error);
             });
         }).then(deletedId => {
-            this.idbObserver?.notify('delete', deletedId); // Notificar después
+            this.emitter?.emit('delete', { config: this.dbConfig, data: deletedId }); // Notificar después
             return deletedId;
         });
     }
@@ -253,7 +260,7 @@ class IndexedDBManager {
             return new Promise((resolve, reject) => {
                 const request = store.clear();
                 request.onsuccess = () => {
-                    this.idbObserver?.notify('clear', null);
+                    this.emitter?.emit('clear', { config: this.dbConfig, data: null });
                     resolve();
                 };
                 request.onerror = () => reject(request.error);
@@ -300,7 +307,12 @@ class IndexedDBManager {
         });
     }
 }
+
 async function getAllDataFromDatabase(databaseConfig) {
+    if (!databaseConfig || !databaseConfig.name || !databaseConfig.version) {
+        console.error("Invalid database configuration:", databaseConfig);
+        return [];
+    }
     return new Promise((resolve) => {
         const request = indexedDB.open(databaseConfig.name, databaseConfig.version);
 
@@ -345,15 +357,127 @@ async function getAllDataFromDatabase(databaseConfig) {
     });
 }
 
+class Emitter {
+    constructor() {
+        this.listeners = new Map();
+        // Special key for listeners that respond to all events
+        this.ALL_EVENTS = Symbol('ALL_EVENTS');
+    }
 
+    // Registra un listener que se ejecutará cada vez que se emita el evento
+    on(event, callback) {
+        if (!this.listeners.has(event)) {
+            this.listeners.set(event, []);
+        }
+        this.listeners.get(event).push({ callback, once: false });
+        // Devuelve una función para remover el listener
+        return () => {
+            const listeners = this.listeners.get(event);
+            if (listeners) {
+                this.listeners.set(event, listeners.filter(
+                    listener => listener.callback !== callback
+                ));
+            }
+        };
+    }
 
-class DBObserver {
-    constructor() { this.listeners = []; }
-    subscribe(cb) { this.listeners.push(cb); }
-    unsubscribe(cb) { this.listeners = this.listeners.filter(l => l !== cb); }
-    notify(act, data) { this.listeners.forEach(l => l(act, data)); }
+    // Registra un listener que se ejecutará solo una vez
+    once(event, callback) {
+        if (!this.listeners.has(event)) {
+            this.listeners.set(event, []);
+        }
+        this.listeners.get(event).push({ callback, once: true });
+        // Devuelve una función para remover el listener
+        return () => {
+            const listeners = this.listeners.get(event);
+            if (listeners) {
+                this.listeners.set(event, listeners.filter(
+                    listener => listener.callback !== callback
+                ));
+            }
+        };
+    }
+
+    // Registra un listener que se ejecutará para todos los eventos
+    onAny(callback) {
+        if (!this.listeners.has(this.ALL_EVENTS)) {
+            this.listeners.set(this.ALL_EVENTS, []);
+        }
+        this.listeners.get(this.ALL_EVENTS).push({ callback, once: false });
+        // Devuelve una función para remover el listener
+        return () => {
+            const listeners = this.listeners.get(this.ALL_EVENTS);
+            if (listeners) {
+                this.listeners.set(this.ALL_EVENTS, listeners.filter(
+                    listener => listener.callback !== callback
+                ));
+            }
+        };
+    }
+
+    // Registra un listener que se ejecutará una vez para cualquier evento
+    onceAny(callback) {
+        if (!this.listeners.has(this.ALL_EVENTS)) {
+            this.listeners.set(this.ALL_EVENTS, []);
+        }
+        this.listeners.get(this.ALL_EVENTS).push({ callback, once: true });
+        // Devuelve una función para remover el listener
+        return () => {
+            const listeners = this.listeners.get(this.ALL_EVENTS);
+            if (listeners) {
+                this.listeners.set(this.ALL_EVENTS, listeners.filter(
+                    listener => listener.callback !== callback
+                ));
+            }
+        };
+    }
+
+    // Emite un evento con los datos proporcionados
+    emit(event, data) {
+        // Primero, ejecutar listeners específicos del evento
+        if (this.listeners.has(event)) {
+            const listeners = this.listeners.get(event);
+            
+            // Ejecutar todos los listeners específicos del evento
+            listeners.forEach(listener => {
+                listener.callback(data);
+            });
+            
+            // Filtrar los listeners de tipo "once" después de ejecutarlos
+            this.listeners.set(event, listeners.filter(
+                listener => !listener.once
+            ));
+            
+            // Si no quedan listeners, eliminar el evento del Map
+            if (this.listeners.get(event).length === 0) {
+                this.listeners.delete(event);
+            }
+        }
+        
+        // Luego, ejecutar listeners que escuchan todos los eventos
+        if (this.listeners.has(this.ALL_EVENTS)) {
+            const allListeners = this.listeners.get(this.ALL_EVENTS);
+            
+            // Ejecutar todos los listeners de ALL_EVENTS con el nombre del evento y los datos
+            allListeners.forEach(listener => {
+                listener.callback(event, data);
+            });
+            
+            // Filtrar los listeners de tipo "once" después de ejecutarlos
+            this.listeners.set(this.ALL_EVENTS, allListeners.filter(
+                listener => !listener.once
+            ));
+            
+            // Si no quedan listeners, eliminar el ALL_EVENTS del Map
+            if (this.listeners.get(this.ALL_EVENTS).length === 0) {
+                this.listeners.delete(this.ALL_EVENTS);
+            }
+        }
+    }
 }
-export { databases, IndexedDBManager, DBObserver, getAllDataFromDatabase }
+
+const emitter = new Emitter();
+export { databases, IndexedDBManager, Emitter, emitter, getAllDataFromDatabase }
 
 // Usage example
 // IndexedDBManager.updateData({ name: 'User 1', points: 100 }, 'name');
