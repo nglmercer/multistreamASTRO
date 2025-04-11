@@ -310,7 +310,7 @@ export class DlgCont extends LitElement {
 
   _handleOverlayClick(e) {
     if (e.target === e.currentTarget && !this.required) {
-      console.log("Overlay click event:", e, e.target === e.currentTarget,this.required);
+      console.log("Overlay click event:", e.target === e.currentTarget,this.required);
       this.hide();
     }
   }
@@ -1258,342 +1258,342 @@ class DynObjDisp extends LitElement {
 }
 customElements.define('dyn-obj-disp', DynObjDisp);
 
-class BanManager extends LitElement {
-  static styles = css`
-      :host { display: block; padding: 1em; }
-      .toolbar { margin-bottom: 1em; display: flex; align-items: center; gap: 1em; flex-wrap: wrap; }
-      .filter-btns button { margin-right: 0.5em; }
-      .filter-btns button[active] { font-weight: bold; background-color: #e0e0e0; }
-      table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-      th, td { border: 1px solid #ccc; padding: 0.6em; text-align: left; }
-      th { background-color: #f4f4f4; }
-      td.actions button { margin-left: 0.5em; cursor: pointer; padding: 0.2em 0.5em; font-size: 0.9em;}
-      .status-active { color: red; font-weight: bold; }
-      .status-expired { color: green; }
-      .add-btn { background-color: #007bff; color: white; border: none; padding: 0.6em 1em; border-radius: 4px;}
-      .modal-content { padding: 1em; background: white; border-radius: 8px; min-width: 450px; max-width: 90vw; }
-      /* Estilos para obj-edit-frm dentro del modal si es necesario */
-       dlg-cont obj-edit-frm { border: none; padding: 0; background: transparent; }
-  `;
+class DataGridView extends LitElement {
+    static styles = css`
+        :host {
+            display: block;
+            padding: 1em;
+            --grid-item-min-width: 300px; /* Variable para tamaño mínimo del item */
+        }
+        .toolbar {
+            margin-bottom: 1.5em;
+            display: flex;
+            justify-content: space-between; /* Pone el botón Añadir a la derecha */
+            align-items: center;
+            gap: 1em;
+            flex-wrap: wrap;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #444;
+        }
+        .toolbar select, .toolbar button {
+             padding: 0.5em 1em;
+             border-radius: 4px;
+             border: 1px solid #555;
+             background-color: #333;
+             color: white;
+             cursor: pointer;
+        }
+        .toolbar select { min-width: 150px; }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(var(--grid-item-min-width), 1fr));
+            gap: 1.5em;
+        }
+        .loading, .error, .empty {
+            grid-column: 1 / -1; /* Ocupa todo el ancho del grid */
+            text-align: center;
+            padding: 2em;
+            font-style: italic;
+            color: #aaa;
+        }
+        .error { color: #ff8a8a; }
+        /* Estilos para el modal (si es necesario, similar al ejemplo anterior) */
+        dlg-cont dyn-obj-disp {
+            min-width: 400px;
+            max-width: 90vw;
+            display: block;
+            background-color: #222;
+            border-radius: 8px;
+        }
+        dlg-cont dyn-obj-disp obj-edit-frm {
+             border: none; padding: 0; background: transparent;
+        }
+    `;
 
-  static properties = {
-      _allBans: { state: true },      // Todos los baneos de IDB
-      _filteredBans: { state: true }, // Baneos mostrados según filtro
-      _filter: { state: true },       // 'all', 'active', 'expired'
-      _showAddModal: { state: true }, // Visibilidad del modal de añadir/editar
-      _editItem: { state: true },    // Item a editar (null para añadir)
-      _isLoading: { state: true },    // Estado de carga
-  };
+    static properties = {
+        // Propiedades públicas configurables desde fuera
+        fetchDataCallback: { type: Function }, // Función async para obtener datos: async () => Array<Object>
+        itemConfigs: { type: Object },         // Objeto con configuraciones por tipo de item (similar a formConfigurations)
+        itemTypeKey: { type: String, attribute: 'item-type-key' }, // Clave en el objeto de datos que indica el tipo (ej: 'type')
+        headerKey: { type: String, attribute: 'header-key' },   // Clave para la cabecera de dyn-obj-disp
+        allowAdd: { type: Boolean, attribute: 'allow-add' }, // Permitir añadir nuevos items
+        allowEdit: { type: Boolean, attribute: 'allow-edit' }, // Permitir editar items existentes
+        allowDelete: { type: Boolean, attribute: 'allow-delete' }, // Permitir eliminar items
 
-  constructor() {
-      super();
-      this._allBans = [];
-      this._filteredBans = [];
-      this._filter = 'active'; // Mostrar activos por defecto
-      this._showAddModal = false;
-      this._editItem = null;
-      this._isLoading = true;
+        // Estado interno
+        _items: { state: true },          // Array de items cargados
+        _isLoading: { state: true },
+        _error: { state: true },
+        _showModal: { state: true },
+        _modalItem: { state: true },     // Item actual para el modal (nuevo o existente)
+        _modalItemType: { state: true }, // Tipo de item en el modal
+        _availableTypes: { state: true }, // Tipos disponibles para añadir (basado en itemConfigs)
+    };
 
-      // Configura el observer y el manager de IDB
-      this.dbObserver = new DBObserver();
-      this.idbManager = new IndexedDBManager(databases.banDB, this.dbObserver);
+    constructor() {
+        super();
+        // Valores por defecto para propiedades públicas
+        this.fetchDataCallback = async () => { console.warn("fetchDataCallback not provided"); return []; };
+        this.itemConfigs = {};
+        this.itemTypeKey = 'type'; // Asume que los objetos de datos tienen una clave 'type'
+        this.allowAdd = false;
+        this.allowEdit = true;
+        this.allowDelete = true;
 
-      // Define la configuración del formulario de baneos
-      this.banFormConfig = {
-          type: { label: 'Tipo', type: 'select', required: true, options: [
-              { value: 'user', label: 'Usuario (ID)' },
-              { value: 'ip', label: 'Dirección IP' },
-              { value: 'domain', label: 'Dominio' },
-              { value: 'keyword', label: 'Palabra Clave' }
-          ]},
-          value: { label: 'Valor', type: 'text', required: true, placeholder: 'ID Usuario, IP, Dominio...' },
-          banType: { label: 'Tipo Baneo', type: 'select', required: true, options: [
-              { value: 'temporary', label: 'Temporal' },
-              { value: 'permanent', label: 'Permanente' }
-          ]},
-          // Campos específicos para baneo temporal (se mostrarán condicionalmente o se manejarán en lógica)
-          durationValue: { label: 'Duración', type: 'number', min: 1 },
-          durationUnit: { label: 'Unidad', type: 'select', options: [
-               { value: 'seconds', label: 'Segundos' },
-               { value: 'minutes', label: 'Minutos' },
-               { value: 'hours', label: 'Horas' },
-               { value: 'days', label: 'Días' }
-           ]},
-          reason: { label: 'Motivo', type: 'textarea', required: false, placeholder: 'Motivo del baneo...' }
-          // banStartDate y banEndDate se calculan al guardar
-      };
+        // Inicialización del estado interno
+        this._items = [];
+        this._isLoading = true;
+        this._error = null;
+        this._showModal = false;
+        this._modalItem = null;
+        this._modalItemType = null;
+        this._availableTypes = [];
 
-      // Bind de la función del observer
-      this._handleDbUpdate = this._handleDbUpdate.bind(this);
-  }
+        // Podríamos necesitar un ID único para el modal si hubiera múltiples grids en una página
+        this._modalId = `modal-${Math.random().toString(36).substring(2, 9)}`;
+    }
 
-  connectedCallback() {
-      super.connectedCallback();
-      this.dbObserver.subscribe(this._handleDbUpdate);
-      this._loadBans();
-  }
+    connectedCallback() {
+        super.connectedCallback();
+        this.loadData(); // Carga los datos cuando el componente se conecta
+        this._updateAvailableTypes(); // Determina los tipos disponibles para añadir
+    }
 
-  disconnectedCallback() {
-      super.disconnectedCallback();
-      this.dbObserver.unsubscribe(this._handleDbUpdate);
-  }
+    willUpdate(changedProperties) {
+        // Si la configuración de items cambia, actualiza los tipos disponibles
+        if (changedProperties.has('itemConfigs')) {
+            this._updateAvailableTypes();
+        }
+        // Si la callback de datos cambia, recarga los datos
+        if (changedProperties.has('fetchDataCallback')) {
+            this.loadData();
+        }
+    }
 
-  _handleDbUpdate(action, data) {
-      console.log('DB Update Received:', action, data);
-      // Recargar los datos para reflejar el cambio
-      this._loadBans();
-  }
+    _updateAvailableTypes() {
+         // Extrae las claves del objeto itemConfigs como tipos disponibles
+        this._availableTypes = Object.keys(this.itemConfigs || {});
+    }
 
-  async _loadBans() {
-      this._isLoading = true;
-      try {
-          this._allBans = await this.idbManager.getAllData();
-          this._applyFilter(); // Aplicar filtro actual a los nuevos datos
-      } catch (error) {
-          console.error("Error loading bans:", error);
-          this._allBans = [];
-          this._filteredBans = [];
-          // Podrías mostrar un mensaje de error al usuario aquí
-      } finally {
-          this._isLoading = false;
-      }
-  }
+    async loadData() {
+        this._isLoading = true;
+        this._error = null;
+        this._items = []; // Limpia mientras carga
+        try {
+            if (typeof this.fetchDataCallback !== 'function') {
+                 throw new Error("fetchDataCallback is not a valid function.");
+            }
+            const data = await this.fetchDataCallback();
+            this._items = Array.isArray(data) ? data : [];
+            // console.log("Data loaded:", this._items);
+        } catch (err) {
+            console.error("Error loading data:", err);
+            this._error = `Error al cargar datos: ${err.message}`;
+            this._items = [];
+        } finally {
+            this._isLoading = false;
+        }
+    }
 
-  _isBanActive(ban) {
-      if (!ban) return false;
-      if (ban.banType === 'permanent') return true;
-      if (ban.banType === 'temporary' && ban.banEndDate) {
-          try { return new Date(ban.banEndDate) > new Date(); }
-          catch(e) { return false; }
-      }
-      return false;
-  }
+    // --- Manejadores de Modal ---
 
-  _applyFilter() {
-      const now = new Date();
-      if (this._filter === 'all') {
-          this._filteredBans = [...this._allBans];
-      } else if (this._filter === 'active') {
-          this._filteredBans = this._allBans.filter(ban => this._isBanActive(ban));
-      } else if (this._filter === 'expired') {
-          this._filteredBans = this._allBans.filter(ban => !this._isBanActive(ban));
-      }
-      // console.log(`Filter applied: ${this._filter}, Count: ${this._filteredBans.length}`);
-  }
+    async _openModal(item = null, itemType = null) {
+        // Determina el tipo y el item para el modal
+        if (item) { // Editando existente
+            this._modalItemType = item[this.itemTypeKey] || null;
+            this._modalItem = { ...item }; // Pasa una copia
+        } else if (itemType) { // Añadiendo nuevo de tipo específico
+            this._modalItemType = itemType;
+            const config = this.itemConfigs[itemType];
+            this._modalItem = config?.getInitialData ? config.getInitialData() : {};
+             // Asegura que el tipo esté en los datos iniciales si no lo puso getInitialData
+            if (this._modalItem && this.itemTypeKey && !this._modalItem[this.itemTypeKey]) {
+                 this._modalItem[this.itemTypeKey] = itemType;
+            }
+        } else {
+            console.error("Cannot open modal without an item or an itemType for adding.");
+            return;
+        }
 
-  _handleFilterChange(newFilter) {
-      if (this._filter !== newFilter) {
-          this._filter = newFilter;
-          this._applyFilter();
-      }
-  }
+        if (!this._modalItemType || !this.itemConfigs[this._modalItemType]) {
+             console.error(`Invalid item type or configuration not found for type: ${this._modalItemType}`);
+             this._error = `Configuración no encontrada para tipo: ${this._modalItemType}`;
+             return;
+        }
 
-  _openAddModal(itemToEdit = null) {
-      this._editItem = itemToEdit ? { ...itemToEdit } : null; // Clona el item si es edición
-      // Pre-rellenar duración si es edición temporal
-      if (this._editItem && this._editItem.banType === 'temporary' && this._editItem.banEndDate && this._editItem.banStartDate) {
-           const durationMs = new Date(this._editItem.banEndDate).getTime() - new Date(this._editItem.banStartDate).getTime();
-           // Convertir ms a la unidad más grande posible para el form (simplificado)
-           const days = durationMs / (1000 * 60 * 60 * 24);
-           if (days >= 1 && days % 1 === 0) {
-               this._editItem.durationValue = days;
-               this._editItem.durationUnit = 'days';
-           } else {
-                const hours = durationMs / (1000 * 60 * 60);
-                 if (hours >= 1 && hours % 1 === 0) {
-                     this._editItem.durationValue = hours;
-                     this._editItem.durationUnit = 'hours';
-                 } else {
-                      const minutes = durationMs / (1000 * 60);
-                       if (minutes >= 1 && minutes % 1 === 0) {
-                          this._editItem.durationValue = minutes;
-                          this._editItem.durationUnit = 'minutes';
-                       } else {
-                            this._editItem.durationValue = Math.round(durationMs / 1000);
-                            this._editItem.durationUnit = 'seconds';
-                       }
-                 }
-           }
+        this._showModal = true;
+        // El render se encargará de pasar los datos al modal y al dyn-obj-disp
+    }
 
-      }
-      this._showAddModal = true;
-  }
+    _closeModal() {
+        this._showModal = false;
+        this._modalItem = null;
+        this._modalItemType = null;
+    }
 
-  _closeAddModal() {
-      this._showAddModal = false;
-      this._editItem = null; // Limpiar item en edición
-  }
+    async _handleSave(e) {
+        const savedData = e.detail;
+        const itemType = this._modalItemType; // Usa el tipo que estaba en el modal
+        console.log(`Save event received (${itemType}):`, savedData);
+        output.textContent = `Guardado (${itemType}):\n${JSON.stringify(savedData, null, 2)}`;
 
-  _calculateEndDate(startDate, value, unit) {
-      if (!value || !unit) return null;
-      const date = new Date(startDate);
-      const numValue = Number(value);
-      if (isNaN(numValue)) return null;
 
-      switch (unit) {
-          case 'seconds': date.setSeconds(date.getSeconds() + numValue); break;
-          case 'minutes': date.setMinutes(date.getMinutes() + numValue); break;
-          case 'hours': date.setHours(date.getHours() + numValue); break;
-          case 'days': date.setDate(date.getDate() + numValue); break;
-          default: return null;
-      }
-      return date.toISOString();
-  }
+        // !!! AQUÍ VA TU LÓGICA DE PERSISTENCIA !!!
+        // Deberías tener una función (posiblemente pasada como propiedad)
+        // para guardar los datos (ej: usando IndexedDBManager)
+        this._isLoading = true; // Indicar carga mientras guarda
+        try {
+             // Ejemplo hipotético: await saveDataFunction(savedData);
+             console.log(`Simulando guardado para ${itemType}...`, savedData);
+             await new Promise(res => setTimeout(res, 500)); // Simular delay
+             // Después de guardar exitosamente, recarga los datos del grid
+             await this.loadData();
+             this._closeModal();
+        } catch (saveError) {
+             console.error(`Error saving ${itemType}:`, saveError);
+             alert(`Error al guardar: ${saveError.message}`);
+             // No cerrar modal en caso de error
+        } finally {
+             this._isLoading = false;
+        }
+    }
 
-  async _handleSaveBan(e) {
-      const formData = e.detail;
-      const banData = {
-          id: this._editItem ? this._editItem.id : -1, // Usa ID existente o -1 para nuevo
-          type: formData.type,
-          value: formData.value,
-          banType: formData.banType,
-          reason: formData.reason || '',
-          banStartDate: this._editItem?.banStartDate || new Date().toISOString(), // Mantener fecha inicio si se edita, o nueva si se añade
-          banEndDate: null,
-      };
+    async _handleDelete(itemToDelete) {
+         const itemType = itemToDelete?.[this.itemTypeKey] || 'desconocido';
+        console.log(`Delete event received (${itemType}):`, itemToDelete);
+         if (confirm(`¿Seguro que quieres eliminar este item (${itemType})?`)) {
+             output.textContent = `Eliminado (${itemType}):\n${JSON.stringify(itemToDelete, null, 2)}`;
 
-      if (banData.banType === 'temporary') {
-          if (!formData.durationValue || !formData.durationUnit) {
-               alert("Por favor, especifica la duración y unidad para baneos temporales.");
-               return; // Evita guardar si falta duración
-          }
-          banData.banEndDate = this._calculateEndDate(
-              banData.banStartDate,
-              formData.durationValue,
-              formData.durationUnit
-          );
-           if (!banData.banEndDate) {
-               alert("Error calculando la fecha de fin del baneo.");
-               return;
-           }
-      } else {
-           // Asegurarse que campos de duración no se guarden para baneo permanente
-           delete formData.durationValue;
-           delete formData.durationUnit;
-      }
-      // console.log("Saving ban data:", banData);
+             // !!! AQUÍ VA TU LÓGICA DE PERSISTENCIA PARA ELIMINAR !!!
+             this._isLoading = true;
+             try {
+                  // Ejemplo: await deleteDataFunction(itemToDelete.id);
+                  console.log(`Simulando eliminación para ${itemType} ID ${itemToDelete?.id}...`);
+                  await new Promise(res => setTimeout(res, 500));
+                  await this.loadData(); // Recarga tras eliminar
+                  // No necesitamos cerrar modal porque se llama desde el grid
+             } catch(deleteError) {
+                  console.error(`Error deleting ${itemType}:`, deleteError);
+                  alert(`Error al eliminar: ${deleteError.message}`);
+             } finally {
+                 this._isLoading = false;
+             }
+         }
+    }
 
-      this._isLoading = true; // Mostrar indicador de carga
-      try {
-          await this.idbManager.saveData(banData);
-          // El observer se encargará de llamar a _loadBans para actualizar la UI
-          this._closeAddModal();
-      } catch (error) {
-          console.error("Error saving ban:", error);
-          alert(`Error al guardar el baneo: ${error.message}`);
-      } finally {
-          this._isLoading = false; // Ocultar indicador
-      }
-  }
+     _handleAddNewClick(e) {
+         const selectedType = e.target.value;
+         if (selectedType) {
+             this._openModal(null, selectedType); // Abre modal para añadir nuevo
+             e.target.value = ""; // Resetea el select
+         }
+     }
 
-   async _handleDeleteClick(banId) {
-       const banToDelete = this._allBans.find(b => b.id === banId);
-      if (banToDelete && confirm(`¿Seguro que quieres eliminar el baneo para ${banToDelete.type}: ${banToDelete.value}?`)) {
-          this._isLoading = true;
-          try {
-              await this.idbManager.deleteData(banId);
-              // El observer actualizará la lista
-          } catch (error) {
-               console.error("Error deleting ban:", error);
-               alert(`Error al eliminar el baneo: ${error.message}`);
-          } finally {
-               this._isLoading = false;
-          }
-      }
-  }
 
-  _formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      try {
-          return new Date(dateString).toLocaleString();
-      } catch (e) {
-          return 'Fecha inválida';
-      }
-  }
+    // --- Renderizado ---
 
-  _renderTable() {
-      if (this._isLoading) return html`<p>Cargando baneos...</p>`;
-      if (!this._filteredBans || this._filteredBans.length === 0) {
-          return html`<p>No hay baneos para mostrar con el filtro actual.</p>`;
-      }
+    render() {
+        return html`
+            ${this.allowAdd ? this._renderToolbar() : ''}
 
-      return html`
-          <table>
-              <thead>
-                  <tr>
-                      <th>ID</th>
-                      <th>Tipo</th>
-                      <th>Valor</th>
-                      <th>Razón</th>
-                      <th>Tipo Baneo</th>
-                      <th>Inicio</th>
-                      <th>Fin</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  ${map(this._filteredBans, (ban) => {
-                      const isActive = this._isBanActive(ban);
-                      return html`
-                          <tr>
-                              <td>${ban.id}</td>
-                              <td>${ban.type}</td>
-                              <td>${ban.value}</td>
-                              <td>${ban.reason || '-'}</td>
-                              <td>${ban.banType}</td>
-                              <td>${this._formatDate(ban.banStartDate)}</td>
-                              <td>${ban.banType === 'temporary' ? this._formatDate(ban.banEndDate) : 'Permanente'}</td>
-                              <td class=${isActive ? 'status-active' : 'status-expired'}>
-                                  ${isActive ? 'Activo' : 'Expirado/Inactivo'}
-                              </td>
-                              <td class="actions">
-                                   <button @click=${() => this._openAddModal(ban)} title="Editar">✏️</button>
-                                  <button @click=${() => this._handleDeleteClick(ban.id)} title="Eliminar">🗑️</button>
-                              </td>
-                          </tr>
-                      `;
-                  })}
-              </tbody>
-          </table>
-      `;
-  }
+            <div class="grid-container">
+                ${this._isLoading ? html`<div class="loading">Cargando datos...</div>` : ''}
+                ${this._error ? html`<div class="error">${this._error}</div>` : ''}
+                ${!this._isLoading && !this._error && this._items.length === 0 ? html`<div class="empty">No hay items para mostrar.</div>` : ''}
 
-  _renderAddModal() {
-      return html`
-          <dlg-cont ?visible=${this._showAddModal} @close-request=${this._closeAddModal}>
-               <div class="modal-content">
-                  <h2>${this._editItem ? 'Editar Baneo' : 'Añadir Nuevo Baneo'}</h2>
-                  <obj-edit-frm
-                      .fCfg=${this.banFormConfig}
-                      .itm=${this._editItem || { banType: 'temporary', durationUnit: 'days' }} /* Datos iniciales o para editar */
-                      @save-item=${this._handleSaveBan}
-                      @cancel-edit=${this._closeAddModal}
-                  >
-                      <!-- Los botones Save/Cancel vienen de obj-edit-frm -->
-                  </obj-edit-frm>
-               </div>
-          </dlg-cont>
-      `;
-  }
+                ${map(this._items, (item) => this._renderGridItem(item))}
+            </div>
 
-  render() {
-      return html`
-          <h2>Gestión de Baneos</h2>
-          <div class="toolbar">
-              <div class="filter-btns">
-                  <span>Filtrar:</span>
-                  <button ?active=${this._filter === 'active'} @click=${() => this._handleFilterChange('active')}>Activos</button>
-                  <button ?active=${this._filter === 'expired'} @click=${() => this._handleFilterChange('expired')}>Expirados</button>
-                  <button ?active=${this._filter === 'all'} @click=${() => this._handleFilterChange('all')}>Todos</button>
-              </div>
-              <button class="add-btn" @click=${() => this._openAddModal()}>Añadir Baneo</button>
-          </div>
+            ${this._renderModal()}
+        `;
+    }
 
-          ${this._renderTable()}
-          ${this._renderAddModal()}
-      `;
-  }
+    _renderToolbar() {
+        // Solo muestra el select si hay tipos disponibles
+         if (!this._availableTypes || this._availableTypes.length === 0) {
+            return '';
+         }
+        return html`
+            <div class="toolbar">
+                 <select @change=${this._handleAddNewClick} title="Selecciona un tipo para añadir">
+                    <option value="">-- Añadir Nuevo --</option>
+                    ${map(this._availableTypes, (type) => html`
+                        <option value=${type}>${this.itemConfigs[type]?.title || type}</option>
+                    `)}
+                </select>
+                <button @click=${this.loadData} title="Recargar datos">🔄 Recargar</button>
+                ${this._isLoading ? html`<span>Cargando...</span>` : ''}
+            </div>
+        `;
+    }
+
+    _renderGridItem(item) {
+        const itemType = item[this.itemTypeKey];
+        const config = this.itemConfigs ? this.itemConfigs[itemType] : null;
+
+        if (!config) {
+            console.warn(`No config found for item type "${itemType}". Skipping item:`, item);
+            return ''; // O renderizar un item genérico/error
+        }
+
+        // Pasa la configuración y el item a dyn-obj-disp
+        // Añade listeners para edit/delete específicos de este item
+        return html`
+            <dyn-obj-disp
+                .itm=${item}
+                .fCfg=${config.getFieldConfig} 
+                
+                .cActs=${[]}
+                header-key=${ifDefined(this.headerKey)}
+                ?allowEdit=${this.allowEdit}
+                ?allowDelete=${this.allowDelete}
+                @edit-item=${() => this.allowEdit && this._openModal(item)}
+                @delete-item=${() => this.allowDelete && this._handleDelete(item)}
+                darkmode
+            >
+            </dyn-obj-disp>
+        `;
+    }
+
+     // Helper para resolver la config si dyn-obj-disp no acepta promesas/funciones async
+     // NOTA: Esto cargaría la config ANTES de renderizar, podría ser ineficiente
+     // _resolveConfig(configFn) {
+     //    if (typeof configFn === 'function') {
+     //         // Devolver una promesa que resuelve la configuración
+     //        // Lit puede manejar promesas en el template
+     //        return configFn();
+     //    }
+     //    return configFn; // Si ya es un objeto
+     // }
+
+
+    _renderModal() {
+        const currentConfig = this._modalItemType ? this.itemConfigs[this._modalItemType] : null;
+        const modalTitle = this._modalItem?.id ? (currentConfig?.title || `Editar ${this._modalItemType}`) : (currentConfig?.title || `Añadir ${this._modalItemType}`);
+
+        // Necesitamos pasar la *función* async getFieldConfig a dyn-obj-disp
+        // dyn-obj-disp deberá manejar la resolución de esta función internamente
+        const fieldConfigProvider = currentConfig?.getFieldConfig;
+
+        return html`
+            <dlg-cont id=${this._modalId} ?visible=${this._showModal} required @close=${this._closeModal}>
+                 <!-- No renderiza dyn-obj-disp si no hay tipo o item -->
+                 ${this._showModal && this._modalItemType && this._modalItem ? html`
+                     <dyn-obj-disp
+                         .itm=${this._modalItem}
+                         .fCfg=${fieldConfigProvider} /* Pasamos la función async */
+                         .cActs=${[]} /* El modal usa los botones de obj-edit-frm */
+                         header-key=${ifDefined(modalTitle)} /* Usa el título calculado */
+                         mode="edit" /* Siempre en modo edición en el modal */
+                         @save-item=${this._handleSave}
+                         @cancel-edit=${this._closeModal} /* obj-edit-frm cancela -> cierra modal */
+                         darkmode
+                     >
+                     </dyn-obj-disp>
+                 ` : ''}
+            </dlg-cont>
+        `;
+    }
 }
 
-customElements.define('ban-manager', BanManager);
+customElements.define('data-grid-view', DataGridView);

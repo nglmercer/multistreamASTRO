@@ -1,7 +1,8 @@
 const databases = {
-    chatEventsDB: { name: 'ChatEvents', version: 1, store: 'chatEvents' },
+    commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
     giftEventsDB: { name: 'GiftEvents', version: 1, store: 'giftEvents' },
     bitsEventsDB: { name: 'bitsEvents', version: 1, store: 'bitsEvents' },
+    likesEventsDB: { name: 'LikesEvents', version: 1, store: 'likesEvents' },
     eventsDB: { name: 'Events', version: 1, store: 'events' },
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
     banDB: { name: 'Bans', version: 1, store: 'bans' },
