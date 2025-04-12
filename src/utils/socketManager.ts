@@ -41,7 +41,11 @@ class SocketManager {
   private baseUrl: string = 'http://localhost:9001';
   private wsBaseUrl: string = 'ws://localhost:21213/';
   private socket: Socket;
-  private ws: WebSocket;
+  private ws: WebSocket | null = null; // Para WebSocket nativo, inicializar a null
+  private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private reconnectDelay: number = 5000; // 5 segundos
+  private reconnectAttempts: number = 0; // Contador de intentos (opcional, para backoff)
+  private maxReconnectAttempts: number = 10; // Limitar intentos (opcional)
   private TiktokEmitter: Emitter;
   private tiktokLiveEvents: TiktokEvent[] = [
     'chat', 'gift', 'connected', 'disconnected',
@@ -59,12 +63,12 @@ class SocketManager {
     console.log("event", 'Socket Manager Loaded', this.baseUrl, this.socket);
     
     this.initializeSocketEvents();
-    this.initializeWebSocket();
+    this.connectWebSocket();
     
     // temporal test joinplatform
-  //  this.joinplatform({ uniqueId: 'foxsabe1', platform: 'tiktok' });
-    this.getRoomInfo({ uniqueId: 'foxsabe1', platform: 'tiktok' });
-    this.getAvailableGifts({ uniqueId: 'foxsabe1', platform: 'tiktok' });
+  //  this.joinplatform({ uniqueId: 'ju44444n._', platform: 'tiktok' });
+    this.getRoomInfo({ uniqueId: 'ju44444n._', platform: 'tiktok' });
+    this.getAvailableGifts({ uniqueId: 'ju44444n._', platform: 'tiktok' });
   }
 
   private initializeSocketEvents(): void {
@@ -84,16 +88,79 @@ class SocketManager {
     });
   }
 
-  private initializeWebSocket(): void {
+  private connectWebSocket(): void {
+    // Limpiar timeout anterior si existe (por si se llama manualmente a connectWebSocket)
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+
+    // Limpiar listeners del WebSocket anterior si existe para evitar fugas
+    if (this.ws) {
+        console.log("event", 'Cleaning up previous WebSocket listeners.');
+        this.ws.onopen = null;
+        this.ws.onmessage = null;
+        this.ws.onerror = null;
+        this.ws.onclose = null;
+        // No necesariamente cerrar aquí, ya que 'onclose' pudo haber disparado esto.
+        // Si llamas a connectWebSocket manualmente, sí deberías cerrarlo antes.
+        // if (this.ws.readyState !== WebSocket.CLOSED) {
+        //   this.ws.close();
+        // }
+    }
+
+    console.log("event", `Attempting WebSocket connection to ${this.wsBaseUrl} (Attempt ${this.reconnectAttempts + 1})`);
+    this.ws = new WebSocket(this.wsBaseUrl); // Crear nueva instancia
+
     this.ws.onopen = () => {
-      console.log("event", 'WebSocket connected');
+      console.log("event", 'WebSocket connected successfully.');
+      this.reconnectAttempts = 0; // Reiniciar contador al conectar exitosamente
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      logger.log("event", 'Received message from server:', data);
-      this.tiktokhandlerdata(data.event as TiktokEvent, data.data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("event", 'Received message from WebSocket:', data); // Descomenta si necesitas mucho detalle
+        this.tiktokhandlerdata(data.event, data.data);
+      } catch (error) {
+        console.error("event", 'Failed to parse WebSocket message:', event.data, error);
+      }
     };
+
+    this.ws.onerror = (error: Event) => {
+      // Los errores a menudo preceden o causan un 'onclose',
+      // pero es bueno loggearlos.
+      console.error("event", 'WebSocket error:', error);
+      // Podrías intentar cerrar aquí si el estado es raro, pero 'onclose' es más fiable para la reconexión.
+      // if (this.ws) this.ws.close();
+    };
+
+    this.ws.onclose = (event: CloseEvent) => {
+      console.log("event", `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
+      this.ws = null; // Limpiar la referencia al socket cerrado
+
+      // Intentar reconectar
+      this.scheduleReconnect();
+    };
+  }
+
+  // Método para programar la reconexión
+  private scheduleReconnect(): void {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.warn("event", `WebSocket max reconnect attempts (${this.maxReconnectAttempts}) reached. Stopping reconnection attempts.`);
+        return;
+    }
+
+    this.reconnectAttempts++;
+    // Opcional: Implementar backoff exponencial
+    // const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Ej: 5s, 10s, 20s, max 30s
+    const delay = this.reconnectDelay; // Usando delay fijo por ahora
+
+    console.log("event", `Scheduling WebSocket reconnect attempt #${this.reconnectAttempts} in ${delay / 1000} seconds...`);
+
+    this.reconnectTimeoutId = setTimeout(() => {
+      this.connectWebSocket(); // Intentar conectar de nuevo
+    }, delay);
   }
 
   private tiktokhandlerdata(event: TiktokEvent, data: any): void {

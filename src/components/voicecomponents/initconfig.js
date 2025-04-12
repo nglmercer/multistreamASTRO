@@ -137,9 +137,9 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
     const speakButton = document.getElementById('speak-button');
     const stopButton = document.getElementById('stop-button');
     providerInfo =  currentProviders[providerSelect.value];
-    if (providerSelect) {
+    if (providerSelect && providerSelect.addEventListener) {
         providerSelect.value = getselectedProviderName();
-        providerSelect.addEventListener('change', async () => {
+        providerSelect?.addEventListener('change', async () => {
             selectedProviderName = providerSelect.value;
             localStorage.setItem('selectedProviderName', selectedProviderName);
         });
