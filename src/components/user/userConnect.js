@@ -5,7 +5,7 @@ const allElements = document.querySelectorAll('user-profile');
 allElements.forEach(element => {
 element.addEventListener('userConnected', event => {
     console.log('User connected:', event.detail);
-    socket.emit('joinRoom', { uniqueId: event.detail.username, platform:event.detail.state.platform });
+    socket.emit('join-platform', { uniqueId: event.detail.username, platform:event.detail.state.platform });
 });
 element.addEventListener('userDisconnected', event => {
     console.log('User disconnected:', event.detail);

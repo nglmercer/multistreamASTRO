@@ -139,6 +139,10 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
     providerInfo =  currentProviders[providerSelect.value];
     if (providerSelect) {
         providerSelect.value = getselectedProviderName();
+        providerSelect.addEventListener('change', async () => {
+            selectedProviderName = providerSelect.value;
+            localStorage.setItem('selectedProviderName', selectedProviderName);
+        });
     }
     console.log("providerSelect.value",providerSelect.value);
     if (speakButton) {
