@@ -26,6 +26,8 @@ type TiktokEvent =
   | 'subscribe'
   | 'follow'
   | 'share'
+  | 'availableGifts'
+  | 'roomInfo'
   | 'streamEnd';
 
 // Define the type for the local storage manager
@@ -45,7 +47,8 @@ class SocketManager {
     'chat', 'gift', 'connected', 'disconnected',
     'websocketConnected', 'error', 'member', 'roomUser',
     'like', 'social', 'emote', 'envelope', 'questionNew',
-    'subscribe', 'follow', 'share', 'streamEnd'
+    'subscribe', 'follow', 'share', 'streamEnd',
+    'availableGifts', 'roomInfo'
   ];
 
   constructor() {

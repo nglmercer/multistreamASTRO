@@ -1,1 +1,0 @@
-availableGifts:Array

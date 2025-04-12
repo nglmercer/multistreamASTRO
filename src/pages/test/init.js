@@ -7,16 +7,9 @@ import {
     setupModalEventListeners,
     setupTableActionListeners
 } from '/src/pages/test/crudUIHelpers.js'; // Ajusta ruta
-
+import { getGiftList, mapgifts, geticonfromarray } from '/src/pages/test/giftutils.js'; // Ajusta ruta
 async function fetchGiftOptions() {
-    await new Promise(resolve => setTimeout(resolve, 10));
-    return [
-        { value: '5565', label: 'Rose (Async)' },
-        { value: '5566', label: 'Rose Red (Async)' },
-        { value: '5567', label: 'Rose Violet (Async)' },
-        { value: '5568', label: 'Rose Yellow (Async)' },
-        { value: '5569', label: 'Rose White (Async)' },
-    ];
+    return getGiftList();
 }
  async function fetchUserRoles() {
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -33,7 +26,7 @@ const formConfigurations = {
         title: "Configurar Evento de Comentario",
         getInitialData: () => ({
             id: '', name: 'Nuevo Evento Comentario', isActive: true,
-            role: 'any', comparator: 'any', value: '', type: 'comment' // Añadir tipo
+            role: 'any', comparator: 'startsWith', value: '', type: 'comment' // Añadir tipo
         }),
         getFieldConfig: async () => ({
             name: { label: 'Nombre', type: 'text', required: true },
@@ -45,7 +38,7 @@ const formConfigurations = {
                 { value: 'contains', label: 'Contiene' }
             ]},
             value: { label: 'Valor Comentario', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
-            id: { hidden: false, readOnly:"true" }, // Ocultar ID para nuevos
+            id: { hidden: false, readonly:"true" }, // Ocultar ID para nuevos
             type: { hidden: true }
         })
     },
@@ -53,7 +46,7 @@ const formConfigurations = {
         title: "Configurar Evento de Bits",
          getInitialData: () => ({
             id: '', name: 'Nuevo Evento Bits', isActive: true, role: 'any',
-            comparator: 'InRange', value: null, lessThan: 0, greaterThan: 100, type: 'bits'
+            comparator: 'InRange', value: null, lessThan: 10, greaterThan: 50, type: 'bits'
         }),
         getFieldConfig: async () => ({
             name: { label: 'Nombre', type: 'text', required: true },
@@ -66,7 +59,7 @@ const formConfigurations = {
             value: { label: 'Valor Exacto', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
-            id: { hidden: false, readOnly:"true" },
+            id: { hidden: false, readonly:"true" },
             type: { hidden: true }
         })
     },
@@ -87,7 +80,7 @@ const formConfigurations = {
             value: { label: 'Likes Exactos', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
-            id: { hidden: false, readOnly:"true" },
+            id: { hidden: false, readonly:"true" },
             type: { hidden: true }
         })
     },
@@ -110,7 +103,7 @@ const formConfigurations = {
                 options: await fetchGiftOptions(), // Llama a la función async
                 showIf: { field: 'comparator', value: 'equal' }
             },
-            id: { hidden: false, readOnly:"true" },
+            id: { hidden: false, readonly:"true" },
             type: { hidden: true }
          })
     }

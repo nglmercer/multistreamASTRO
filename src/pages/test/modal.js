@@ -457,6 +457,12 @@ export class CInp extends LitElement {
         background-color: var(--inp-disabled-bg); /* Usa la variable */
         cursor: not-allowed;
         color: var(--inp-disabled-color); /* Usa la variable */
+        border: 1px solid var(--inp-disabled-color); /* Usa la variable */
+      }
+      input:read-only, textarea:read-only  {
+        background-color: var(--inp-disabled-bg); /* Usa la variable */
+        cursor: not-allowed;
+        color: var(--inp-disabled-color); /* Usa la variable */
       }
 
       .sw { position: relative; display: inline-block; width: 60px; height: 30px; }
@@ -465,11 +471,18 @@ export class CInp extends LitElement {
       .sldr:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: var(--inp-slider-knob); transition: .4s; border-radius: 50%; }
       input:checked + .sldr { background-color: #2196F3; }
       input:checked + .sldr:before { transform: translateX(28px); }
-
-      input:focus, textarea:focus, select:focus {
+      input:not(:read-only):focus,
+      textarea:not(:read-only):focus,
+      select:focus {
         outline: none;
         border-color: #2196F3;
         box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+        cursor: auto; /* Reestablece el cursor */
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none; /* Elimina el contorno predeterminado del navegador */
       }
 
       /* Aplica estilo inválido directamente al host o a un contenedor */

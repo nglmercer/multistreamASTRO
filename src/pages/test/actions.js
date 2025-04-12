@@ -37,7 +37,7 @@ const formConfigurations = {
             overlay_volume: { label: 'Volumen (%)', type: 'range', min: 0, max: 100, step: 1, showIf: { field: 'overlay_check', value: 'true' } },
             keypress_check: { label: 'Pulsación de Tecla', type: 'switch' },
             keypress_key: { label: 'Tecla(s)', type: 'text', showIf: { field: 'keypress_check', value: 'true' } },
-            id: { hidden: false, readOnly:"true" },
+            id: { hidden: false, readonly:"true" },
             type: { hidden: true }
         })
     },
