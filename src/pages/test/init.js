@@ -1,31 +1,13 @@
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/pages/test/idb.js';
-const modal = document.getElementById('modal-container');
-const editor = document.getElementById('dynamic-editor');
-const EventEmitter = new Emitter();
-const commentDbmanager = new IndexedDBManager(databases.commentEventsDB, EventEmitter);
-const giftDbmanager = new IndexedDBManager(databases.giftEventsDB, EventEmitter);
-const bitsDbmanager = new IndexedDBManager(databases.bitsEventsDB, EventEmitter);
-const likesDbmanager = new IndexedDBManager(databases.likesEventsDB, EventEmitter);
-EventEmitter.onAny((eventName, Data) => {
-    switch (eventName) {
-        case 'save':
-        case 'update':
-            const { config, data } = Data;
-            if (config) {
-                console.log(`Event received EventEmitter: update save`, Data);
-                renderizemanager(config.name);
-            }
-            break;
-        case 'delete':
-        case 'clear':
-            console.log(`Event received EventEmitter: clear delete`, Data);
-            break;
-        default:
-            console.log(`Event received EventEmitter: ${eventName}`, Data);
-            break;
-    }
-    // This listener will be automatically removed after execution
-  });
+// /src/pages/events/events.js (o tu ruta)
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/pages/test/idb.js'; // Ajusta ruta
+import {
+    openDynamicModal,
+    initializeTables,
+    updateTableData,
+    setupModalEventListeners,
+    setupTableActionListeners
+} from '/src/pages/test/crudUIHelpers.js'; // Ajusta ruta
+
 async function fetchGiftOptions() {
     await new Promise(resolve => setTimeout(resolve, 10));
     return [
@@ -134,223 +116,113 @@ const formConfigurations = {
     }
 };
 
-async function openModalForType(formType, data) {
-    console.log("Open Modal", formType, data);
-    const configGenerator = formConfigurations[formType];
-    if (!configGenerator) {
-        console.error(`Configuración no encontrada para el tipo: ${formType}`);
-        console.log(
-        `Error: Configuración no encontrada para ${formType}`
-        )
-        return;
-    }
+const pageConfig = {
+    modalId: 'modal-container', // Asegúrate que sea el ID correcto
+    editorId: 'dynamic-editor',   // Asegúrate que sea el ID correcto
+    managerId: 'eventConfigManager',
+    eventTypes: ['comment', 'gift', 'bits', 'likes'] // Tipos gestionados en esta página
+};
 
-    // Almacena el tipo actual para usarlo al guardar/eliminar
-    modal.dataset.currentFormType = formType;
-    editor.itm = {}; // Limpia datos anteriores mientras carga
-    editor.fCfg = {}; // Limpia config anterior mientras carga
-    modal.show(); // Muestra modal (podría estar vacío o con loading)
+const modalEl = document.getElementById(pageConfig.modalId);
+const editorEl = document.getElementById(pageConfig.editorId);
+const managerEl = document.getElementById(pageConfig.managerId);
 
-    try {
-        // Carga configuración y datos iniciales en paralelo
-         // Usamos Promise.all para esperar ambas (aunque getInitialData sea síncrono)
-        const [fCfg, itm] = await Promise.all([
-            configGenerator.getFieldConfig(),
-            Promise.resolve(configGenerator.getInitialData()) // Asegura que sea promesa
-        ]);
-
-        console.log(`Datos iniciales para ${formType}:`, { config: fCfg, data: itm });
-
-        // Configura el editor DENTRO del modal
-        editor.fCfg = fCfg;
-        editor.itm = data || itm;
-        editor.hdrKey = configGenerator.title || `Editar ${formType}`; // Establece título
-        editor.mode = 'edit'; // Asegura que esté en modo edición
-        // Ocultar botón delete para formularios de "Añadir"
-        editor.addAct('cancel', 'Cancelar', "fas fa-times"); // Asegúrate que dyn-obj-disp tenga hideAct
-        if (editor.hideAct) editor.hideAct('delete'); // Asegúrate que dyn-obj-disp tenga hideAct
-
-        console.log(
-        `Editando ${formType}...` // Actualiza estado
-        )
-
-    } catch (error) {
-        console.error(`Error al cargar configuración para ${formType}:`, error);
-        console.log(
-        `Error al cargar ${formType}: ${error.message}`
-        )
-        // Considera ocultar el modal si la carga falla: modal.hide();
-    }
+if (!modalEl || !editorEl || !managerEl) {
+    console.error("Error: Elementos UI necesarios no encontrados.");
+    // Podrías detener aquí o mostrar un error visual
 }
 
-document.body.addEventListener('click', (event) => {
-    // Busca un botón con data-form-type que sea ancestro del elemento clickeado
-    const button = event.target.closest('button[data-form-type]');
-    if (button) {
-        const formType = button.dataset.formType;
-        openModalForType(formType);
-    }
-});
+const globalEmitter = new Emitter(); // Un Emitter para todos los eventos de esta página
 
-editor.addEventListener('item-upd', (e) => {
-    const databaseByType = {
-        comment: commentDbmanager,
-        gift: giftDbmanager,
-        bits: bitsDbmanager,
-        likes: likesDbmanager
-    }
-    const savedData = e.detail;
-    const formType = modal.dataset.currentFormType || 'desconocido'; // Recupera el tipo
-    const dbManager = databaseByType[formType];
-    console.log(`Evento item-upd (${formType}) recibido:`, savedData, databaseByType[formType]);
-    if (dbManager) {
-        dbManager.saveData(savedData);
-    }
-    // AQUÍ: Llama a la función de guardado específica según 'formType'
-    // Ejemplo: if (formType === 'comment') saveCommentToDB(savedData);
-    // Ejemplo: if (formType === 'banUser') saveBanToDB(savedData);
-    modal.hide(); // Cierra el modal al guardar
-});
-
-editor.addEventListener('del-item', (e) => {
-    const itemToDelete = e.detail;
-    const formType = modal.dataset.currentFormType || 'desconocido';
-    console.log(`Evento del-item (${formType}) recibido:`, itemToDelete);
-     if (confirm(`¿Seguro que quieres eliminar este item de tipo "${formType}"?`)) {
-         console.log(
-         `Eliminado (${formType}):\n${JSON.stringify(itemToDelete, null, 2)}`
-         )
-         // AQUÍ: Llama a la función de eliminación específica según 'formType'
-         modal.hide();
-     }
-});
-editor.addEventListener('cancel', () => {
-    console.log("Cancel Edit");
-    modal.hide();
-});
-
- modal.addEventListener('close', () => { 
-     console.log("Modal cerrado");
-     console.log(
-     "Modal cerrado."
-     )
-     modal.dataset.currentFormType = ''; 
- });
- const dbConfigMap = {
+const dbConfigMap = {
   comment: databases.commentEventsDB,
-  gift: databases.giftEventsDB, 
+  gift: databases.giftEventsDB,
   bits: databases.bitsEventsDB,
-  likes: databases.likesEventsDB   
+  likes: databases.likesEventsDB
 };
 
-const dbManagers = {
-  comment: new IndexedDBManager(dbConfigMap.comment, EventEmitter),
-  gift: new IndexedDBManager(dbConfigMap.gift, EventEmitter),
-  bits: new IndexedDBManager(dbConfigMap.bits, EventEmitter),
-  likes: new IndexedDBManager(dbConfigMap.likes, EventEmitter)
-};
-let manager
- async function initializeEventManager() {
-    manager = document.getElementById('eventConfigManager');
-  if (!manager) {
-      console.error('Elemento grid-manager-lit con ID "eventConfigManager" no encontrado.');
-      return;
-  }
-
-  manager.clearAll();
-
-  const eventTypes = Object.keys(formConfigurations); 
-
-  for (const type of eventTypes) {
-      try {
-          const formConfig = formConfigurations[type];
-          const dbConfig = dbConfigMap[type];
-
-          if (!formConfig || !dbConfig) {
-              console.warn(`Configuración no encontrada para el tipo: ${type}`);
-              continue; // Saltar al siguiente tipo
-          }
-
-          // 1. Obtener datos de IndexedDB
-          const initialData = await getAllDataFromDatabase(dbConfig);
-
-          // 2. Obtener configuración de campos y filtrar claves visibles
-          const fieldConfig = await formConfig.getFieldConfig();
-          const displayKeys = Object.entries(fieldConfig)
-              .filter(([key, field]) => !field.hidden) // Excluir campos ocultos
-              .map(([key]) => key); // Obtener solo los nombres de las claves
-        console.log(`Datos para ${type}:`, { data: initialData, keys: displayKeys });
-
-
-          // 3. Añadir el componente (tabla) al Grid Manager
-          manager.addComp(`${type}Events`, { // ID único para el componente
-              displayType: 'table',         // Mostrar como tabla
-              title: formConfig.title,      // Título de la tabla
-              keys: displayKeys,            // Columnas a mostrar
-              initialData: initialData      // Datos cargados de IDB
-              // actions: [], // Opcional: si no quieres los botones por defecto
-              // displayOptions: {} // Opciones específicas de display si usas cards/flex
-          });
-
-      } catch (error) {
-          console.error(`Error al configurar la tabla para el tipo "${type}":`, error);
-          // Podrías añadir un componente de error al manager o mostrar un mensaje
-      }
-  }
-
-  manager.addEventListener('comp-action', async (e) => {
-      const { compId, action, item, index } = e.detail;
-      console.log('Acción recibida:', e.detail);
-    
-      const type = compId.replace('Events', '');
-      const relevantDbManager = dbManagers[type];
-      
-      if (!relevantDbManager) {
-          console.error(`No se encontró DB Manager para el tipo: ${type}`);
-          return;
-      }
-
-      if (action === 'edit') {
-        openModalForType(type, item);
-          // Lógica para editar: Podrías abrir un modal/formulario
-          // precargado con 'item' y usar formConfigurations[type]
-          // para generar los campos del formulario.
-          console.log(`Editar ${type} con ID: ${item.id}`, item);
-          // Ejemplo: showEditModal(type, item);
-          // Después de editar y guardar en el modal, deberías llamar a:
-          // const updatedItem = await relevantDbManager.saveData(newDataFromModal);
-          // Y luego actualizar la tabla en el manager:
-          // manager.setCompData(compId, await getAllDataFromDatabase(dbConfigMap[type]));
-
-      } else if (action === 'delete') {
-          if (confirm(`¿Seguro que quieres eliminar el evento "${item.name}" (ID: ${item.id}) de tipo ${type}?`)) {
-            managerdeleteData(compId, item);
-          }
-      } else {
-          // Manejar otras acciones personalizadas si las añades
-          console.log(`Acción personalizada "${action}" para ${type}:`, item);
-      }
-  });
-}
-async function managerdeleteData(compId, item) {
-    const type = compId.replace('Events', '');
-    const relevantDbManager = dbManagers[type];
-    if (!relevantDbManager) {
-        console.error(`No se encontró DB Manager para el tipo: ${type}`);
-        return;
+const dbManagerMap = {};
+pageConfig.eventTypes.forEach(type => {
+    if(dbConfigMap[type] && formConfigurations[type]) {
+        dbManagerMap[type] = new IndexedDBManager(dbConfigMap[type], globalEmitter);
+    } else {
+         console.warn(`Configuración de DB o Formulario faltante para el tipo: ${type}`);
     }
-    try {
-        await relevantDbManager.deleteData(item.id);
-        console.log(`Elemento ${item.id} de tipo ${type} eliminado.`);
-        renderizemanager(compId);
-        // Actualizar la tabla en el manager para reflejar la eliminación
-    } catch (error) {
-        console.error(`Error al eliminar elemento ${item.id} de tipo ${type}:`, error);
-        alert(`Error al eliminar: ${error.message}`);
+});
+
+
+const tableConfigs = {};
+pageConfig.eventTypes.forEach(type => {
+    if(dbManagerMap[type]) { // Solo añade si el manager se pudo crear
+        tableConfigs[`${type}Events`] = { // Convención: compId = type + "Events"
+            title: formConfigurations[type].title || `Eventos ${type}`,
+            formConfig: formConfigurations[type],
+            dbConfig: dbConfigMap[type]
+        };
+    }
+});
+
+
+function openModal(type, data = null) {
+    openDynamicModal(modalEl, editorEl, type, formConfigurations, data);
+}
+
+function refreshTable(compId) {
+    const config = tableConfigs[compId];
+    if (config) {
+        updateTableData(managerEl, compId, config.dbConfig, getAllDataFromDatabase);
+    } else {
+        console.warn(`No se encontró config para refrescar tabla: ${compId}`);
     }
 }
-async function renderizemanager(compId) {
-    const type = compId.replace('Events', '');
-    manager.setCompData(compId, await getAllDataFromDatabase(dbConfigMap[type]));
-}
-initializeEventManager();
+
+// Listener para botones "Añadir" específicos por tipo
+document.body.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-form-type]');
+    if (button && pageConfig.eventTypes.includes(button.dataset.formType)) {
+        openModal(button.dataset.formType);
+    }
+});
+
+setupModalEventListeners(
+    modalEl,
+    editorEl,
+    dbManagerMap,
+    (type, changedData) => {
+        console.log(`Operación modal completada para ${type}:`, changedData);
+        const compIdToRefresh = `${type}Events`; // Asume la convención
+        if (tableConfigs[compIdToRefresh]) {
+             refreshTable(compIdToRefresh);
+        } else {
+             console.warn(`No se encontró tabla ${compIdToRefresh} para refrescar.`);
+        }
+    }
+);
+
+setupTableActionListeners(
+    managerEl,
+    openModal,
+    dbManagerMap,
+    tableConfigs, // Pasa las configuraciones para el mapeo compId -> formType si es necesario
+    (compId, deletedItem) => {
+        console.log(`Item eliminado desde tabla ${compId}:`, deletedItem);
+        refreshTable(compId); // Refresca la tabla específica que cambió
+    }
+);
+
+// Listener global del Emitter (opcional, si necesitas reaccionar a eventos de DB de forma global)
+globalEmitter.onAny((eventName, eventData) => {
+    console.log(`Evento DB recibido [${eventName}]:`, eventData);
+    // Podrías querer refrescar tablas aquí también, pero cuidado con bucles
+    // if (['save', 'update', 'delete'].includes(eventName) && eventData?.config?.name) {
+    //     const compId = `${eventData.config.name}Events`; // Asumiendo que config.name es el formType
+    //     if (tableConfigs[compId]) {
+    //          // refreshTable(compId); // Podría ser redundante si ya se refresca tras la acción
+    //     }
+    // }
+});
+
+
+initializeTables(managerEl, tableConfigs, getAllDataFromDatabase)
+    .then(() => console.log('Gestor de eventos inicializado.'))
+    .catch(error => console.error('Error inicializando gestor de eventos:', error));

@@ -1,42 +1,13 @@
-const actionConfig = {
-    minecraft: {
-        label: "Acción Minecraft", // Label for the toggle/section
-        checkField: 'check', // The field controlling visibility
-        fields: {
-            command: { label: "Comando Minecraft", type: "text", required: true, placeholder: "/say Hola!" }
-        }
-    },
-    tts: {
-        label: "Acción Text-to-Speech (TTS)",
-        checkField: 'check',
-        fields: {
-            text: { label: "Texto a leer", type: "textarea", required: true, rows: 3, placeholder:"Escribe el mensaje..." }
-        }
-    },
-    overlay: {
-        label: "Acción Superposición (Overlay)",
-        checkField: 'check',
-        fields: {
-            // Note: 'src' is an array in your example. c-inp might need enhancement
-            // for arrays. For now, we'll treat it as text, expecting IDs/URLs separated by comma perhaps?
-            // Or better, provide a specific input later. Let's use text for now.
-            src: { label: "Fuente(s) (IDs/URLs)", type: "text", required: true, placeholder:"1, 2, https://..." },
-            content: { label: "Texto Contenido", type: "text", placeholder:"Texto por defecto" },
-            duration: { label: "Duración (segundos)", type: "number", min: 1, step: 1, required: true, default: 60 },
-            volume: { label: "Volumen (%)", type: "range", min: 0, max: 100, step: 1, required: true, default: 50 }
-        }
-    },
-    keypress: {
-        label: "Acción Pulsación de Tecla (Keypress)",
-        checkField: 'check',
-        // Note: 'key' is an array. Like 'src', needs special handling. Using text for now.
-        fields: {
-            key: { label: "Tecla(s)", type: "text", required: true, placeholder: "Ej: ctrl+alt+k, space" }
-        }
-    }
-    // Add other potential actions here following the same structure
-  };
-  const formConfigurations = {
+// /src/pages/actions/actions.js (o tu ruta)
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/pages/test/idb.js'; // Ajusta ruta
+import {
+    openDynamicModal,
+    initializeTables,
+    updateTableData,
+    setupModalEventListeners,
+    setupTableActionListeners
+} from '/src/pages/test/crudUIHelpers.js'; // Ajusta ruta
+const formConfigurations = {
     actions: {
         title: "Configurar Acción",
         getInitialData: () => ({
@@ -72,95 +43,89 @@ const actionConfig = {
     },
 
 };
-/*
-{
-    "nombre": "1231124124asdasd",
-    "id": 0,
-    "minecraft": {
-        "check": false,
-        "command": "/say coloca tu comando"
-    },
-    "tts": {
-        "check": true,
-        "text": "te dono una rosa"
-    },
-    "overlay": {
-        "check": true,
-        "src": [
-            1
-        ],
-        "content": "default text",
-        "duration": 60,
-        "volume": 50
-    },
-    "keypress": {
-        "check": false,
-        "key": []
+const pageConfig = {
+    formType: 'actions',
+    modalId: 'Action-modal',
+    editorId: 'Action-editor',
+    managerId: 'ActionConfigManager',
+    addButtonId: 'actionButton',
+    dbConfig: databases.ActionsDB,
+    baseCompId: 'actionsTable'
+};
+
+const modalEl = document.getElementById(pageConfig.modalId);
+const editorEl = document.getElementById(pageConfig.editorId);
+const managerEl = document.getElementById(pageConfig.managerId);
+const addBtn = document.getElementById(pageConfig.addButtonId);
+
+if (!modalEl || !editorEl || !managerEl) {
+    console.error("Error: Elementos UI necesarios no encontrados.");
+    // Podrías detener aquí o mostrar un error visual
+}
+
+const actionEmitter = new Emitter();
+const actionDbManager = new IndexedDBManager(pageConfig.dbConfig, actionEmitter);
+
+const dbManagerMap = {
+    [pageConfig.formType]: actionDbManager
+};
+
+const tableConfigs = {
+    [pageConfig.baseCompId]: {
+        title: 'Acciones',
+        formConfig: formConfigurations[pageConfig.formType],
+        dbConfig: pageConfig.dbConfig
+    }
+};
+console.log("tableConfigs:", tableConfigs);
+function openModal(type, data = null) {
+    openDynamicModal(modalEl, editorEl, type, formConfigurations, data);
+}
+
+function refreshTable(compId = pageConfig.baseCompId) {
+    const config = tableConfigs[compId];
+    if(config) {
+      updateTableData(managerEl, compId, config.dbConfig, getAllDataFromDatabase);
+    } else {
+      console.warn(`No se encontró configuración para refrescar tabla con ID: ${compId}`);
     }
 }
-*/
-const modal = document.getElementById('Action-modal');
-const editor = document.getElementById('Action-editor');
-const actionButton = document.getElementById('actionButton');
-async function openModalForType(formType, data) {
-    console.log("Open Modal", formType, data);
-    const configGenerator = formConfigurations[formType];
-    if (!configGenerator) {
-        console.error(`Configuración no encontrada para el tipo: ${formType}`);
-        console.log(
-        `Error: Configuración no encontrada para ${formType}`
-        )
-        return;
+
+if (addBtn) {
+    addBtn.addEventListener('click', () => {
+        openModal(pageConfig.formType);
+    });
+}
+
+setupModalEventListeners(
+    modalEl,
+    editorEl,
+    dbManagerMap,
+    (type, changedData) => {
+        console.log(`Operación modal completada para ${type}:`, changedData);
+        // Encuentra el compId asociado al formType para refrescar la tabla correcta
+        const compIdToRefresh = Object.keys(tableConfigs).find(id => tableConfigs[id].formConfig === formConfigurations[type]);
+        if (compIdToRefresh) {
+            refreshTable(compIdToRefresh);
+        } else {
+            console.warn(`No se encontró tabla asociada al tipo ${type} para refrescar.`);
+            // Intenta refrescar la tabla por defecto si solo hay una
+             if(Object.keys(tableConfigs).length === 1) refreshTable();
+        }
     }
+);
 
-    // Almacena el tipo actual para usarlo al guardar/eliminar
-    modal.dataset.currentFormType = formType;
-    editor.itm = {}; // Limpia datos anteriores mientras carga
-    editor.fCfg = {}; // Limpia config anterior mientras carga
-    modal.show(); // Muestra modal (podría estar vacío o con loading)
-
-    try {
-        // Carga configuración y datos iniciales en paralelo
-         // Usamos Promise.all para esperar ambas (aunque getInitialData sea síncrono)
-        const [fCfg, itm] = await Promise.all([
-            configGenerator.getFieldConfig(),
-            Promise.resolve(configGenerator.getInitialData()) // Asegura que sea promesa
-        ]);
-
-        console.log(`Datos iniciales para ${formType}:`, { config: fCfg, data: itm });
-
-        // Configura el editor DENTRO del modal
-        editor.fCfg = fCfg;
-        editor.itm = data || itm;
-        editor.hdrKey = configGenerator.title || `Editar ${formType}`; // Establece título
-        editor.mode = 'edit'; // Asegura que esté en modo edición
-        // Ocultar botón delete para formularios de "Añadir"
-        editor.addAct('cancel', 'Cancelar', "fas fa-times"); // Asegúrate que dyn-obj-disp tenga hideAct
-        if (editor.hideAct) editor.hideAct('delete'); // Asegúrate que dyn-obj-disp tenga hideAct
-
-        console.log(
-        `Editando ${formType}...` // Actualiza estado
-        )
-
-    } catch (error) {
-        console.error(`Error al cargar configuración para ${formType}:`, error);
-        console.log(
-        `Error al cargar ${formType}: ${error.message}`
-        )
-        // Considera ocultar el modal si la carga falla: modal.hide();
+setupTableActionListeners(
+    managerEl,
+    openModal,
+    dbManagerMap,
+    tableConfigs,
+    (compId, deletedItem) => {
+        console.log(`Item eliminado desde tabla ${compId}:`, deletedItem);
+        refreshTable(compId); // Refresca la tabla específica que cambió
     }
-}
-if (actionButton) {
-    actionButton.addEventListener('click', (e) => {
-        openModalForType('actions');
-    });
-}
-if (modal, editor) {
-    editor.addEventListener('item-upd', (e) => {
-        console.log("Save dispatched:", e.detail);
-    });
-    editor.addEventListener('cancel', () => {
-        console.log("Cancel Edit");
-        modal.hide();
-    });
-}
+);
+
+initializeTables(managerEl, tableConfigs, getAllDataFromDatabase, ["name", "id", "type"])
+    .then(() => console.log('Gestor de acciones inicializado.'))
+    .catch(error => console.error('Error inicializando gestor de acciones:', error));

@@ -4,7 +4,7 @@ import logger from './logger';
 import LocalStorageManager from './LocalStorageManager'
 import {setupData} from '../utils/userdata/UserProcessor.js';
 
-interface RoomJoinData {
+interface JoinPlatformparams {
   uniqueId: string;
   platform: string;
 }
@@ -58,8 +58,10 @@ class SocketManager {
     this.initializeSocketEvents();
     this.initializeWebSocket();
     
-    // temporal test joinRoom
-    this.joinRoom({ uniqueId: 'foxsabe1', platform: 'tiktok' });
+    // temporal test joinplatform
+  //  this.joinplatform({ uniqueId: 'foxsabe1', platform: 'tiktok' });
+    this.getRoomInfo({ uniqueId: 'foxsabe1', platform: 'tiktok' });
+    this.getAvailableGifts({ uniqueId: 'foxsabe1', platform: 'tiktok' });
   }
 
   private initializeSocketEvents(): void {
@@ -102,10 +104,15 @@ class SocketManager {
     localStorageManager.set(event, data);
   }
 
-  public joinRoom(data: RoomJoinData): void {
-    this.socket.emit('joinRoom', data);
+  public joinplatform(data: JoinPlatformparams): void {
+    this.socket.emit('join-platform', data);
   }
-
+  public getRoomInfo(data: JoinPlatformparams): void {
+    this.socket.emit('getRoomInfo', data);
+  }
+  public getAvailableGifts(data: JoinPlatformparams): void {
+    this.socket.emit('getAvailableGifts', data);
+  }
   public getSocket(): Socket {
     return this.socket;
   }
