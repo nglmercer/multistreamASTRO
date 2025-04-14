@@ -1,5 +1,9 @@
 import {getAllDataFromDatabase, databases} from '/src/pages/test/idb.js';
 import logger from '/src/utils/logger.js';
+import {flattenObject, unflattenObject, replaceVariables} from '/src/utils/utils.js';
+import {
+    playTextwithproviderInfo
+} from '/src/components/voicecomponents/initconfig.js';	
 /*
     commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
     giftEventsDB: { name: 'giftEvents', version: 1, store: 'giftEvents' },
@@ -175,9 +179,70 @@ function switcheventDb(event, eventData) {
 function processMatchedItems(items, eventData, eventType) {
     items.forEach( async item => {
         const actions = await filterItemsByIds(item.actions);
-        logger.log("Action", item.actions, actions);
+        const ProcesedActions = unflattenObject(actions);
+        logger.log("Action", item.actions, ProcesedActions);
+        const verifyObj = {
+            "minecraft": {
+                verify: ["check","command"],
+                callback: (A,B,C,ev)=>{
+                    console.log("Minecraft",A,B,C,ev);
+                }
+            },
+            "tts": {
+                verify: ["check","text"],
+                callback: (A,B,C,ev)=>{
+                    console.log("tts",A,B,C,ev);
+                    playTextwithproviderInfo(A.text);
+                }
+            },
+            "overlay": {
+                verify: ["check","src","content","duration","volume"],
+                callback: (A,B,C,ev)=>{
+                    console.log("overlay",A,B,C,ev);
+                }
+            },
+            "keypress": {
+                verify: ["check","key"],
+                callback: (A,B,C,ev)=>{
+                    console.log("keypress",A,B,C,ev);
+                }
+            }
+        }
+        processActions(verifyObj, ProcesedActions, eventData, eventType);
     });
 }
+function processActions(verifyObj, ProcessedActions, eventData, eventType) {
+    if (!ProcessedActions || !Array.isArray(ProcessedActions)) {
+        return;
+    }
+    ProcessedActions.forEach(action => {
+        if (!action || typeof action !== 'object') {
+            return;
+        }
+        Object.keys(verifyObj).forEach(actionType => {
+            const config = verifyObj[actionType]; // Get config { verify: [...], callback: fn }
+            const actionData = action[actionType]; // Get the specific data part, e.g., action.minecraft
+            // 1. Check if this action type exists in the current action object,
+            //    is an object itself, and has its 'check' property set to true.
+            if (actionData && typeof actionData === 'object' && actionData.check === true) {
+                logger.log(`  - Action type '${actionType}' is ENABLED. Verifying properties...`);
+
+                let allPropsValid = true;
+                for (const propName of config.verify) {
+                    if ((propName in actionData) || actionData[propName]) {
+                    //    logger.log("Action",`    - Verification SUCCESSFUL.`,actionType);
+                        allPropsValid = true;
+                    }
+                }
+                if (allPropsValid) {
+                    logger.log("Action",`    - Verification SUCCESSFUL for '${actionType}'. Executing callback.`);
+                    config.callback(actionData, action, eventData, eventType);
+                }
+            } else {}
+        });
+    });
+}
+
 async function filterItemsByIds(ids) {
     const items = await getAllDataFromDatabase(databases.ActionsDB);
     if (!Array.isArray(items) || !Array.isArray(ids)) {
