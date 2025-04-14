@@ -39,7 +39,7 @@ const localStorageManager = new LocalStorageManager<TiktokEventsStorage>('Tiktok
 
 class SocketManager {
   private baseUrl: string = 'http://localhost:9001';
-  private wsBaseUrl: string = 'ws://localhost:21213/';
+  public wsBaseUrl: string = 'ws://localhost:21213/';
   private socket: Socket;
   private ws: WebSocket | null = null; // Para WebSocket nativo, inicializar a null
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -47,7 +47,7 @@ class SocketManager {
   private reconnectAttempts: number = 0; // Contador de intentos (opcional, para backoff)
   private maxReconnectAttempts: number = 10; // Limitar intentos (opcional)
   private TiktokEmitter: Emitter;
-  private tiktokLiveEvents: TiktokEvent[] = [
+  public tiktokLiveEvents: TiktokEvent[] = [
     'chat', 'gift', 'connected', 'disconnected',
     'websocketConnected', 'error', 'member', 'roomUser',
     'like', 'social', 'emote', 'envelope', 'questionNew',
@@ -78,10 +78,6 @@ class SocketManager {
 
     this.tiktokLiveEvents.forEach(event => {
       this.socket.on(event, async (data: any) => {
-        if (event === 'roomUser') {
-          emitter.emit(event, data);
-          localStorage.setItem('lastRoomUser', JSON.stringify(data));
-        }
         setupData(event,data);
         this.tiktokhandlerdata(event, data);
       });
@@ -89,7 +85,6 @@ class SocketManager {
   }
 
   private connectWebSocket(): void {
-    // Limpiar timeout anterior si existe (por si se llama manualmente a connectWebSocket)
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId);
       this.reconnectTimeoutId = null;
@@ -117,7 +112,7 @@ class SocketManager {
       this.reconnectAttempts = 0; // Reiniciar contador al conectar exitosamente
     };
 
-    this.ws.onmessage = (event: MessageEvent) => {
+    this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log("event", 'Received message from WebSocket:', data); // Descomenta si necesitas mucho detalle
@@ -163,7 +158,7 @@ class SocketManager {
     }, delay);
   }
 
-  private tiktokhandlerdata(event: TiktokEvent, data: any): void {
+  private tiktokhandlerdata(event: any, data: any): void {
     logger.log("event", event, data, 'TiktokLive');
     this.TiktokEmitter.emit(event, data);
     
@@ -193,6 +188,7 @@ class SocketManager {
 }
 
 const socketManager = new SocketManager();
+
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
 export default socketManager;

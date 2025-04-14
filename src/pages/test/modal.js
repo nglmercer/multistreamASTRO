@@ -343,7 +343,8 @@ export class CInp extends LitElement {
       title: { type: String, reflect: true },
       pattern: { type: String, reflect: true },
       _isValid: { type: Boolean, state: true }, // Estado interno para la validez
-      _internalValue: { state: true } // Estado interno para manejar el valor real (puede no ser string)
+      _internalValue: { state: true },
+      multiple: { type: Boolean, reflect: true },
     };
   }
 
@@ -381,21 +382,52 @@ export class CInp extends LitElement {
 
    // Hook para actualizar el valor interno cuando la propiedad 'value' cambia
    willUpdate(changedProperties) {
-        if (changedProperties.has('value')) {
-            this._internalValue = this._parseValueForInternal(this.value);
-        }
-   }
+      if (changedProperties.has('value')) {
+          // ¡Importante! Adaptar parseo para multiple si value puede ser un array o JSON string
+          this._internalValue = this._parseValueForInternal(this.value);
+      }
+      // Si 'multiple' cambia, quizás necesites convertir el valor interno
+      if (changedProperties.has('multiple')) {
+          const oldMultiple = changedProperties.get('multiple');
+          if (this.multiple && !oldMultiple && !Array.isArray(this._internalValue)) {
+              // Cambiando a multiple: convierte valor a array si no lo es
+              this._internalValue = (this._internalValue !== null && this._internalValue !== undefined && this._internalValue !== '') ? [String(this._internalValue)] : [];
+          } else if (!this.multiple && oldMultiple && Array.isArray(this._internalValue)) {
+              // Cambiando a single: toma el primer valor o vacío
+              this._internalValue = this._internalValue.length > 0 ? this._internalValue[0] : '';
+          }
+      }
+  }
 
-   _parseValueForInternal(val) {
-       if (this.type === 'checkbox' || this.type === 'switch' || this.type === 'boolean') {
-           // Convertir 'true'/'false' string a booleano si es necesario
-           return String(val).toLowerCase() === 'true';
-       }
-        if (this.type === 'number') {
-           return (val === '' || val === null || val === undefined) ? null : Number(val);
-       }
-       return val ?? ''; // Devuelve string vacío para null/undefined en otros casos
-   }
+
+  _parseValueForInternal(val) {
+    if (this.multiple && this.type === 'select') {
+        if (Array.isArray(val)) {
+            return val.map(String); // Asegura que sean strings
+        }
+        if (typeof val === 'string') {
+            // Intenta parsear si es JSON string o separada por comas, etc.
+            // O simplemente trátalo como si fuera una selección única inicial
+            try {
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed.map(String) : [];
+            } catch (e) {
+                // Si no es JSON, ¿es una sola selección inicial?
+                // O considera una convención como 'val1,val2'
+                return val ? [String(val)] : []; // Ejemplo simple: un solo valor inicial
+            }
+        }
+        return []; // Default a array vacío
+    }
+    // ... (tu lógica existente para otros tipos)
+    if (this.type === 'checkbox' || this.type === 'switch' || this.type === 'boolean') {
+        return String(val).toLowerCase() === 'true';
+    }
+    if (this.type === 'number') {
+        return (val === '' || val === null || val === undefined) ? null : Number(val);
+    }
+    return val ?? '';
+  }
 
 
   static get styles() {
@@ -484,7 +516,11 @@ export class CInp extends LitElement {
       select:focus {
         outline: none; /* Elimina el contorno predeterminado del navegador */
       }
-
+      select option:checked {
+        background-color: rgb(0, 171, 255);
+        color: white;             /* Might work in SOME browsers/OS, often ignored */
+        font-weight: bold;        /* Often ignored */
+      }
       /* Aplica estilo inválido directamente al host o a un contenedor */
       :host([invalid]) .input-element {
          border-color: red !important; /* Usa !important con cuidado, o aumenta especificidad */
@@ -560,25 +596,34 @@ export class CInp extends LitElement {
           </label>`;
 
       case 'select':
+        console.log(this.multiple, this._internalValue);
         return html`
-          <select
-            class=${commonInputClass}
-            id=${ifDefined(this.id)}
-            name=${ifDefined(this.name)}
-            .value=${this._internalValue ?? ''}
-            ?disabled=${this.disabled}
-            ?readonly=${this.readonly}
-            ?required=${this.required}
-            title=${ifDefined(this.title)}
-            @change=${this._handleInputChange}
-          >
-            ${this.options.map(opt => html`
-              <option
-                value=${opt.value}
-                ?selected=${opt.value == this._internalValue}
-              >${opt.label}</option>
-            `)}
-          </select>`;
+      <select
+        class=${commonInputClass}
+        id=${ifDefined(this.id)}
+        name=${ifDefined(this.name)}
+        .value=${!this.multiple ? (this._internalValue ?? '') : undefined}
+        ?disabled=${this.disabled}
+        ?readonly=${this.readonly}
+        ?required=${this.required}
+        title=${ifDefined(this.title)}
+        @change=${this._handleInputChange}
+        ?multiple=${this.multiple}
+      >
+        ${this.options.map(opt => {
+          // Add a log here for debugging inside the map
+          const isSelected = this.multiple
+            ? Array.isArray(this._internalValue) && this._internalValue.includes(String(opt.value))
+            : String(opt.value) == String(this._internalValue ?? '');
+          // console.log(`Option ${opt.value}, multiple: ${this.multiple}, internalValue: ${JSON.stringify(this._internalValue)}, isSelected: ${isSelected}`); // DEBUG LINE
+          return html`
+            <option
+              value=${opt.value}
+              ?selected=${isSelected}
+            >${opt.label}</option>
+          `;
+        })}
+      </select>`;
 
       case 'radio':
          // Los radios individuales no necesitan la clase 'input-element'
@@ -629,13 +674,18 @@ export class CInp extends LitElement {
     const inputElement = evt.target;
     let newValue;
 
-    if (this.type === 'radio') {
-        // Para radio, el valor ya está en el evento si está marcado
+    if (this.type === 'select' && this.multiple) {
+        // --- Lógica para MULTISELECT ---
+        newValue = Array.from(inputElement.selectedOptions).map(option => option.value);
+    } else if (this.type === 'radio') {
+        // ... (tu lógica de radio)
         const checkedRadio = this.shadowRoot.querySelector(`input[name="${this.name}"]:checked`);
-        newValue = checkedRadio ? checkedRadio.value : null;
+        newValue = checkedRadio ? checkedRadio.value : null; // Mantén null si no hay selección
     } else if (inputElement.type === 'checkbox') {
+        // ... (tu lógica de checkbox)
         newValue = inputElement.checked;
     } else {
+        // --- Lógica para otros inputs (incluido select simple) ---
         newValue = inputElement.value;
     }
 
@@ -1005,9 +1055,9 @@ class ObjEditFrm extends LitElement {
                                   id=${id}
                                   name=${k}
                                   type=${c.type || 'text'}
-                                  .value=${val} /* Pasa el valor directamente */
+                                  .value=${val} 
                                   placeholder=${ifDefined(c.placeholder)}
-                                  ?required=${isRequired} /* Required condicional */
+                                  ?required=${isRequired} 
                                   ?disabled=${c.disabled}
                                   ?readonly=${c.readonly}
                                   pattern=${ifDefined(c.pattern)}
@@ -1017,6 +1067,7 @@ class ObjEditFrm extends LitElement {
                                   step=${ifDefined(c.step)}
                                   rows=${ifDefined(c.rows)}
                                   cols=${ifDefined(c.cols)}
+                                  ?multiple=${c.multiple}
                                   .options=${(c.type === 'select' || c.type === 'radio') && Array.isArray(c.options) ? c.options : undefined}
                                   ?darkmode=${this.darkmode}
                                   @change=${this._hInpChg}

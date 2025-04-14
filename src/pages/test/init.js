@@ -17,9 +17,31 @@ async function fetchGiftOptions() {
         { value: 'any', label: 'Cualquiera' },
         { value: 'sub', label: 'Suscriptor (Async)' },
         { value: 'mod', label: 'Moderador (Async)' },
-        { value: 'admin', label: 'Administrador' }
+        { value: 'gifter', label: 'Regalador (Async)' },
     ];
  }
+async function getAllActions() {
+    try {
+        let actions = [];
+        const allactionsDb = await getAllDataFromDatabase(databases.ActionsDB);
+        if (allactionsDb && Array.isArray(allactionsDb)) {
+            actions = allactionsDb.map(item => ({ value: item.id, label: item.name }));
+        }
+        console.log("getAllActions", actions);
+        return actions;
+    } catch (error) {
+        console.error("Error getting actions:", error);
+        return [];
+    }
+}
+getAllActions()
+ function comparatorStringOptions() {
+    return [
+        { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Igual a' },
+        { value: 'startsWith', label: 'Comienza con' }, { value: 'endsWith', label: 'Termina con' },
+        { value: 'contains', label: 'Contiene' }
+    ]
+}
 
 const formConfigurations = {
     comment: {
@@ -32,12 +54,9 @@ const formConfigurations = {
             name: { label: 'Nombre', type: 'text', required: true },
             isActive: { label: 'Activo', type: 'switch' },
             role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
-            comparator: { label: 'Comparador', type: 'select', options: [
-                { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Igual a' },
-                { value: 'startsWith', label: 'Comienza con' }, { value: 'endsWith', label: 'Termina con' },
-                { value: 'contains', label: 'Contiene' }
-            ]},
+            comparator: { label: 'Comparador', type: 'select', options: comparatorStringOptions() },
             value: { label: 'Valor Comentario', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
+            actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
             id: { hidden: false, readonly:"true" }, // Ocultar ID para nuevos
             type: { hidden: true }
         })
@@ -59,6 +78,7 @@ const formConfigurations = {
             value: { label: 'Valor Exacto', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+            actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
             id: { hidden: false, readonly:"true" },
             type: { hidden: true }
         })
@@ -80,6 +100,7 @@ const formConfigurations = {
             value: { label: 'Likes Exactos', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+            actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
             id: { hidden: false, readonly:"true" },
             type: { hidden: true }
         })
@@ -103,6 +124,7 @@ const formConfigurations = {
                 options: await fetchGiftOptions(), // Llama a la función async
                 showIf: { field: 'comparator', value: 'equal' }
             },
+            actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
             id: { hidden: false, readonly:"true" },
             type: { hidden: true }
          })

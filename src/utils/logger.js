@@ -68,7 +68,15 @@ class Logger {
   logger.addCategory('Action', true);
   logger.addCategory('EventAction', true);
   logger.addCategory('renderhtml', true);
+
+  logger.addCategory('evalueChat', true);
+  logger.addCategory('evalueGift', true);
+  logger.addCategory('evalueLikes', true);
+  logger.addCategory('evalueBits', true);
+  logger.addCategory('originEvalue', true);
+
   logger.addCategory('event', true);
 
   logger.toggleCategory('event', false);
+  
 export default logger;
