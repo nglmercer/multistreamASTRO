@@ -4,7 +4,7 @@ import { LitElement, html, css } from 'lit';
 const pages = {
     0: { name: "Home", slot: "index" },
     1: { name: "Search", slot: "chat" },
-    2: { name: "Recommended", slot: "chat" },
+    2: { name: "Action", slot: "Action" },
     3: { name: "History", slot: "page-3" },
     4: { name: "Favorites", slot: "page-4" },
     5: { name: "Settings", slot: "page-5" },

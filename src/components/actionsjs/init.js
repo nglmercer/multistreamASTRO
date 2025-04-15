@@ -239,7 +239,7 @@ globalEmitter.onAny((eventName, eventData) => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    initializeTables(managerEl, tableConfigs, getAllDataFromDatabase)
+    initializeTables(managerEl, tableConfigs, getAllDataFromDatabase, ["name", "id","isActive", "actions"])
     .then(() => console.log('Gestor de eventos inicializado.'))
     .catch(error => console.error('Error inicializando gestor de eventos:', error));
 });
