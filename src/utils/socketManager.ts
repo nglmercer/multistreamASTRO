@@ -32,7 +32,12 @@ type TiktokEvent =
 
 // Define the type for the local storage manager
 interface TiktokEventsStorage {
-  [eventName: string]: any[];
+  // Use specific types if possible, otherwise 'any' or 'object'
+  [eventName: string]: any; // Or Record<TiktokEvent, any>
+  // Example with more specific types (optional):
+  // chat?: ChatEventData;
+  // gift?: GiftEventData;
+  // ... etc
 }
 
 const localStorageManager = new LocalStorageManager<TiktokEventsStorage>('TiktokEvents');
@@ -67,8 +72,8 @@ class SocketManager {
     
     // temporal test joinplatform
   //  this.joinplatform({ uniqueId: 'ju44444n._', platform: 'tiktok' });
-    this.getRoomInfo({ uniqueId: 'ju44444n._', platform: 'tiktok' });
-    this.getAvailableGifts({ uniqueId: 'ju44444n._', platform: 'tiktok' });
+  //  this.getRoomInfo({ uniqueId: 'ju44444n._', platform: 'tiktok' });
+  //  this.getAvailableGifts({ uniqueId: 'ju44444n._', platform: 'tiktok' });
   }
 
   private initializeSocketEvents(): void {
@@ -167,6 +172,8 @@ class SocketManager {
     // Add the new event data
     // Store back to localStorage
     localStorageManager.set(event, data);
+    // LOG AND GET localStorageManager DATA
+    console.log("localStorageManager",localStorageManager.getAll());
   }
 
   public joinplatform(data: JoinPlatformparams): void {
@@ -191,4 +198,6 @@ const socketManager = new SocketManager();
 
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
+export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
+export {localStorageManager}
 export default socketManager;

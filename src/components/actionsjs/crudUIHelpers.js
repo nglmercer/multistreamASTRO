@@ -1,5 +1,3 @@
-import { getAllDataFromDatabase } from '/src/pages/test/idb.js'; // Ajusta ruta
-
 export async function openDynamicModal(modalEl, editorEl, formType, formConfigs, data = null, onBeforeOpen = null, onAfterConfig = null) {
     const configGenerator = formConfigs[formType];
     if (!configGenerator) {

@@ -33,7 +33,7 @@ class LocalStorageManager<T extends object> {
     }
   }
 
-  get(): T | null {
+  getAll(): T | null {
     try {
       const serialized = localStorage.getItem(this.key);
       if (serialized === null) {
@@ -65,7 +65,7 @@ class LocalStorageManager<T extends object> {
    */
   add<K extends keyof T>(key: K, item: T[K]): void {
     try {
-      let main = this.get();
+      let main = this.getAll();
       if (!main) {
         main = {} as T; // Inicializa el objeto principal si no existe.
       }
@@ -84,7 +84,7 @@ class LocalStorageManager<T extends object> {
    */
   replaceItem<K extends keyof T>(key: K, item: T[K]): void {
       try {
-          let main = this.get();
+          let main = this.getAll();
           if (!main) {
               console.warn(`No existing object found in localStorage with key ${this.key}. Replacing will create a new object.`);
               main = {} as T;
@@ -104,7 +104,7 @@ class LocalStorageManager<T extends object> {
    */
   getItem<K extends keyof T>(key: K): T[K] | null {
     try {
-      const main = this.get();
+      const main = this.getAll();
       if (!main || !(key in main)) {
         return null; // Retorna null si el objeto principal o el objeto no existen.
       }
@@ -121,7 +121,7 @@ class LocalStorageManager<T extends object> {
    */
   removeItem<K extends keyof T>(key: K): void {
     try {
-      let main = this.get();
+      let main = this.getAll();
       if (main && key in main) {
         delete main[key]; // Elimina la propiedad (objeto).
         this.set(main); // Guarda el objeto principal actualizado.
@@ -130,14 +130,16 @@ class LocalStorageManager<T extends object> {
       console.error(`Error al eliminar objeto (clave: ${this.key}, key: ${String(key)}):`, error);
     }
   }
-
+  get<K extends keyof T>(key: K): T[K] | null {
+    return this.getItem(key);
+  }
   /**
    * Verifica si un objeto existe dentro del objeto principal.
    * @param key La clave del objeto a verificar.
    * @returns True si el objeto existe, false en caso contrario.
    */
   hasItem<K extends keyof T>(key: K): boolean {
-    const main = this.get();
+    const main = this.getAll();
     return main !== null && Object.prototype.hasOwnProperty.call(main, key);
   }
 
@@ -150,7 +152,7 @@ class LocalStorageManager<T extends object> {
    */
   pushToArray<K extends keyof T>(key: K, item: T[K] extends any[] ? T[K][number] : any, limit: number | null = null): void {
     try {
-      let main = this.get();
+      let main = this.getAll();
       if (!main) {
         main = {} as T;
       }
@@ -200,6 +202,6 @@ export default LocalStorageManager;
   
   const user1AfterDeletion = itemStorage.getItem("user1");
   console.log("User 1 (after deletion):", user1AfterDeletion); // null
-  const allItems = itemStorage.get();
+  const allItems = itemStorage.getAll();
   console.log("All items:", allItems); */
   

@@ -185,21 +185,21 @@ function getselectedProviderName(value) {
     }
     return selectedProviderName || value;
 }
-async  function playTextwithproviderInfo(textToSpeak) {
-    if (!providerInfo.initialized) { updateStatus(`${selectedProviderName} provider not yet initialized.`); return; }
+async  function playTextwithproviderInfo(textToSpeak, Providername = selectedProviderName) {
+    if (!providerInfo.initialized) { updateStatus(`${Providername} provider not yet initialized.`); return; }
     if (providerInfo && providerInfo.instance) {
-        console.log("rawdata",textToSpeak,providerInfo,providerInfo,selectedProviderName);
+        console.log("rawdata",textToSpeak,providerInfo,providerInfo,Providername);
         Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
-        activeProviderName = selectedProviderName;
-        updateStatus(`Speaking with ${selectedProviderName}...`);
+        activeProviderName = Providername;
+        updateStatus(`Speaking with ${Providername}...`);
 
         try {
             await providerInfo.instance.speak(textToSpeak);
-            updateStatus(`Finished speaking with ${selectedProviderName}.`);
+            updateStatus(`Finished speaking with ${Providername}.`);
             activeProviderName = null;
         } catch (error) {
-            console.error(`Error speaking with ${selectedProviderName}:`, error);
-            updateStatus(`Error with ${selectedProviderName}: ${error.message}`);
+            console.error(`Error speaking with ${Providername}:`, error);
+            updateStatus(`Error with ${Providername}: ${error.message}`);
             activeProviderName = null;
         }
     }

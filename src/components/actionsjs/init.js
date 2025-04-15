@@ -1,13 +1,13 @@
 // /src/pages/events/events.js (o tu ruta)
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/pages/test/idb.js'; // Ajusta ruta
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/components/actionsjs/idb.js'; // Ajusta ruta
 import {
     openDynamicModal,
     initializeTables,
     updateTableData,
     setupModalEventListeners,
     setupTableActionListeners
-} from '/src/pages/test/crudUIHelpers.js'; // Ajusta ruta
-import { getGiftList, mapgifts, geticonfromarray } from '/src/pages/test/giftutils.js'; // Ajusta ruta
+} from '/src/components/actionsjs/crudUIHelpers.js'; // Ajusta ruta
+import { getGiftList, mapgifts, geticonfromarray } from '/src/components/actionsjs/giftutils.js'; // Ajusta ruta
 async function fetchGiftOptions() {
     return getGiftList();
 }
@@ -238,6 +238,8 @@ globalEmitter.onAny((eventName, eventData) => {
 });
 
 
-initializeTables(managerEl, tableConfigs, getAllDataFromDatabase)
+document.addEventListener('DOMContentLoaded', () => {
+    initializeTables(managerEl, tableConfigs, getAllDataFromDatabase)
     .then(() => console.log('Gestor de eventos inicializado.'))
     .catch(error => console.error('Error inicializando gestor de eventos:', error));
+});
