@@ -1,5 +1,6 @@
 import { buildTTSConfigData,TTSConfigManager  } from './tts_config.js';
 import { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeechProvider } from './tts_provider.js';
+import { AudioQueue } from './audio_queue.js'; // Assuming file name
 import { TiktokEmitter } from '/src/utils/socketManager';
 TiktokEmitter.on('play_arrow', async (data) => {
   console.log("TiktokEmitter",data);
@@ -10,6 +11,8 @@ let providerInfo;
 let ttsConfigData;
 let currentProviders = {}; // Para instancias de proveedores
 let selectedProviderName;
+const audioQueue = new AudioQueue(currentProviders);
+
 function updateStatus(message) {
     console.log(`Status: ${message}`);
 }
@@ -147,12 +150,24 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
     console.log("providerSelect.value",providerSelect.value);
     if (speakButton) {
         speakButton.addEventListener('click', async () => {
-            selectedProviderName = providerSelect.value;
-           const textToSpeak = textInput.value;
-            providerInfo = currentProviders[selectedProviderName];
-           playTextwithproviderInfo(textToSpeak,{currentProviders, selectedProviderName});
-           getselectedProviderName(selectedProviderName);
-       });
+            selectedProviderName = providerSelect.value; // Keep track locally if needed
+            const textToSpeak = textInput.value;
+            const providerToUse = selectedProviderName; // Or getselectedProviderName()
+          
+            if (textToSpeak && providerToUse) {
+               try {
+                  // Example: Button click plays immediately, interrupting queue
+                  updateStatus(`Playing immediately with ${providerToUse}...`);
+                  await audioQueue.playNow(textToSpeak, providerToUse);
+                  updateStatus(`Finished immediate playback with ${providerToUse}.`);
+               } catch (error) {
+                   console.error(`Error playing immediately with ${providerToUse}:`, error);
+                   updateStatus(`Error with ${providerToUse}: ${error.message}`);
+               }
+            } else {
+               console.warn("No text or provider selected for immediate playback.");
+            }
+          });
     }
     if (stopButton) {
     stopButton.addEventListener('click', () => {
@@ -185,22 +200,25 @@ function getselectedProviderName(value) {
     }
     return selectedProviderName || value;
 }
-async  function playTextwithproviderInfo(textToSpeak, Providername = selectedProviderName) {
+async  function playTextwithproviderInfo(textToSpeak, Providername = selectedProviderName, playNow= false) {
     if (!providerInfo.initialized) { updateStatus(`${Providername} provider not yet initialized.`); return; }
     if (providerInfo && providerInfo.instance) {
         console.log("rawdata",textToSpeak,providerInfo,providerInfo,Providername);
-        Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
         activeProviderName = Providername;
         updateStatus(`Speaking with ${Providername}...`);
-
+        
         try {
-            await providerInfo.instance.speak(textToSpeak);
-            updateStatus(`Finished speaking with ${Providername}.`);
-            activeProviderName = null;
+            if (playNow){
+                Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
+                await audioQueue.playNow(textToSpeak, Providername);
+            }else{
+                await audioQueue.enqueue(textToSpeak, Providername);
+                updateStatus(`Finished speaking with ${Providername}.`);
+                //    await providerInfo.instance.speak(textToSpeak);
+            }
         } catch (error) {
             console.error(`Error speaking with ${Providername}:`, error);
             updateStatus(`Error with ${Providername}: ${error.message}`);
-            activeProviderName = null;
         }
     }
 }
