@@ -800,9 +800,15 @@ export class CInp extends LitElement {
 }
 
 
-customElements.define('c-dlg', CDlg);
-customElements.define('dlg-cont', DlgCont);
+if (!customElements.get('c-dlg')) {
+  customElements.define('c-dlg', CDlg);
+}
+if (!customElements.get('dlg-cont')) {
+  customElements.define('dlg-cont', DlgCont);
+}
+if (!customElements.get('c-inp')) {
 customElements.define('c-inp', CInp);
+}
 class ObjEditFrm extends LitElement {
   static styles = css`
       /* Tus estilos existentes */
@@ -1087,7 +1093,9 @@ class ObjEditFrm extends LitElement {
       `;
   }
 }
-customElements.define('obj-edit-frm', ObjEditFrm);
+if (!customElements.get('obj-edit-frm')) {
+  customElements.define('obj-edit-frm', ObjEditFrm);
+}
 
 
 class DynObjDisp extends LitElement {
@@ -1317,4 +1325,6 @@ class DynObjDisp extends LitElement {
       `;
   }
 }
-customElements.define('dyn-obj-disp', DynObjDisp);
+if (!customElements.get('dyn-obj-disp')) {
+  customElements.define('dyn-obj-disp', DynObjDisp);
+}

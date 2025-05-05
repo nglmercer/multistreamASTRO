@@ -1,22 +1,35 @@
 function getGiftList(by="gift") {
     let gifts = [];
+    const tiktokEvents = getAgifts();
+    try {
+            if (tiktokEvents && Array.isArray(tiktokEvents)) {
+                if (!by || by === 'gift') {
+                gifts = mapgifts(tiktokEvents);
+                } else if (by === 'cost') {
+                    gifts = mapgiftsbycost(tiktokEvents);
+                }
+            }
+        
+    } catch (error) {
+        console.error(error);
+        return []
+    }
+    console.log("getGiftList", gifts,tiktokEvents);
+    return gifts;
+}
+function getAgifts(){
+    const avg = ["availableGifts","connected"]
     try {
         const tiktokEventsString = localStorage.getItem('TiktokEvents');  // Evita repetir la llamada
         if (tiktokEventsString) {
-            const tiktokEvents = JSON.parse(tiktokEventsString);
-            if (tiktokEvents && tiktokEvents.availableGifts && Array.isArray(tiktokEvents.availableGifts)) {
-                if (!by || by === 'gift') {
-                gifts = mapgifts(tiktokEvents.availableGifts);
-                } else if (by === 'cost') {
-                    gifts = mapgiftsbycost(tiktokEvents.availableGifts);
-                }
-            }
+            const TStore = JSON.parse(tiktokEventsString);
+            const giftStore = TStore[avg[0]] ? TStore[avg[0]] : TStore[avg[1]]?.[avg[0]];
+            return giftStore
         }
-    } catch (error) {
-        console.error(error); // Usa console.error para errores
+    } catch {
+        console.error(error);
+        return []
     }
-    console.log("getGiftList", gifts);
-    return gifts;
 }
 
 function mapgifts(array = [], orderBy = 'cost') {

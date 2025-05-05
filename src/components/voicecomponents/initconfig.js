@@ -203,14 +203,16 @@ function getselectedProviderName(value) {
 async  function playTextwithproviderInfo(textToSpeak, Providername = selectedProviderName, playNow= false) {
     if (!providerInfo.initialized) { updateStatus(`${Providername} provider not yet initialized.`); return; }
     if (providerInfo && providerInfo.instance) {
-        console.log("rawdata",textToSpeak,providerInfo,providerInfo,Providername);
+        console.log("rawdata",{
+            textToSpeak, Providername, playNow
+        });
         activeProviderName = Providername;
         updateStatus(`Speaking with ${Providername}...`);
         
         try {
             if (playNow){
                 Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
-                await audioQueue.playNow(textToSpeak, Providername);
+                await providerInfo.instance.speak(textToSpeak);
             }else{
                 await audioQueue.enqueue(textToSpeak, Providername);
                 updateStatus(`Finished speaking with ${Providername}.`);

@@ -1,9 +1,9 @@
-import {getAllDataFromDatabase, databases} from '/src/components/actionsjs/idb.js';
-import logger from '/src/utils/logger.js';
-import {flattenObject, unflattenObject, replaceVariables} from '/src/utils/utils.js';
+import {getAllDataFromDatabase, databases} from '@components/actionsjs/idb.js';
+import logger from '@utils/logger.js';
+import {flattenObject, unflattenObject, replaceVariables} from '@utils/utils.js';
 import {
     playTextwithproviderInfo
-} from '/src/components/voicecomponents/initconfig.js';	
+} from '@components/voicecomponents/initconfig.js';	
 /*
     commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
     giftEventsDB: { name: 'giftEvents', version: 1, store: 'giftEvents' },
@@ -12,7 +12,7 @@ import {
     eventsDB: { name: 'Events', version: 1, store: 'events' },
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
 */
-import {socket,TiktokEmitter,tiktokLiveEvents, localStorageManager } from '/src/utils/socketManager.ts';
+import {socket,TiktokEmitter,tiktokLiveEvents, localStorageManager } from '@utils/socketManager.ts';
 
 tiktokLiveEvents.forEach(event => {
     TiktokEmitter.on(event, async (data) => {
@@ -192,8 +192,14 @@ function processMatchedItems(items, eventData, eventType) {
             "tts": {
                 verify: ["check","text"],
                 callback: (A,B,C,ev)=>{
+                    let playnow;
                     console.log("tts",A,B,C,ev);
-                    playTextwithproviderInfo(replaceVariables(A.text,C));
+                    if (C.emotes && C.emotes.length >= 1){
+                        return;
+                    }
+                    if (C.giftId || C.giftName) playnow = true; 
+                    console.log("playnow",playnow)
+                    playTextwithproviderInfo(replaceVariables(A.text,C),undefined,playnow);
                 }
             },
             "overlay": {
