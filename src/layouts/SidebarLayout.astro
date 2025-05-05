@@ -1,6 +1,6 @@
 ---
 import { pagesConfigA, pagesConfigB } from '../config/pages';
-
+import Actiontest from '@components/menu/actiontest.astro';
 interface Props {
   title?: string;
   activeConfig?: 'A' | 'B';
@@ -27,9 +27,15 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" /> -->
 
     <meta name="color-scheme" content="light dark" /> {/* Important for auto-theming */}
+    <script src="/src/litcomponents/init"></script>
     <title>{title}</title>
   </head>
   <body>
+    <dialog-container id="ActionDialog">
+      <div class="modal__container">
+        <Actiontest/>
+      </div>
+    </dialog-container>
     <div class="layout">
       {/* Mobile Navbar */}
       <nav class="mobile-nav">
@@ -81,7 +87,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
       <main class="main-content">
         <slot />
       </main>
-      <button class="float-btn">
+      <button class="float-btn" onclick="document.getElementById('ActionDialog').show()">
         <span class="material-symbols-outlined">
           view_headline
         </span>
@@ -98,6 +104,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     --navbar-height: 60px;
 
     --primary-bg: #ffffff;
+    --background-primary: black;
     --secondary-bg: #f8f9fa;
     --border-color: #e9ecef;
     --text-color: #212529;
@@ -314,4 +321,18 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     bottom: 5%;
     right: 5%;
   }
+
+.modal__container {
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+    padding-inline: 0.8rem;
+    padding-block: 0.8rem;
+    min-width: min(100%,400px);
+    max-width: 1200px;
+    max-height: 100vh;
+    border-radius: 8px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
 </style>

@@ -1,0 +1,27 @@
+<div
+class="tiktok-event-simulator"
+style="padding: 15px; margin: 15px 0; border-radius: 5px;"
+>
+<h4>Simulate TikTok Event</h4>
+<p>
+  Select an event type below (populated from localStorage) and click "Emit"
+  to simulate it using TiktokEmitter.
+</p>
+<div>
+  <label for="tiktok-event-select">Event Type:</label>
+  <select
+    id="tiktok-event-select"
+    style="margin-left: 5px; margin-right: 10px;"
+  >
+    <option value="">-- Select Event --</option>
+  </select>
+  <button id="emit-tiktok-event-button" disabled>Emit Selected Event</button
+  >
+</div>
+<div
+  id="tiktok-event-status"
+  style="margin-top: 10px; font-style: italic; min-height: 1.2em;"
+>
+</div>
+</div>
+<script src="/src/components/menu/actionoptions.js"></script>

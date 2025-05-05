@@ -1,5 +1,7 @@
 ---
+
 ---
+
 <script src="/src/components/actionsjs/modal.js"></script>
 <script src="/src/components/actionsjs/table.js"></script>
 <script src="/src/components/actionsjs/init.js"></script>
@@ -11,50 +13,63 @@
     <button data-form-type="likes" class="primary">Evento Likes</button>
     <button data-form-type="gift" class="primary">Evento Regalo</button>
     <button id="actionButton" class="primary">Acción</button>
-</div>
+  </div>
 
-<dlg-cont id="modal-container">
-    <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode>
-    </dyn-obj-disp>
-</dlg-cont>
-<dlg-cont id="Action-modal">
-    <dyn-obj-disp id="Action-editor" mode="edit" darkmode>
-    </dyn-obj-disp>
-</dlg-cont>
+  <dlg-cont id="modal-container">
+    <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode> </dyn-obj-disp>
+  </dlg-cont>
+  <dlg-cont id="Action-modal">
+    <dyn-obj-disp id="Action-editor" mode="edit" darkmode> </dyn-obj-disp>
+  </dlg-cont>
 
-<grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
-<grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
-<div class="tiktok-event-simulator" style="border: 1px solid #ccc; padding: 15px; margin: 15px 0; border-radius: 5px;">
-<h4>Simulate TikTok Event</h4>
-<p>Select an event type below (populated from localStorage) and click "Emit" to simulate it using TiktokEmitter.</p>
-<div>
-  <label for="tiktok-event-select">Event Type:</label>
-  <select id="tiktok-event-select" style="margin-left: 5px; margin-right: 10px;">
-    <option value="">-- Select Event --</option>
-  </select>
-  <button id="emit-tiktok-event-button" disabled>Emit Selected Event</button>
-</div>
-<div id="tiktok-event-status" style="margin-top: 10px; font-style: italic; min-height: 1.2em;"></div>
-</div>
+  <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
+  <grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
+
 </div>
 <script src="/src/components/actionsjs/actions.js"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>
-    button { padding: 0.6em 1.2em; cursor: pointer; margin: 5px; border-radius: 4px; border: 1px solid #555; background-color: #333; color: white; }
-        button.primary { background-color: #007bff; border-color: #007bff; }
-        button:hover { filter: brightness(1.2); }
-        #modal-container dyn-obj-disp { /* Estilo más general */
-            min-width: 400px;
-            display: block; /* Asegurar que toma espacio */
-            background-color: #222; /* Fondo para el contenido del modal */
-            border-radius: 8px;
-             /* obj-edit-form dentro no necesita borde/padding extra */
-        }
-         #modal-container dyn-obj-disp obj-edit-frm {
-             border: none;
-             padding: 0;
-             background: transparent;
-         }
-        .output { margin-top: 1rem; padding: 1rem; background-color: #1a1a1a; border: 1px solid #333; border-radius: 5px; white-space: pre-wrap; font-family: monospace; min-height: 50px;}
-        .loading { font-style: italic; color: #aaa; }
+  button {
+    padding: 0.6em 1.2em;
+    cursor: pointer;
+    margin: 5px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background-color: #333;
+    color: white;
+  }
+  button.primary {
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+  button:hover {
+    filter: brightness(1.2);
+  }
+  #modal-container dyn-obj-disp {
+    /* Estilo más general */
+    min-width: 400px;
+    display: block; /* Asegurar que toma espacio */
+    background-color: #222; /* Fondo para el contenido del modal */
+    border-radius: 8px;
+    /* obj-edit-form dentro no necesita borde/padding extra */
+  }
+  #modal-container dyn-obj-disp obj-edit-frm {
+    border: none;
+    padding: 0;
+    background: transparent;
+  }
+  .output {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    min-height: 50px;
+  }
+  .loading {
+    font-style: italic;
+    color: #aaa;
+  }
 </style>
