@@ -11,7 +11,7 @@ interface Option {
 
 // Define input types
 type InputType = 'text' | 'textarea' | 'select' | 'checkbox' | 'switch' | 'boolean' | 'radio' |
-    'number' | 'email' | 'password' | 'tel' | 'url' | 'date' | 'time' | 'datetime-local' | 'string' | 'File' | 'color' | 'range';
+    'number' | 'email' | 'password' | 'tel' | 'url' | 'date' | 'time' | 'datetime-local' | 'string' | 'File' | 'file' | 'color' | 'range';
 type InputReturnType = string | boolean | number | string[] | null | undefined | object;
 
 function safeParse(value: InputReturnType): InputReturnType {
@@ -44,10 +44,13 @@ export class CInput extends LitElement {
     // Properties with decorators
     @property({ type: String, reflect: true }) type: InputType = 'text';
     @property({ type: String, reflect: true }) name?: string;
-    @property({ type: String }) value?: string;
+    @property({ type: String }) value?: string = '';
     @property({ type: String, reflect: true }) placeholder?: string;
     @property({ type: Boolean, reflect: true }) disabled: boolean = false;
     @property({ type: Boolean, reflect: true }) readonly: boolean = false;
+    @property({ type: Number, reflect: true }) min?: number;
+    @property({ type: Number, reflect: true }) max?: number;
+    @property({ type: Number, reflect: true }) step?: number;
     @property({ type: Boolean, reflect: true }) darkmode: boolean = false;
     @property({ type: Array }) options: Option[] = [];
     @property({ type: Boolean, reflect: true }) required: boolean = false;
@@ -108,6 +111,10 @@ export class CInput extends LitElement {
 
     // Parse value for internal storage based on input type
     private _parseValueForInternal(val: string | null | undefined | string[] | boolean | number): string | boolean | number | string[] | null {
+        if (val === null || val === undefined) {
+            return this.type === 'number' ? null : '';
+        }
+
         if (this.multiple && this.type === 'select') {
             if (Array.isArray(val)) {
                 return val.map(String);
@@ -130,10 +137,16 @@ export class CInput extends LitElement {
         }
 
         if (this.type === 'number') {
-            return (val === '' || val === null || val === undefined) ? null : Number(val);
+            if (val === '' || val === null || val === undefined) {
+                return null;
+            }
+            
+            // Parse as number but handle potential NaN results
+            const num = Number(val);
+            return isNaN(num) ? null : num;
         }
 
-        return val ?? '';
+        return String(val);
     }
 
     // CSS styles
@@ -144,11 +157,13 @@ export class CInput extends LitElement {
       padding: 0;
       color-scheme: light dark;
       /* Define variables default aquí para que se puedan sobreescribir */
-      --inp-border-color: #ccc;
+      --inp-border-color: rgba(99, 99, 99, 0.5);
       --inp-disabled-bg: #f5f5f5;
       --inp-disabled-color: #888;
       --inp-slider-bg: #ccc;
       --inp-slider-knob: white;
+      --padding: 0.5rem;
+      --border: 1px solid var(--inp-border-color);
     }
     
     :host([darkmode]) {
@@ -163,7 +178,7 @@ export class CInput extends LitElement {
     .inp-cont {
       display: flex;
       flex-direction: column;
-      padding: 0.5rem;
+      padding: var(--padding);
     }
     
     label {
@@ -175,7 +190,7 @@ export class CInput extends LitElement {
 
     input, textarea, select {
       padding: 0.5rem;
-      border: 1px solid var(--inp-border-color);
+      border: var(--border);
       border-radius: 4px;
       font-size: 14px;
       background-color: inherit;
@@ -204,7 +219,7 @@ export class CInput extends LitElement {
     
     input:read-only, textarea:read-only {
       background-color: var(--inp-disabled-bg);
-      cursor: not-allowed;
+      cursor: no-drop;
       color: var(--inp-disabled-color);
     }
 
@@ -343,7 +358,22 @@ export class CInput extends LitElement {
             </label>
           `)}
         `;
-
+            case 'File':
+            case 'file':
+                return html`
+                <input
+                  class=${commonInputClass}
+                  id=${ifDefined(this.id)}
+                  type="file"
+                  name=${ifDefined(this.name)}
+                  placeholder=${ifDefined(this.placeholder)}
+                  ?disabled=${this.disabled}
+                  ?readonly=${this.readonly}
+                  ?required=${this.required}
+                  title=${ifDefined(this.title)}
+                  pattern=${ifDefined(this.pattern)}
+                  @change=${this._handleInputChange}
+                >`;
             default: // text, email, number, password, etc.
                 return html`
           <input
@@ -351,17 +381,18 @@ export class CInput extends LitElement {
             type=${this.type === 'string' ? 'text' : this.type}
             id=${ifDefined(this.id)}
             name=${ifDefined(this.name)}
-            ${this.type.toLowerCase() !== 'file'
-                ? html` .value=${this._internalValue === null ? '' : String(this._internalValue)} `
-                : ''
-              }
+            value=${this._internalValue === null ? '' : String(this._internalValue)}
             placeholder=${ifDefined(this.placeholder)}
             ?disabled=${this.disabled}
             ?readonly=${this.readonly}
             ?required=${this.required}
+            min=${this.min}
+            max=${this.max}
+            step=${this.step}
             title=${ifDefined(this.title)}
             pattern=${ifDefined(this.pattern)}
             @change=${this._handleInputChange}
+            @input=${this._handleInputEvent}
           >`;
         }
     }
@@ -372,6 +403,14 @@ export class CInput extends LitElement {
             composed: true
         }));
     }
+    private _handleInputEvent(evt: Event) {
+        const inputElement = evt.target as HTMLInputElement | HTMLTextAreaElement;
+        if (inputElement instanceof HTMLInputElement && inputElement.pattern) {
+            const allowedPattern = new RegExp(inputElement.pattern, 'g');
+            const matches = inputElement.value.match(allowedPattern);
+            inputElement.value = matches ? matches.join('') : '';
+        }
+    }    
     // Event handlers and utility methods
     private _handleInputChange(evt: Event) {
         const inputElement = evt.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -387,7 +426,6 @@ export class CInput extends LitElement {
         } else {
             newValue = inputElement.value;
         }
-        
         // Update internal value first
         this._internalValue = this._parseValueForInternal(newValue);
         // Update public 'value' property (as string for attribute)

@@ -1,4 +1,6 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, type PropertyValues } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { customElement, property, state } from 'lit/decorators.js';
 
 interface DialogOption {
   label: string;
@@ -6,6 +8,11 @@ interface DialogOption {
   style?: string;
   callback?: (e: Event) => void;
 }
+interface PopupOption {
+  html: string;
+  callback?: (event: Event) => void;
+}
+
 export class DialogContent extends LitElement {
   static get properties() {
     return {
@@ -259,27 +266,9 @@ export class DialogContainer extends LitElement {
                     visibility var(--dlg-transition-duration) ease;
       }
 
-      .dlg-cnt {
-        max-height: var(--dlg-content-max-height);
-        overflow-y: auto;
-
-        background: var(--dlg-content-bg);
-        color: var(--dlg-content-color);
-        border-radius: var(--dlg-content-border-radius);
-        padding: var(--dlg-content-padding);
-
-        transform: scale(0.95);
-        transition: transform var(--dlg-transition-duration) ease;
-        transition-property: transform;
-      }
-
       .dlg-ov.visible {
         opacity: 1;
         visibility: visible;
-      }
-
-      .dlg-ov.visible .dlg-cnt {
-        transform: scale(1);
       }
     `;
   }
@@ -287,9 +276,7 @@ export class DialogContainer extends LitElement {
   render() {
     return html`
       <div class="dlg-ov ${this.visible ? 'visible' : ''}" @click="${this._handleOverlayClick}">
-        <div class="dlg-cnt">
           <slot></slot>
-        </div>
       </div>
     `;
   }
@@ -312,6 +299,245 @@ export class DialogContainer extends LitElement {
   hide(): void {
     this.visible = false;
   }
+}
+
+@customElement('custom-popup')
+export class CustomPopup extends LitElement {
+  static styles = css`
+    :host {
+      display: inline-block;
+      color-scheme: light dark;
+      font-family: inherit;
+    }
+    
+    .container {
+      position: fixed;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      background-color: inherit;
+      display: none;
+      z-index: 1000;
+      justify-content: center;
+      flex-direction: column;
+      min-width: inherit;
+      width: 100%;
+      max-width: min(300px, 100%);
+      overflow: hidden;
+      * {
+        padding: 0;
+        margin: 0;
+        border-radius: 4px;
+      }
+    }
+  
+    .popup-option {
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      user-select: none;
+      filter: contrast(200%) brightness(150%);
+    }
+    
+    .popup-option:hover { 
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .default-font {
+      font-family: sans-serif, Arial, Helvetica;
+      font-size: 1.2rem;
+    }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      border-radius: 4px;
+    }
+    
+
+    
+    @media (prefers-color-scheme: dark) {
+      .popup-option:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+  `;
+
+  @property({ type: Array })
+  private _options: PopupOption[] = [];
+
+  @state()
+  private isVisible: boolean = false;
+
+  @state()
+  private posX: number = 0;
+
+  @state()
+  private posY: number = 0;
+
+  private lastFocusedElement: HTMLElement | null = null;
+  private handleClickOutsideBound: (event: MouseEvent) => void;
+
+  constructor() {
+    super();
+    this.handleClickOutsideBound = this.handleClickOutside.bind(this);
+  }
+
+  // Getter and setter for options
+  get options(): PopupOption[] {
+    return this._options;
+  }
+
+  set options(newOptions: PopupOption[]) {
+    this._options = [...newOptions];
+    this.requestUpdate();
+  }
+
+  // Add a single option
+  addOption(html: string, callback: (event: Event) => void): number {
+    const wrappedCallback = (event: Event) => {
+      callback(event);
+      this.hide();
+    };
+    
+    this._options.push({
+      html,
+      callback: wrappedCallback
+    });
+    
+    this.requestUpdate();
+    return this._options.length - 1;
+  }
+
+  // Set multiple options at once
+  setOptions(options: { html: string; callback: (event: Event) => void }[]): void {
+    this._options = options.map(option => ({
+      html: option.html,
+      callback: (event: Event) => {
+        option.callback(event);
+        this.hide();
+      }
+    }));
+    
+    this.requestUpdate();
+  }
+
+  // Clear all options
+  clearOptions(): void {
+    this._options = [];
+    this.requestUpdate();
+  }
+
+  // Remove a specific option by index
+  removeOption(index: number): boolean {
+    if (index >= 0 && index < this._options.length) {
+      this._options.splice(index, 1);
+      this.requestUpdate();
+      return true;
+    }
+    return false;
+  }
+
+  // Show the popup at specific coordinates
+  show({x, y}: {x?: number, y?: number}): void {
+    this.isVisible = true;
+    
+    if (x !== undefined && y !== undefined) {
+      this.moveTo(x, y);
+    }
+    
+    this.requestUpdate();
+    
+    // Add click outside listener after render
+    setTimeout(() => {
+      document.addEventListener('click', this.handleClickOutsideBound);
+    }, 0);
+  }
+
+  // Hide the popup
+  hide(): void {
+    this.isVisible = false;
+    this.requestUpdate();
+    document.removeEventListener('click', this.handleClickOutsideBound);
+  }
+
+  // Move popup to specific coordinates
+  moveTo(x: number, y: number): void {
+    const container = this.shadowRoot?.querySelector('.container') as HTMLElement;
+    if (!container) return;
+    
+    const rect = container.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (x + rect.width > viewportWidth) {
+      x = viewportWidth - rect.width - 10;
+    }
+    
+    if (y + rect.height > viewportHeight) {
+      y = viewportHeight - rect.height - 10;
+    }
+    
+    this.posX = Math.max(0, x);
+    this.posY = Math.max(0, y);
+    this.requestUpdate();
+  }
+
+  // Show popup at a specific element
+  showAtElement(element: HTMLElement): void {
+    const rect = element.getBoundingClientRect();
+    const positions = {
+      x: rect.left, 
+      y: rect.bottom
+    };
+    this.show(positions);
+    this.lastFocusedElement = element;
+  }
+
+  // Handle click outside the popup
+  handleClickOutside(event: MouseEvent): void {
+    const path = event.composedPath();
+    const container = this.shadowRoot?.querySelector('.container');
+    
+    if (
+      container && 
+      !path.includes(container) && 
+      (!this.lastFocusedElement || !path.includes(this.lastFocusedElement))
+    ) {
+      this.hide();
+    }
+  }
+
+  // Cleanup event listeners when element is removed
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this.handleClickOutsideBound);
+  }
+
+  // Update component when properties change
+  updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    
+    const container = this.shadowRoot?.querySelector('.container') as HTMLElement;
+    if (container) {
+      container.style.display = this.isVisible ? 'flex' : 'none';
+      container.style.left = `${this.posX}px`;
+      container.style.top = `${this.posY}px`;
+    }
+  }
+
+  render() {
+      return html`
+        <div class="container">
+          ${this._options.map((option) => html`
+            <div class="popup-option" @click=${option.callback}>
+              ${unsafeHTML(option.html)}
+            </div>
+          `)}
+        </div>
+      `;
+    }
 }
 
 customElements.define('dialog-content', DialogContent);

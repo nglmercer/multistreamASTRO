@@ -1,12 +1,12 @@
 // /src/pages/actions/actions.js (o tu ruta)
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/components/actionsjs/idb.js'; // Ajusta ruta
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '../actionsjs/idb.js'; // Ajusta ruta
 import {
     openDynamicModal,
     initializeTables,
     updateTableData,
     setupModalEventListeners,
     setupTableActionListeners
-} from '/src/components/actionsjs/crudUIHelpers.js'; // Ajusta ruta
+} from '../actionsjs/crudUIHelpers.js'; // Ajusta ruta
 const formConfigurations = {
     actions: {
         title: "Configurar Acción",
