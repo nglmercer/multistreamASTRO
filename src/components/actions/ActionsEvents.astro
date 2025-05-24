@@ -5,7 +5,6 @@
 <script src="/src/components/actionsjs/modal.js"></script>
 <script src="/src/components/actionsjs/table.js"></script>
 <script src="/src/components/actionsjs/init.js"></script>
-
 <div class="container">
   <div class="button-group">
     <button data-form-type="comment" class="primary">Evento Comentario</button>
@@ -24,7 +23,32 @@
 
   <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
   <grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
-
+  <http-request-config id="configForm"></http-request-config>
+  <script>
+    import { HttpRequestConfig } from "src/litcomponents/fetchcomponent";
+    import { HttpRequestExecutor } from "src/fetch/executor";
+    const configForm = document.getElementById('configForm') as HttpRequestConfig
+    configForm.addEventListener('config-change', (e) => {
+      const { detail } = e as CustomEvent;
+      console.log('Config change:', detail);
+      const config = configForm.getConfig();
+      const validation = configForm.validate();
+      console.log('Config validation:', {
+        isValid: validation,
+        config,
+      });
+      localStorage.setItem('httpRequestConfig', JSON.stringify(config));
+    });
+    document.addEventListener('DOMContentLoaded',async () => {
+      if (localStorage.getItem('httpRequestConfig')) {
+        const config = JSON.parse((localStorage.getItem('httpRequestConfig')||'{}'));
+        configForm.setConfig(config);
+        const executor = new HttpRequestExecutor();
+        const result = await executor.execute(config);
+        console.log('Loading config:', config,result);
+      }
+    });
+  </script>
 </div>
 <script src="/src/components/actionsjs/actions.js"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
