@@ -1,0 +1,763 @@
+---
+// ActionForm.astro - Refactorizado
+
+// Interfaces TypeScript mejoradas
+interface ShowIfCondition {
+  field: string;
+  value: boolean | string | number | (string | number | boolean)[];
+  negate?: boolean;
+}
+
+interface FieldConfig {
+  label?: string;
+  type?: 'text' | 'textarea' | 'switch' | 'checkbox' | 'boolean' | 'number' | 'range' | 'select' | 'radio' | 'email' | 'password' | 'tel' | 'url' | 'date' | 'time' | 'color' | 'file';
+  required?: boolean;
+  disabled?: boolean;
+  readonly?: boolean;
+  hidden?: boolean;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  pattern?: string;
+  multiple?: boolean;
+  options?: Array<{ value: string; label: string }>;
+  showIf?: ShowIfCondition;
+}
+
+interface FormConfig {
+  [key: string]: FieldConfig;
+}
+
+interface FormData {
+  [key: string]: string | number | boolean | string[];
+}
+
+export interface Props {
+  initialData?: FormData;
+  darkmode?: boolean;
+  id?: string;
+  formConfig?: FormConfig;
+  title?: string;
+  description?: string;
+}
+
+// Configuración por defecto del formulario
+const defaultFormConfig: FormConfig = {
+  name: { 
+    label: 'Nombre', 
+    type: 'text', 
+    required: true,
+    placeholder: 'Ingresa el nombre de la acción'
+  },
+  minecraft_check: { 
+    label: 'Minecraft', 
+    type: 'switch' 
+  },
+  minecraft_command: { 
+    label: 'Comando Minecraft', 
+    type: 'textarea', 
+    placeholder: '/say hola mundo',
+    showIf: { field: 'minecraft_check', value: true } 
+  },
+  tts_check: { 
+    label: 'Texto-a-Voz', 
+    type: 'switch' 
+  },
+  tts_text: { 
+    label: 'Texto a leer', 
+    type: 'text', 
+    placeholder: 'Texto que será leído en voz alta',
+    showIf: { field: 'tts_check', value: true } 
+  },
+  overlay_check: { 
+    label: 'Superposición', 
+    type: 'switch' 
+  },
+  overlay_src: { 
+    label: 'Fuente(s) (IDs/URLs)', 
+    type: 'text', 
+    placeholder: 'https://example.com/image.png',
+    showIf: { field: 'overlay_check', value: true } 
+  },
+  overlay_content: { 
+    label: 'Texto Contenido', 
+    type: 'text', 
+    placeholder: 'Texto a mostrar en la superposición',
+    showIf: { field: 'overlay_check', value: true } 
+  },
+  overlay_duration: { 
+    label: 'Duración (segundos)', 
+    type: 'number', 
+    min: 1, 
+    step: 1,
+    showIf: { field: 'overlay_check', value: true } 
+  },
+  overlay_volume: { 
+    label: 'Volumen (%)', 
+    type: 'range', 
+    min: 0, 
+    max: 100, 
+    step: 1,
+    showIf: { field: 'overlay_check', value: true } 
+  },
+  keypress_check: { 
+    label: 'Pulsación de Tecla', 
+    type: 'switch' 
+  },
+  keypress_key: { 
+    label: 'Tecla(s)', 
+    type: 'text', 
+    placeholder: 'space, ctrl+c, alt+tab',
+    showIf: { field: 'keypress_check', value: true } 
+  },
+  id: { 
+    label: 'ID', 
+    type: 'text', 
+    readonly: true 
+  },
+  type: { 
+    hidden: true 
+  }
+};
+
+// Datos iniciales por defecto
+const defaultData: FormData = {
+  id: '',
+  name: 'Nueva Acción',
+  type: 'Action',
+  minecraft_check: false,
+  minecraft_command: '/say hola',
+  tts_check: false,
+  tts_text: 'Texto de ejemplo',
+  overlay_check: false,
+  overlay_src: 'https://example.com/image.png',
+  overlay_content: 'Contenido de ejemplo',
+  overlay_duration: 60,
+  overlay_volume: 50,
+  keypress_check: false,
+  keypress_key: 'space'
+};
+
+// Destructuring de props con valores por defecto
+const { 
+  initialData = {}, 
+  darkmode = true, 
+  id = 'actionForm',
+  formConfig = defaultFormConfig,
+  title = 'Configurar Acción',
+  description
+} = Astro.props;
+
+// Combinar datos iniciales con los datos por defecto
+const formData: FormData = { ...defaultData, ...initialData };
+
+// Filtrar campos visibles para el render
+const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config.hidden);
+---
+
+<div class={`action-form ${darkmode ? 'dark' : 'light'}`} data-form-id={id}>
+  <form id={id} class="form-container" novalidate>
+    <header class="form-header">
+      <h3 class="form-title">{title}</h3>
+      {description && <p class="form-description">{description}</p>}
+    </header>
+    
+    <div class="fields-container">
+      {visibleFields.map(([fieldKey, fieldConfig]) => {
+        const fieldId = `${id}-field-${fieldKey}`;
+        const fieldValue = formData[fieldKey];
+        const showIfCondition = fieldConfig.showIf ? JSON.stringify(fieldConfig.showIf) : null;
+        
+        return (
+          <div 
+            class="field-wrapper" 
+            data-field={fieldKey}
+            data-show-if={showIfCondition}
+            data-field-type={fieldConfig.type || 'text'}
+          >
+            <label for={fieldId} class="field-label">
+              {fieldConfig.label || fieldKey}
+              {fieldConfig.required && <span class="required-indicator" aria-label="Campo requerido">*</span>}
+            </label>
+            
+            <c-input
+              id={fieldId}
+              name={fieldKey}
+              type={fieldConfig.type || 'text'}
+              value={fieldValue?.toString() || ''}
+              placeholder={fieldConfig.placeholder}
+              required={fieldConfig.required}
+              disabled={fieldConfig.disabled}
+              readonly={fieldConfig.readonly}
+              min={fieldConfig.min}
+              max={fieldConfig.max}
+              step={fieldConfig.step}
+              pattern={fieldConfig.pattern}
+              multiple={fieldConfig.multiple}
+              options={fieldConfig.options ? JSON.stringify(fieldConfig.options) : undefined}
+              darkmode={darkmode}
+              data-field-name={fieldKey}
+            ></c-input>
+            
+            <div class="field-error" role="alert"></div>
+          </div>
+        );
+      })}
+    </div>
+    
+    <div class="custom-fields">
+      <slot name="fields"></slot>
+    </div>
+    
+    <footer class="form-actions">
+      <slot name="actions">
+        <button type="button" class="btn btn-secondary" data-action="reset">
+          Reiniciar
+        </button>
+        <button type="submit" class="btn btn-primary" data-action="submit">
+          Guardar
+        </button>
+      </slot>
+    </footer>
+  </form>
+</div>
+
+<script define:vars={{ initialData, id, formConfig }}>
+  class ActionFormManager {
+    constructor(formId) {
+      this.formId = formId;
+      this.form = document.getElementById(formId);
+      this.formData = new Map();
+      this.fieldConfigs = new Map();
+      this.validationErrors = new Map();
+      
+      if (!this.form) {
+        console.error(`Form with id "${formId}" not found`);
+        return;
+      }
+      
+      this.initialize();
+    }
+
+    initialize() {
+      this.parseFieldConfigs();
+      this.initializeFormData();
+      this.bindEvents();
+      this.evaluateAllFieldVisibility();
+      this.validateForm();
+    }
+
+    parseFieldConfigs() {
+      Object.entries(formConfig).forEach(([key, config]) => {
+        this.fieldConfigs.set(key, config);
+      });
+    }
+
+    initializeFormData() {
+      const inputs = this.form.querySelectorAll('c-input[data-field-name]');
+      inputs.forEach(input => {
+        const fieldName = input.getAttribute('data-field-name');
+        const value = input.getAttribute('value') || '';
+        const parsedValue = this.parseValueByType(value, input.getAttribute('type'));
+        this.formData.set(fieldName, parsedValue);
+      });
+    }
+
+    bindEvents() {
+      // Event delegation para cambios en los inputs
+      this.form.addEventListener('change', this.handleFieldChange.bind(this));
+      
+      // Eventos de botones
+      this.form.addEventListener('click', this.handleButtonClick.bind(this));
+      
+      // Evento de submit
+      this.form.addEventListener('submit', this.handleFormSubmit.bind(this));
+      
+      // Escuchar eventos personalizados de c-input
+      this.form.addEventListener('change', (event) => {
+        if (event.detail && event.detail.name) {
+          this.updateFieldValue(event.detail.name, event.detail.value);
+        }
+      });
+    }
+
+    handleFieldChange(event) {
+      const input = event.target.closest('c-input');
+      if (!input) return;
+      
+      const fieldName = input.getAttribute('data-field-name');
+      if (!fieldName) return;
+      
+      const newValue = input.getVal ? input.getVal() : input.getAttribute('value');
+      this.updateFieldValue(fieldName, newValue);
+    }
+
+    updateFieldValue(fieldName, value) {
+      const oldValue = this.formData.get(fieldName);
+      this.formData.set(fieldName, value);
+      
+      // Re-evaluar visibilidad si el campo cambió
+      if (oldValue !== value) {
+        this.evaluateAllFieldVisibility();
+        this.validateField(fieldName);
+        this.emitFormDataChange(fieldName, value, oldValue);
+      }
+    }
+
+    evaluateAllFieldVisibility() {
+      const fieldWrappers = this.form.querySelectorAll('.field-wrapper[data-show-if]');
+      
+      fieldWrappers.forEach(wrapper => {
+        const showIfData = wrapper.getAttribute('data-show-if');
+        if (!showIfData) return;
+        
+        try {
+          const condition = JSON.parse(showIfData);
+          const shouldShow = this.evaluateShowCondition(condition);
+          
+          this.toggleFieldVisibility(wrapper, shouldShow);
+        } catch (error) {
+          console.error('Error evaluating show condition:', error, showIfData);
+        }
+      });
+    }
+
+    evaluateShowCondition(condition) {
+      if (!condition?.field) return true;
+      
+      const triggerValue = this.formData.get(condition.field);
+      const expectedValue = condition.value;
+      const negate = condition.negate === true;
+      
+      let matches;
+      if (Array.isArray(expectedValue)) {
+        matches = expectedValue.some(val => this.compareValues(triggerValue, val));
+      } else {
+        matches = this.compareValues(triggerValue, expectedValue);
+      }
+      
+      return negate ? !matches : matches;
+    }
+
+    compareValues(actual, expected) {
+      // Comparación para booleanos
+      if (typeof expected === 'boolean') {
+        const actualBool = this.coerceToBoolean(actual);
+        return actualBool === expected;
+      }
+      
+      // Comparación para null/undefined
+      if (actual == null) {
+        return expected == null || expected === '';
+      }
+      
+      // Comparación de strings
+      return String(actual) === String(expected);
+    }
+
+    coerceToBoolean(value) {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'string') {
+        return !['false', '0', '', 'null', 'undefined'].includes(value.toLowerCase());
+      }
+      return Boolean(value);
+    }
+
+    toggleFieldVisibility(wrapper, isVisible) {
+      wrapper.classList.toggle('hidden', !isVisible);
+      
+      // Limpiar errores de validación si se oculta
+      if (!isVisible) {
+        const fieldName = wrapper.getAttribute('data-field');
+        this.clearFieldError(fieldName);
+      }
+    }
+
+    parseValueByType(value, type) {
+      if (!value && value !== '0' && value !== 0) {
+        return type === 'number' ? null : '';
+      }
+      
+      switch (type) {
+        case 'switch':
+        case 'checkbox':
+        case 'boolean':
+          return this.coerceToBoolean(value);
+        case 'number':
+        case 'range':
+          const num = Number(value);
+          return isNaN(num) ? null : num;
+        default:
+          return String(value);
+      }
+    }
+
+    validateField(fieldName) {
+      const input = this.form.querySelector(`c-input[data-field-name="${fieldName}"]`);
+      const wrapper = this.form.querySelector(`.field-wrapper[data-field="${fieldName}"]`);
+      
+      if (!input || !wrapper || wrapper.classList.contains('hidden')) {
+        this.validationErrors.delete(fieldName);
+        return true;
+      }
+      
+      const isValid = input.isValid ? input.isValid() : true;
+      
+      if (isValid) {
+        this.clearFieldError(fieldName);
+      } else {
+        this.showFieldError(fieldName, 'Este campo no es válido');
+      }
+      
+      return isValid;
+    }
+
+    validateForm() {
+      let isFormValid = true;
+      const visibleFields = this.getVisibleFields();
+      
+      visibleFields.forEach(fieldName => {
+        const fieldValid = this.validateField(fieldName);
+        if (!fieldValid) isFormValid = false;
+      });
+      
+      return isFormValid;
+    }
+
+    getVisibleFields() {
+      const visibleWrappers = this.form.querySelectorAll('.field-wrapper:not(.hidden)');
+      return Array.from(visibleWrappers).map(wrapper => wrapper.getAttribute('data-field'));
+    }
+
+    showFieldError(fieldName, message) {
+      const wrapper = this.form.querySelector(`.field-wrapper[data-field="${fieldName}"]`);
+      if (!wrapper) return;
+      
+      const errorContainer = wrapper.querySelector('.field-error');
+      if (errorContainer) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = 'block';
+      }
+      
+      wrapper.classList.add('invalid');
+      this.validationErrors.set(fieldName, message);
+    }
+
+    clearFieldError(fieldName) {
+      const wrapper = this.form.querySelector(`.field-wrapper[data-field="${fieldName}"]`);
+      if (!wrapper) return;
+      
+      const errorContainer = wrapper.querySelector('.field-error');
+      if (errorContainer) {
+        errorContainer.textContent = '';
+        errorContainer.style.display = 'none';
+      }
+      
+      wrapper.classList.remove('invalid');
+      this.validationErrors.delete(fieldName);
+    }
+
+    handleButtonClick(event) {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      
+      const action = button.getAttribute('data-action');
+      
+      switch (action) {
+        case 'reset':
+          event.preventDefault();
+          this.resetForm();
+          break;
+        case 'submit':
+          // Let the form submit event handle this
+          break;
+      }
+    }
+
+    handleFormSubmit(event) {
+      event.preventDefault();
+      
+      if (this.validateForm()) {
+        this.emitFormSubmit();
+      } else {
+        this.focusFirstInvalidField();
+      }
+    }
+
+    resetForm() {
+      const inputs = this.form.querySelectorAll('c-input');
+      inputs.forEach(input => {
+        if (input.reset) {
+          input.reset();
+        }
+      });
+      
+      this.initializeFormData();
+      this.evaluateAllFieldVisibility();
+      this.clearAllErrors();
+      this.emitFormReset();
+    }
+
+    clearAllErrors() {
+      this.validationErrors.clear();
+      const errorContainers = this.form.querySelectorAll('.field-error');
+      errorContainers.forEach(container => {
+        container.textContent = '';
+        container.style.display = 'none';
+      });
+      
+      const invalidWrappers = this.form.querySelectorAll('.field-wrapper.invalid');
+      invalidWrappers.forEach(wrapper => wrapper.classList.remove('invalid'));
+    }
+
+    focusFirstInvalidField() {
+      const firstInvalidWrapper = this.form.querySelector('.field-wrapper.invalid:not(.hidden)');
+      if (firstInvalidWrapper) {
+        const input = firstInvalidWrapper.querySelector('c-input');
+        if (input && input.focus) {
+          input.focus();
+        }
+      }
+    }
+
+    // Public API methods
+    getFormData() {
+      return Object.fromEntries(this.formData.entries());
+    }
+
+    setFormData(data) {
+      Object.entries(data).forEach(([key, value]) => {
+        const input = this.form.querySelector(`c-input[data-field-name="${key}"]`);
+        if (input && input.setVal) {
+          input.setVal(value);
+          this.formData.set(key, value);
+        }
+      });
+      
+      this.evaluateAllFieldVisibility();
+      this.validateForm();
+    }
+
+    getFieldValue(fieldName) {
+      return this.formData.get(fieldName);
+    }
+
+    setFieldValue(fieldName, value) {
+      const input = this.form.querySelector(`c-input[data-field-name="${fieldName}"]`);
+      if (input && input.setVal) {
+        input.setVal(value);
+        this.updateFieldValue(fieldName, value);
+      }
+    }
+
+    // Event emitters
+    emitFormDataChange(fieldName, newValue, oldValue) {
+      this.form.dispatchEvent(new CustomEvent('form-data-change', {
+        detail: { fieldName, newValue, oldValue, formData: this.getFormData() },
+        bubbles: true
+      }));
+    }
+
+    emitFormSubmit() {
+      this.form.dispatchEvent(new CustomEvent('form-submit', {
+        detail: { formData: this.getFormData(), formId: this.formId },
+        bubbles: true
+      }));
+    }
+
+    emitFormReset() {
+      this.form.dispatchEvent(new CustomEvent('form-reset', {
+        detail: { formId: this.formId },
+        bubbles: true
+      }));
+    }
+  }
+
+  // Initialize form manager
+  const formManager = new ActionFormManager(id);
+  
+  // Expose to global scope for external access
+  window[`formManager_${id}`] = formManager;
+</script>
+
+<style>
+  .action-form {
+    --form-bg: #f9f9f9;
+    --form-border: #eee;
+    --text-color: #333;
+    --border-color: #ddd;
+    --error-color: #dc3545;
+    --success-color: #28a745;
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    
+    display: block;
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--form-bg);
+    border: 1px solid var(--form-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    max-width: 800px;
+    color: var(--text-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .action-form.dark {
+    --form-bg: #1a1a1a;
+    --form-border: #333;
+    --text-color: #e0e0e0;
+    --border-color: #444;
+  }
+
+  .form-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .form-title {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .form-description {
+    margin: 0;
+    color: var(--text-color);
+    opacity: 0.8;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .fields-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: opacity 0.2s ease;
+  }
+
+  .field-wrapper.hidden {
+    display: none;
+  }
+
+  .field-wrapper.invalid {
+    border-left: 3px solid var(--error-color);
+    padding-left: 12px;
+    margin-left: -15px;
+  }
+
+  .field-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .required-indicator {
+    color: var(--error-color);
+    font-weight: bold;
+  }
+
+  .field-error {
+    display: none;
+    font-size: 0.8rem;
+    color: var(--error-color);
+    margin-top: 4px;
+  }
+
+  .custom-fields {
+    margin-bottom: 24px;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+  }
+
+  .btn:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--secondary-color);
+    color: white;
+  }
+
+  /* Estilos específicos para tipos de campo */
+  .field-wrapper[data-field-type="range"] {
+    grid-column: span 2;
+  }
+
+  .field-wrapper[data-field-type="textarea"] {
+    grid-column: span 2;
+  }
+
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .action-form {
+      padding: 16px;
+    }
+    
+    .fields-container {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    
+    .field-wrapper[data-field-type="range"],
+    .field-wrapper[data-field-type="textarea"] {
+      grid-column: span 1;
+    }
+    
+    .form-actions {
+      flex-direction: column-reverse;
+    }
+    
+    .btn {
+      width: 100%;
+    }
+  }
+</style>

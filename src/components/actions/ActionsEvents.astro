@@ -1,5 +1,5 @@
 ---
-
+import ActionsFormCsomponent from "./ActionsForm.astro";
 ---
 
 <script src="/src/components/actionsjs/modal.js"></script>
@@ -18,12 +18,24 @@
     <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode> </dyn-obj-disp>
   </dlg-cont>
   <dlg-cont id="Action-modal">
-    <dyn-obj-disp id="Action-editor" mode="edit" darkmode> </dyn-obj-disp>
+    <obj-edit-frm id="Action-editor" mode="edit" darkmode> </obj-edit-frm>
   </dlg-cont>
 
   <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
   <grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
-  <http-request-config id="configForm"></http-request-config>
+  <ActionsFormCsomponent id="actionForm">
+    <div slot="fields">
+      <http-request-config id="configForm"></http-request-config>
+    </div>
+    <div slot="actions">
+      <button type="button" class="btn btn-secondary" data-action="reset">
+        Reiniciar
+      </button>
+      <button type="submit" class="btn btn-primary" data-action="submit">
+        Guardar
+      </button>
+    </div>
+  </ActionsFormCsomponent>
   <script>
     import { HttpRequestConfig } from "src/litcomponents/fetchcomponent";
     import { HttpRequestExecutor } from "src/fetch/executor";
@@ -39,6 +51,7 @@
       });
       localStorage.setItem('httpRequestConfig', JSON.stringify(config));
     });
+    
     document.addEventListener('DOMContentLoaded',async () => {
       if (localStorage.getItem('httpRequestConfig')) {
         const config = JSON.parse((localStorage.getItem('httpRequestConfig')||'{}'));
@@ -47,7 +60,24 @@
         const result = await executor.execute(config);
         console.log('Loading config:', config,result);
       }
+      //configForm.getConfig()
+      getFormData();
+
     });
+    function getFormData() {
+      const actionFormElements = document.querySelector('#actionForm');
+      if (!actionFormElements) return;
+      if (actionFormElements.getElementsByTagName('c-input').length === 0) return;
+      const allFields = actionFormElements.getElementsByTagName('c-input');
+      const Data = {} as Record<string, any>;
+      Object.entries(allFields).forEach(([key, field]) => {
+        const fieldName = field.getAttribute('data-field-name') as string;
+        if (!fieldName) return;
+        const value = field.getAttribute('value') || '';
+        Data[fieldName] = value;
+      });
+      console.log('Action form elements:', actionFormElements, allFields, Data);
+    }
   </script>
 </div>
 <script src="/src/components/actionsjs/actions.js"></script>
