@@ -392,6 +392,7 @@ export class HttpRequestConfig extends LitElement {
   `;
 
   @property({ type: Object }) 
+  value: RequestConfig = this.getDefaultConfig();
   config: RequestConfig = this.getDefaultConfig();
 
   @property({ type: String })
@@ -444,11 +445,15 @@ export class HttpRequestConfig extends LitElement {
     }
   }
 
-  // Métodos públicos existentes...
+  getVal(): RequestConfig {
+    return this.getConfig();
+  }
   getConfig(): RequestConfig {
     return { ...this.config };
   }
-
+  setVal(config: RequestConfig)  {
+    this.setConfig(config);
+  }
   setConfig(config: RequestConfig) {
     this.config = { ...config };
     this.requestUpdate();

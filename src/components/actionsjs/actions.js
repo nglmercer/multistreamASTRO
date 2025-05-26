@@ -53,12 +53,10 @@ const pageConfig = {
     baseCompId: 'actionsTable'
 };
 
-const modalEl = document.getElementById(pageConfig.modalId);
 const editorEl = document.getElementById(pageConfig.editorId);
 const managerEl = document.getElementById(pageConfig.managerId);
-const addBtn = document.getElementById(pageConfig.addButtonId);
 
-if (!modalEl || !editorEl || !managerEl) {
+if (!editorEl || !managerEl) {
     console.error("Error: Elementos UI necesarios no encontrados.");
     // Podrías detener aquí o mostrar un error visual
 }
@@ -78,9 +76,6 @@ const tableConfigs = {
     }
 };
 console.log("tableConfigs:", tableConfigs);
-function openModal(type, data = null) {
-    openDynamicModal(modalEl, editorEl, type, formConfigurations, data);
-}
 
 function refreshTable(compId = pageConfig.baseCompId) {
     const config = tableConfigs[compId];
@@ -91,33 +86,14 @@ function refreshTable(compId = pageConfig.baseCompId) {
     }
 }
 
-if (addBtn) {
-    addBtn.addEventListener('click', () => {
-        openModal(pageConfig.formType);
-    });
-}
 
-setupModalEventListeners(
-    modalEl,
-    editorEl,
-    dbManagerMap,
-    (type, changedData) => {
-        console.log(`Operación modal completada para ${type}:`, changedData);
-        // Encuentra el compId asociado al formType para refrescar la tabla correcta
-        const compIdToRefresh = Object.keys(tableConfigs).find(id => tableConfigs[id].formConfig === formConfigurations[type]);
-        if (compIdToRefresh) {
-            refreshTable(compIdToRefresh);
-        } else {
-            console.warn(`No se encontró tabla asociada al tipo ${type} para refrescar.`);
-            // Intenta refrescar la tabla por defecto si solo hay una
-             if(Object.keys(tableConfigs).length === 1) refreshTable();
-        }
-    }
-);
+
 
 setupTableActionListeners(
     managerEl,
-    openModal,
+    (data) => {
+        console.log("Datos recibidos para agregar/editar:", data);
+    },
     dbManagerMap,
     tableConfigs,
     (compId, deletedItem) => {

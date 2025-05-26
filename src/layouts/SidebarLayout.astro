@@ -99,7 +99,9 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
   </body>
 </html>
 
-<style>
+<style is:global>
   @import '../assets/global.css';
-
+  .hidden {
+    display: none !important;
+  }
 </style>
