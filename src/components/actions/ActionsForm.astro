@@ -581,7 +581,7 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
   window[`formManager_${id}`] = formManager;
 </script>
 
-<style>
+<style is:global>
   .action-form {
     --form-bg: #f9f9f9;
     --form-border: #eee;

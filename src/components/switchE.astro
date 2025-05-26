@@ -1,0 +1,54 @@
+---
+interface Props {
+  id: string;
+  label: string;
+  checked?: boolean;
+}
+const { id, label, checked = false } = Astro.props;
+const switchId = `${id}_check`;
+---
+
+<label for={id} class="field-label">
+  {label || id}
+</label>
+
+<c-input
+  type="checkbox"
+  id={switchId}
+  name={switchId}
+  value={checked ? "on" : "off"}
+  checked={checked ? "checked" : ""}
+  class="switch"
+>
+</c-input>
+
+<div
+  class={`field-wrapper ${checked ? 'hidden' : ''}`}
+  data-field={id}
+  data-show-if={id}
+  data-field-type={label || "text"}
+>
+  <slot />
+</div>
+<script
+  define:vars={{
+    id,
+    label,
+    checked,
+    switchId
+  }}
+>
+  // This script can be used to handle any additional logic related to the switch component.
+  // For example, you could add event listeners or manipulate the DOM based on the switch state.
+  const switchElement = document.getElementById(switchId);
+  const elementWrapper = document.querySelector(`[data-field="${id}"]`);
+  if (switchElement) {
+    switchElement.addEventListener("change", (event) => {
+      const IsChecked = (event.detail?.value || event.target.checked);
+      console.log(`Switch ${id}`,IsChecked);
+      if (elementWrapper){
+        elementWrapper.classList.toggle("hidden", !IsChecked);
+      }
+    });
+  }
+</script>

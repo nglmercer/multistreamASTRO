@@ -1,5 +1,6 @@
 ---
 import ActionsFormCsomponent from "./ActionsForm.astro";
+import SwitchE from "@components/switchE.astro";
 ---
 
 <script src="/src/components/actionsjs/modal.js"></script>
@@ -25,9 +26,14 @@ import ActionsFormCsomponent from "./ActionsForm.astro";
   <grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
   <ActionsFormCsomponent id="actionForm">
     <div slot="fields">
+      <SwitchE
+      id="fetchForm"
+      label="Habilitar Configuración HTTP"
+      checked={true}>
       <http-request-config id="configForm"></http-request-config>
+      </SwitchE>
     </div>
-    <div slot="actions">
+    <div slot="actions" class="ActionForm-buttons">
       <button type="button" class="btn btn-secondary" data-action="reset">
         Reiniciar
       </button>
@@ -62,8 +68,24 @@ import ActionsFormCsomponent from "./ActionsForm.astro";
       }
       //configForm.getConfig()
       getFormData();
-
+    listenersForm();
     });
+    function listenersForm(){
+      const actionsContainer = document.querySelector<HTMLElement>('.form-actions');
+      if (!actionsContainer) return;
+          actionsContainer.addEventListener('click', function(event) {
+            if (!(event.target && event.target instanceof Element)) return;
+                  const clickedButton = event.target.closest('button[data-action]')
+                  if (!clickedButton) return;
+                  const action = clickedButton.getAttribute('data-action');
+                  if (action === 'reset') {
+                  } else if (action === 'submit') {
+                    console.log('Submitting form...', getFormData());
+                  }
+                  event.preventDefault();
+                  event.stopPropagation();
+          });
+    }
     function getFormData() {
       const actionFormElements = document.querySelector('#actionForm');
       if (!actionFormElements) return;
@@ -76,7 +98,9 @@ import ActionsFormCsomponent from "./ActionsForm.astro";
         const value = field.getAttribute('value') || '';
         Data[fieldName] = value;
       });
-      console.log('Action form elements:', actionFormElements, allFields, Data);
+      return {
+        ...Data,
+      }
     }
   </script>
 </div>
