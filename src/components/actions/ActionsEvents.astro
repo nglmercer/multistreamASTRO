@@ -7,6 +7,7 @@ import SwitchE from "@components/switchE.astro";
 <script src="/src/components/actionsjs/table.js"></script>
 <script src="/src/components/actionsjs/init.js"></script>
 <div class="container">
+
   <div class="button-group">
     <button data-form-type="comment" class="primary">Evento Comentario</button>
     <button data-form-type="bits" class="primary">Evento Bits</button>
@@ -24,45 +25,31 @@ import SwitchE from "@components/switchE.astro";
 
   <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
   <grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
-  <ActionsFormCsomponent id="actionForm">
-    <div slot="fields">
-      <SwitchE
-      id="fetchForm"
-      label="Habilitar Configuración HTTP"
-      checked={true}>
-      <http-request-config id="fetchForm_config"></http-request-config>
-      </SwitchE>
-    </div>
-    <div slot="actions" class="ActionForm-buttons">
-      <button type="button" class="btn btn-secondary" data-action="reset">
-        Reiniciar
-      </button>
-      <button type="submit" class="btn btn-primary" data-action="submit">
-        Guardar
-      </button>
-    </div>
-  </ActionsFormCsomponent>
+    <dialog-container class="ActionModal" id="ActionModal">    
+      <ActionsFormCsomponent id="actionForm">
+        <div slot="fields">
+          <SwitchE
+          id="fetchForm"
+          label="Habilitar Configuración HTTP"
+          checked={true}>
+          <http-request-config id="fetchForm_config"></http-request-config>
+          </SwitchE>
+        </div>
+        <div slot="actions" class="ActionForm-buttons">
+          <button type="button" class="btn btn-secondary" data-action="reset">
+            Reiniciar
+          </button>
+          <button type="submit" class="btn btn-primary" data-action="submit">
+            Guardar
+          </button>
+        </div>
+      </ActionsFormCsomponent>
+  </dialog-container>
 </div>
 <script src="/src/components/actions/actions.js"></script>
 <script src="/src/components/actionsjs/actionstable.js"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>
-  button {
-    padding: 0.6em 1.2em;
-    cursor: pointer;
-    margin: 5px;
-    border-radius: 4px;
-    border: 1px solid #555;
-    background-color: #333;
-    color: white;
-  }
-  button.primary {
-    background-color: #007bff;
-    border-color: #007bff;
-  }
-  button:hover {
-    filter: brightness(1.2);
-  }
   #modal-container dyn-obj-disp {
     /* Estilo más general */
     min-width: 400px;

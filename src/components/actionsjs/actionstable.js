@@ -1,12 +1,11 @@
 // /src/pages/actions/actions.js (o tu ruta)
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '../actionsjs/idb.js'; // Ajusta ruta
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '../actionsjs/idb.js';
 import {
-    openDynamicModal,
     initializeTables,
     updateTableData,
-    setupModalEventListeners,
     setupTableActionListeners
-} from '../actionsjs/crudUIHelpers.js'; // Ajusta ruta
+} from '../actionsjs/crudUIHelpers.js';
+import { setFormData,openModal } from '@components/actions/actions.js';
 const formConfigurations = {
     actions: {
         title: "Configurar Acción",
@@ -41,7 +40,6 @@ const formConfigurations = {
             type: { hidden: true }
         })
     },
-
 };
 const pageConfig = {
     formType: 'actions',
@@ -55,27 +53,42 @@ const pageConfig = {
 
 const editorEl = document.getElementById(pageConfig.editorId);
 const managerEl = document.getElementById(pageConfig.managerId);
-
-if (!editorEl || !managerEl) {
-    console.error("Error: Elementos UI necesarios no encontrados.");
-    // Podrías detener aquí o mostrar un error visual
-}
-
 const actionEmitter = new Emitter();
 const actionDbManager = new IndexedDBManager(pageConfig.dbConfig, actionEmitter);
 
-const dbManagerMap = {
-    [pageConfig.formType]: actionDbManager
-};
-
-const tableConfigs = {
-    [pageConfig.baseCompId]: {
-        title: 'Acciones',
-        formConfig: formConfigurations[pageConfig.formType],
-        dbConfig: pageConfig.dbConfig
+function initTablelisteners(){
+    if (!editorEl || !managerEl) {
+        console.error("Error: Elementos UI necesarios no encontrados.");
+        // Podrías detener aquí o mostrar un error visual
     }
-};
-console.log("tableConfigs:", tableConfigs);
+    const dbManagerMap = {
+        [pageConfig.formType]: actionDbManager
+    };
+
+    const tableConfigs = {
+        [pageConfig.baseCompId]: {
+            title: 'Acciones',
+            formConfig: formConfigurations[pageConfig.formType],
+            dbConfig: pageConfig.dbConfig
+        }
+    };
+    console.log("tableConfigs:", tableConfigs);
+    setupTableActionListeners(managerEl,(a,data) => {
+        console.log("Datos recibidos para agregar/editar:", a,data);
+        openModal();
+        setFormData(data);
+    },
+    dbManagerMap,tableConfigs,(compId, deletedItem) => {
+            console.log(`Item eliminado desde tabla ${compId}:`, deletedItem);
+            refreshTable(compId); // Refresca la tabla específica que cambió
+        }
+    );
+    initializeTables(managerEl, tableConfigs, getAllDataFromDatabase, ["name", "id", "type"])
+    .then(() => console.log('Gestor de acciones inicializado.'))
+    .catch(error => console.error('Error inicializando gestor de acciones:', error));
+}
+
+
 
 function refreshTable(compId = pageConfig.baseCompId) {
     const config = tableConfigs[compId];
@@ -89,21 +102,8 @@ function refreshTable(compId = pageConfig.baseCompId) {
 
 
 
-setupTableActionListeners(
-    managerEl,
-    (data) => {
-        console.log("Datos recibidos para agregar/editar:", data);
-    },
-    dbManagerMap,
-    tableConfigs,
-    (compId, deletedItem) => {
-        console.log(`Item eliminado desde tabla ${compId}:`, deletedItem);
-        refreshTable(compId); // Refresca la tabla específica que cambió
-    }
-);
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    initializeTables(managerEl, tableConfigs, getAllDataFromDatabase, ["name", "id", "type"])
-    .then(() => console.log('Gestor de acciones inicializado.'))
-    .catch(error => console.error('Error inicializando gestor de acciones:', error));
+    initTablelisteners();
     });

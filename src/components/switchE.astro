@@ -23,7 +23,7 @@ const switchId = `${id}_check`;
 </c-input>
 
 <div
-  class={`field-wrapper ${checked ? 'hidden' : ''}`}
+  class={`field-wrapper ${checked ? '' : 'hidden'}`}
   data-field={id}
   data-show-if={id}
   data-field-type={label || "text"}
@@ -40,15 +40,19 @@ const switchId = `${id}_check`;
 >
   // This script can be used to handle any additional logic related to the switch component.
   // For example, you could add event listeners or manipulate the DOM based on the switch state.
+
+  document.addEventListener("DOMContentLoaded", () => {
   const switchElement = document.getElementById(switchId);
   const elementWrapper = document.querySelector(`[data-field="${id}"]`);
+  console.log(`Switch ${id} initialized with checked=${checked}`, switchElement, elementWrapper);
   if (switchElement) {
     switchElement.addEventListener("change", (event) => {
-      const IsChecked = (event.detail?.value || event.target.checked);
+      const IsChecked = (event.detail?.value || switchElement.value) == "true"
       console.log(`Switch ${id}`,IsChecked);
-      if (elementWrapper){
-        elementWrapper.classList.toggle("hidden", !IsChecked);
-      }
+      if (!elementWrapper) return;
+      elementWrapper.classList.toggle("hidden",!IsChecked);
+      
     });
   }
+  });
 </script>

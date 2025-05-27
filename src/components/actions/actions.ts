@@ -3,28 +3,202 @@ import {
   IndexedDBManager,
   Emitter,
   getAllDataFromDatabase,
-} from "../actionsjs/idb.js"; // Ajusta ruta
-import { defaultFormConfig } from "src/config/actionsconfig.js";
+} from "../actionsjs/idb.js";
 import { HttpRequestConfig } from "src/litcomponents/fetchcomponent";
 import { HttpRequestExecutor } from "src/fetch/executor";
-const configForm = document.getElementById(
-  "fetchForm_config"
-) as HttpRequestConfig;
+import { DialogContainer } from "src/litcomponents/custom-modal.js";
+import { CInput } from "src/litcomponents/CInput.js";
+// Elementos DOM globales con validación
+const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
-configForm.addEventListener("config-change", (e) => {
-  const { detail } = e as CustomEvent;
-  console.log("Config change:", detail);
-  const config = configForm.getConfig();
-  const validation = configForm.validate();
-  console.log("Config validation:", {
-    isValid: validation,
-    config,
-  });
-  localStorage.setItem("httpRequestConfig", JSON.stringify(config));
-});
+const actionButton = document.getElementById("actionButton");
+const ActionModal = document.getElementById("ActionModal") as DialogContainer;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  if (localStorage.getItem("httpRequestConfig")) {
+  try {
+    listenersForm();
+
+    if (actionButton) {
+      actionButton.addEventListener("click", () => {
+        openModal();
+        resetForm();
+      });
+    } else {
+      console.warn("Action button not found");
+    }
+  } catch (error) {
+    console.error("Error during DOM initialization:", error);
+  }
+});
+
+function openModal(): void {
+  if (!ActionModal) {
+    console.warn("Action modal not found");
+    return;
+  }
+  ActionModal.show();
+}
+
+function listenersForm(): void {
+  const actionsContainer = document.querySelector<HTMLElement>(".form-actions");
+  if (!actionsContainer) {
+    console.warn("Form actions container not found");
+    return;
+  }
+
+  actionsContainer.addEventListener("click", async function (event) {
+    try {
+      if (!(event.target instanceof Element)) return;
+
+      const clickedButton = event.target.closest("button[data-action]");
+      if (!clickedButton) return;
+
+      const action = clickedButton.getAttribute("data-action");
+      
+      if (action === "reset") {
+        resetForm();
+        console.log("Form reset");
+      } else if (action === "submit") {
+        const formData = getFormData();
+        if (!formData) {
+          console.error("No form data found");
+          return;
+        }
+        
+        // Operación async con manejo de errores
+        await actionDatabase.saveData(formData);
+        console.log("Form submitted successfully:", formData);
+      } else {
+        console.warn(`Unknown action: ${action}`);
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+    } catch (error) {
+      console.error("Error handling form action:", error);
+    }
+  });
+}
+
+function getFormData(): Record<string, any> | null {
+  try {
+    const actionFormElements = document.querySelector("#actionForm");
+    if (!actionFormElements) {
+      console.warn("Action form not found");
+      return null;
+    }
+
+    const allFields = actionFormElements.getElementsByTagName("c-input");
+    if (allFields.length === 0) {
+      console.warn("No input fields found");
+      return null;
+    }
+
+    const data: Record<string, any> = {};
+
+    // Usar Array.from() en lugar de Object.entries() para HTMLCollection
+    Array.from(allFields).forEach((field:CInput) => {
+      const fieldName = field.getAttribute("data-field-name");
+      if (fieldName) {
+        data[fieldName] = (field).value;
+      }
+    });
+
+    // Obtener elementos adicionales con validación
+    const fetchForm = document.querySelector("#fetchForm_check") as HTMLInputElement;
+    const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
+
+    return {
+      ...data,
+      fetchForm_check: fetchForm?.value || "",
+      fetchForm_value: fetchConfig?.value || {},
+    };
+  } catch (error) {
+    console.error("Error getting form data:", error);
+    return null;
+  }
+}
+
+function setFormData(data: Record<string, any>): void {
+  if (!data || Object.keys(data).length === 0) {
+    console.warn("No data provided to setFormData");
+    return;
+  }
+
+  try {
+    const actionFormElements = document.querySelector("#actionForm");
+    if (!actionFormElements) {
+      console.warn("Action form not found");
+      return;
+    }
+
+    const allFields = actionFormElements.getElementsByTagName("c-input");
+
+    // Usar Array.from() correctamente
+    Array.from(allFields).forEach((field:CInput) => {
+      const fieldName = field.getAttribute("data-field-name");
+      if (fieldName && data[fieldName] !== undefined) {
+        (field).setVal(data[fieldName]);
+      }
+    });
+
+    console.log("Setting form data:", data);
+
+    // Configurar elementos adicionales con validación
+    const fetchForm = document.querySelector("#fetchForm_check") as CInput;
+    if (fetchForm) {
+      fetchForm.setVal(data.fetchForm_check);
+    }
+
+    const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
+    if (fetchConfig) {
+      fetchConfig.setConfig(data.fetchForm_value || {});
+    }
+
+    console.log("Form data set successfully");
+  } catch (error) {
+    console.error("Error setting form data:", error);
+  }
+}
+
+function resetForm(): void {
+  try {
+    const actionFormElements = document.querySelector("#actionForm");
+    if (!actionFormElements) {
+      console.warn("Action form not found");
+      return;
+    }
+
+    const allFields = actionFormElements.getElementsByTagName("c-input");
+
+    // Usar Array.from() correctamente
+    Array.from(allFields).forEach((field:CInput) => {
+      (field).reset();
+    });
+
+    // Reset elementos adicionales con validación
+    const fetchForm = document.querySelector("#fetchForm_check") as CInput;
+    if (fetchForm) {
+      fetchForm.setVal(false);
+    }
+
+    const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
+    if (fetchConfig) {
+      fetchConfig.reset();
+    }
+
+    console.log("Form reset successfully");
+  } catch (error) {
+    console.error("Error resetting form:", error);
+  }
+}
+
+export {
+  setFormData,
+  openModal,
+  resetForm
+};
+/*  if (localStorage.getItem("httpRequestConfig")) {
     const config = JSON.parse(
       localStorage.getItem("httpRequestConfig") || "{}"
     );
@@ -32,80 +206,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     const executor = new HttpRequestExecutor();
     const result = await executor.execute(config);
     console.log("Loading config:", config, result);
-  }
-  //configForm.getConfig()
-  getFormData();
-  listenersForm();
-  const testData = await actionDatabase.getDataById(0);
-  if (testData) {
-    console.log("Test data found:", testData);
-    // setFormData(testData);
-  }
-});
-function listenersForm() {
-  const actionsContainer = document.querySelector<HTMLElement>(".form-actions");
-  if (!actionsContainer) return;
-  actionsContainer.addEventListener("click", function (event) {
-    if (!(event.target && event.target instanceof Element)) return;
-    const clickedButton = event.target.closest("button[data-action]");
-    if (!clickedButton) return;
-    const action = clickedButton.getAttribute("data-action");
-    if (action === "reset") {
-    } else if (action === "submit") {
-      const formData = getFormData();
-      if (!formData) {
-        console.error("No form data found");
-        return;
-      }
-      actionDatabase.saveData(formData);
-      console.log("Submitting form...", formData);
-    }
-    event.preventDefault();
-    event.stopPropagation();
-  });
-}
-function getFormData() {
-  const actionFormElements = document.querySelector("#actionForm");
-  if (!actionFormElements) return;
-  if (actionFormElements.getElementsByTagName("c-input").length === 0) return;
-  const allFields = actionFormElements.getElementsByTagName("c-input");
-  const Data = {} as Record<string, any>;
-  Object.entries(allFields).forEach(([key, field]) => {
-    const fieldName = field.getAttribute("data-field-name") as string;
-    if (!fieldName) return;
-    const value = field.value;
-    Data[fieldName] = value;
-  });
-  const fetchForm = document.querySelector(
-    "#fetchForm_check"
-  ) as HTMLInputElement;
-  const fetchConfig = document.querySelector(
-    "#fetchForm_config"
-  ) as HttpRequestConfig;
-  return {
-    ...Data,
-    fetchForm_check: fetchForm.value,
-    fetchForm_value: fetchConfig.value,
-  };
-}
-function setFormData(data: Record<string, any>) {
-  const actionFormElements = document.querySelector("#actionForm");
-  if (!actionFormElements) return;
-  const allFields = actionFormElements.getElementsByTagName("c-input");
-  Object.entries(allFields).forEach(([key, field]) => {
-    const fieldName = field.getAttribute("data-field-name") as string;
-    console.log("fieldName:", fieldName, field);
-    if (!fieldName) return;
-    const value = data[fieldName];
-    field.value = value;
-  });
-  console.log("Setting form data:allFields ", data, allFields);
-  const fetchForm = document.querySelector(
-    "#fetchForm_check"
-  ) as HTMLInputElement;
-  fetchForm.value = data.fetchForm_check || "";
-  const fetchConfig = document.querySelector(
-    "#fetchForm_config"
-  ) as HttpRequestConfig;
-  fetchConfig.setConfig(data.fetchForm_value || {});
-}
+  }*/

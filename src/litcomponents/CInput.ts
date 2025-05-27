@@ -480,6 +480,7 @@ export class CInput extends LitElement {
         this.value = (val === null || val === undefined) ? '' : String(val);
         this.requestUpdate();
         setTimeout(() => this.isValid(), 0);
+        this.EmitEvent('change',this.getVal())
     }
 
     /** Resets the input to its default value (empty or false) */

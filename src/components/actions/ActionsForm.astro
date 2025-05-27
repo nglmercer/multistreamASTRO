@@ -102,6 +102,30 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
 </div>
 
 <script define:vars={{ initialData, id, formConfig }}>
+  function safeParse(value) {
+    if (value == null || typeof value !== 'string') {
+        return value;
+    }
+
+    const trimmed = value.trim();
+    if (!(trimmed.startsWith('{') || trimmed.startsWith('['))) {
+        return value;
+    }
+
+    try {
+        return JSON.parse(trimmed);
+    } catch {
+        try {
+            const fixedJson = trimmed
+                .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')
+                .replace(/:\s*'([^']+)'/g, ': "$1"');
+            return JSON.parse(fixedJson);
+        } catch (error) {
+            console.error("Error al parsear JSON:", error, "Valor recibido:", value);
+            return value;
+        }
+    }
+  }
   class ActionFormManager {
     constructor(formId) {
       this.formId = formId;
@@ -123,7 +147,6 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       this.initializeFormData();
       this.bindEvents();
       this.evaluateAllFieldVisibility();
-      this.validateForm();
     }
 
     parseFieldConfigs() {
@@ -133,7 +156,7 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
     }
 
     initializeFormData() {
-      const inputs = this.form.querySelectorAll('c-input[data-field-name]');
+      const inputs = this.form.querySelectorAll('c-input');
       inputs.forEach(input => {
         const fieldName = input.getAttribute('data-field-name');
         const value = input.getAttribute('value') || '';
@@ -148,19 +171,11 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       
       // Eventos de botones
       this.form.addEventListener('click', this.handleButtonClick.bind(this));
-      
-      // Evento de submit
-      this.form.addEventListener('submit', this.handleFormSubmit.bind(this));
-      
-      // Escuchar eventos personalizados de c-input
-      this.form.addEventListener('change', (event) => {
-        if (event.detail && event.detail.name) {
-          this.updateFieldValue(event.detail.name, event.detail.value);
-        }
-      });
+            
     }
 
     handleFieldChange(event) {
+      console.log('Field change detected:', event);
       const input = event.target.closest('c-input');
       if (!input) return;
       
@@ -189,15 +204,15 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       fieldWrappers.forEach(wrapper => {
         const showIfData = wrapper.getAttribute('data-show-if');
         if (!showIfData) return;
-        
+        console.log('Evaluating show condition for:', showIfData);
         try {
-          const condition = JSON.parse(showIfData);
+          const condition = safeParse(showIfData);
           const shouldShow = this.evaluateShowCondition(condition);
           
           this.toggleFieldVisibility(wrapper, shouldShow);
         } catch (error) {
           console.error('Error evaluating show condition:', error, showIfData);
-        }
+        } 
       });
     }
 
@@ -222,7 +237,7 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       // Comparación para booleanos
       if (typeof expected === 'boolean') {
         const actualBool = this.coerceToBoolean(actual);
-        return actualBool === expected;
+        return String(actualBool) === String(expected);
       }
       
       // Comparación para null/undefined
@@ -281,26 +296,14 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       }
       
       const isValid = input.isValid ? input.isValid() : true;
-      
-      if (isValid) {
+      console.log("isValid for field:", fieldName, isValid);
+      if (isValid || (typeof isValid === 'boolean')) {
         this.clearFieldError(fieldName);
       } else {
-        this.showFieldError(fieldName, 'Este campo no es válido');
+        this.showFieldError(fieldName);
       }
       
       return isValid;
-    }
-
-    validateForm() {
-      let isFormValid = true;
-      const visibleFields = this.getVisibleFields();
-      
-      visibleFields.forEach(fieldName => {
-        const fieldValid = this.validateField(fieldName);
-        if (!fieldValid) isFormValid = false;
-      });
-      
-      return isFormValid;
     }
 
     getVisibleFields() {
@@ -350,16 +353,6 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
         case 'submit':
           // Let the form submit event handle this
           break;
-      }
-    }
-
-    handleFormSubmit(event) {
-      event.preventDefault();
-      
-      if (this.validateForm()) {
-        this.emitFormSubmit();
-      } else {
-        this.focusFirstInvalidField();
       }
     }
 
@@ -414,7 +407,6 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       });
       
       this.evaluateAllFieldVisibility();
-      this.validateForm();
     }
 
     getFieldValue(fieldName) {
@@ -452,11 +444,14 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
     }
   }
 
-  // Initialize form manager
   const formManager = new ActionFormManager(id);
-  
-  // Expose to global scope for external access
-  window[`formManager_${id}`] = formManager;
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log(`ActionFormManager initialized for form: ${id}`);
+    // Initialize form manager
+    
+    // Expose to global scope for external access
+    window[`formManager_${id}`] = formManager;
+  });
 </script>
 
 <style is:global>
@@ -477,9 +472,11 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 16px;
-    max-width: 800px;
     color: var(--text-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    max-height: 90dvh;
+    overflow: auto;
   }
 
   .action-form.dark {

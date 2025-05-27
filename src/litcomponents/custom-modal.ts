@@ -52,7 +52,7 @@ export class DialogContent extends LitElement {
         --dlg-button-font-size: 0.875rem;
         --dlg-options-gap: 0.5rem;
         --dlg-slot-margin-top: 1rem;
-        --dlg-transition-speed: 0.2s;
+        --transition-speed: 0.2s;
 
         --dlg-text-color: #1a1a1a;
         --dlg-border-color: #e5e5e5;
@@ -82,7 +82,7 @@ export class DialogContent extends LitElement {
       .container {
         padding: var(--dlg-padding);
         border-radius: var(--dlg-border-radius);
-        transition: background-color var(--dlg-transition-speed) ease, border-color var(--dlg-transition-speed) ease, color var(--dlg-transition-speed) ease;
+        transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, color var(--transition-speed) ease;
         border: 1px solid var(--dlg-border-color);
         background-color: var(--dlg-bg-color);
         color: var(--dlg-text-color);
@@ -131,7 +131,7 @@ export class DialogContent extends LitElement {
         cursor: pointer;
         font-size: var(--dlg-button-font-size);
         font-family: inherit;
-        transition: background-color var(--dlg-transition-speed) ease, opacity var(--dlg-transition-speed) ease;
+        transition: background-color var(--transition-speed) ease, opacity var(--transition-speed) ease;
         background-color: transparent;
         color: inherit;
         border: 1px solid transparent;
@@ -234,24 +234,24 @@ export class DialogContainer extends LitElement {
   static get styles() {
     return css`
       :host {
-        --dlg-overlay-bg: rgba(0, 0, 0, 0.5);
+        --overlay-bg: rgba(0, 0, 0, 0.5);
         --dlg-z-index: 1000;
-        --dlg-transition-duration: 0.3s;
-        --dlg-content-max-height: 90dvh;
-        --dlg-content-border-radius: 16px;
-        --dlg-content-padding: 8px;
-        --dlg-content-bg: inherit;
-        --dlg-content-color: inherit;
+        --transition-duration: 0.3s;
+        --content-max-height: 90dvh;
+        --content-border-radius: 16px;
+        --content-padding: 8px;
+        --content-bg: inherit;
+        --content-color: inherit;
 
         display: block;
         background: inherit;
         color: inherit;
       }
 
-      .dlg-ov {
+      .dialog {
         position: fixed;
         inset: 0;
-        background-color: var(--dlg-overlay-bg);
+        background-color: var(--overlay-bg);
 
         display: flex;
         align-items: center;
@@ -262,11 +262,11 @@ export class DialogContainer extends LitElement {
         opacity: 0;
         visibility: hidden;
 
-        transition: opacity var(--dlg-transition-duration) ease,
-                    visibility var(--dlg-transition-duration) ease;
+        transition: opacity var(--transition-duration) ease,
+                    visibility var(--transition-duration) ease;
       }
 
-      .dlg-ov.visible {
+      .dialog.visible {
         opacity: 1;
         visibility: visible;
       }
@@ -275,7 +275,7 @@ export class DialogContainer extends LitElement {
 
   render() {
     return html`
-      <div class="dlg-ov ${this.visible ? 'visible' : ''}" @click="${this._handleOverlayClick}">
+      <div class="dialog ${this.visible ? 'visible' : ''}" @click="${this._handleOverlayClick}">
           <slot></slot>
       </div>
     `;
