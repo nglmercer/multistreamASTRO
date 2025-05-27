@@ -47,7 +47,8 @@ const switchId = `${id}_check`;
   console.log(`Switch ${id} initialized with checked=${checked}`, switchElement, elementWrapper);
   if (switchElement) {
     switchElement.addEventListener("change", (event) => {
-      const IsChecked = (event.detail?.value || switchElement.value) == "true"
+      const valuesw = (event.detail?.value || switchElement.value)
+      const IsChecked = (valuesw === "on" || valuesw === true || valuesw === "true");
       console.log(`Switch ${id}`,IsChecked);
       if (!elementWrapper) return;
       elementWrapper.classList.toggle("hidden",!IsChecked);

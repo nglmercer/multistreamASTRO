@@ -3,7 +3,9 @@ import logger from '@utils/logger.js';
 import {flattenObject, unflattenObject, replaceVariables} from '@utils/utils.js';
 import {
     playTextwithproviderInfo
-} from '@components/voicecomponents/initconfig.js';	
+} from '@components/voicecomponents/initconfig.js';
+import { HttpRequestExecutor } from "src/fetch/executor";
+
 /*
     commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
     giftEventsDB: { name: 'giftEvents', version: 1, store: 'giftEvents' },
@@ -146,7 +148,7 @@ function switcheventDb(event, eventData) {
     
     if (dbEvents[event]) {
         getAllDataFromDatabase(dbEvents[event]).then(array => {
-            logger.log("originEvalue", event, array);
+            console.log("originEvalue", event, array);
             let result;
             
             switch (event) {
@@ -164,7 +166,7 @@ function switcheventDb(event, eventData) {
                     break;
             }
             
-            logger.log(`originEvalue`, result);
+            console.log(`originEvalue`, result);
             
             // Procesar los resultados si los hay
             if (result && result instanceof Map && result.size > 0) {
@@ -180,7 +182,7 @@ function processMatchedItems(items, eventData, eventType) {
     items.forEach( async item => {
         const actions = await filterItemsByIds(item.actions);
         const ProcesedActions = unflattenObject(actions);
-        logger.log("Action", item.actions, ProcesedActions);
+        console.log("Action", item.actions, ProcesedActions);
         const verifyObj = {
             "minecraft": {
                 verify: ["check","command"],
@@ -215,6 +217,13 @@ function processMatchedItems(items, eventData, eventType) {
                     console.log("keypress",A,B,C,ev);
                     socket.emit("actions",{type:"keypress",data:{A,B,C,ev},event:ev});
                 }
+            },
+            "fetchForm":{
+                verify: ["check"],
+                callback: async (A, B, C, ev) => {
+                    console.log("fetchForm", A, B, C, ev);
+                    
+                }
             }
         }
         processActions(verifyObj, ProcesedActions, eventData, eventType);
@@ -228,13 +237,15 @@ function processActions(verifyObj, ProcessedActions, eventData, eventType) {
         if (!action || typeof action !== 'object') {
             return;
         }
+        console.log("Processing action:", action);
         Object.keys(verifyObj).forEach(actionType => {
             const config = verifyObj[actionType]; // Get config { verify: [...], callback: fn }
             const actionData = action[actionType]; // Get the specific data part, e.g., action.minecraft
             // 1. Check if this action type exists in the current action object,
             //    is an object itself, and has its 'check' property set to true.
-            if (actionData && typeof actionData === 'object' && actionData.check === true) {
-                logger.log(`  - Action type '${actionType}' is ENABLED. Verifying properties...`);
+            const verifyprocess = (actionData && typeof actionData === 'object' && (actionData.check === true || actionData.check === "true"))
+            if (verifyprocess) {
+                console.log(`  - Action type '${actionType}' is ENABLED. Verifying properties...`,verifyprocess);
 
                 let allPropsValid = true;
                 for (const propName of config.verify) {
@@ -244,7 +255,7 @@ function processActions(verifyObj, ProcessedActions, eventData, eventType) {
                     }
                 }
                 if (allPropsValid) {
-                    logger.log("Action",`    - Verification SUCCESSFUL for '${actionType}'. Executing callback.`);
+                    console.log("Action",`    - Verification SUCCESSFUL for '${actionType}'. Executing callback.`);
                     config.callback(actionData, action, eventData, eventType);
                 }
             } else {}
