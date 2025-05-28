@@ -41,10 +41,11 @@ interface TiktokEventsStorage {
 }
 
 const localStorageManager = new LocalStorageManager<TiktokEventsStorage>('TiktokEvents');
-
+const apiKey = localStorage.getItem('tiktok_apiKey')
+const wsUrl = `wss://ws.eulerstream.com?uniqueId=tv_asahi_news&apiKey=`;
 class SocketManager {
   private baseUrl: string = 'http://localhost:9001';
-  public wsBaseUrl: string = 'ws://localhost:21213/';
+  public wsBaseUrl: string = wsUrl;
   private socket: Socket;
   private ws: WebSocket | null = null; // Para WebSocket nativo, inicializar a null
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -52,6 +53,7 @@ class SocketManager {
   private reconnectAttempts: number = 0; // Contador de intentos (opcional, para backoff)
   private maxReconnectAttempts: number = 10; // Limitar intentos (opcional)
   private TiktokEmitter: Emitter;
+  private KickEmitter: Emitter;
   public tiktokLiveEvents: TiktokEvent[] = [
     'chat', 'gift', 'connected', 'disconnected',
     'websocketConnected', 'error', 'member', 'roomUser',
@@ -59,17 +61,17 @@ class SocketManager {
     'subscribe', 'follow', 'share', 'streamEnd',
     'availableGifts', 'roomInfo'
   ];
-
+  public kickLiveEvents: string[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'login','close'];
   constructor() {
     this.socket = io(this.baseUrl);
     this.TiktokEmitter = new Emitter();
+    this.KickEmitter = new Emitter();
     this.ws = new WebSocket(this.wsBaseUrl);
     
     console.log("event", 'Socket Manager Loaded', this.baseUrl, this.socket);
     
     this.initializeSocketEvents();
-    this.connectWebSocket();
-    
+    this.connectWebSocket(apiKey); // Conectar al WebSocket con la clave de API
     // temporal test joinplatform
   //  this.joinplatform({ uniqueId: 'ju44444n._', platform: 'tiktok' });
   //  this.getRoomInfo({ uniqueId: 'ju44444n._', platform: 'tiktok' });
@@ -87,14 +89,21 @@ class SocketManager {
         this.tiktokhandlerdata(event, data);
       });
     });
+    this.kickLiveEvents.forEach(event => {
+      console.log("event", `Listening for Kick event: ${event} on KickEmitter`);
+      this.socket.on(event, (data: any) => {
+        this.kickhandlerdata(event, data);
+      });
+    });
   }
 
-  private connectWebSocket(): void {
+  private connectWebSocket(key:string|null): void {
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId);
       this.reconnectTimeoutId = null;
     }
-
+    if (!key && !apiKey) return;
+    localStorage.setItem('tiktok_apiKey',String(key || apiKey)); // Guardar la clave en localStorage
     // Limpiar listeners del WebSocket anterior si existe para evitar fugas
     if (this.ws) {
         console.log("event", 'Cleaning up previous WebSocket listeners.');
@@ -110,7 +119,7 @@ class SocketManager {
     }
 
     console.log("event", `Attempting WebSocket connection to ${this.wsBaseUrl} (Attempt ${this.reconnectAttempts + 1})`);
-    this.ws = new WebSocket(this.wsBaseUrl); // Crear nueva instancia
+    this.ws = new WebSocket(key ? (this.wsBaseUrl + key): (this.wsBaseUrl + apiKey)); // Crear nueva instancia
 
     this.ws.onopen = () => {
       console.log("event", 'WebSocket connected successfully.');
@@ -159,7 +168,7 @@ class SocketManager {
     console.log("event", `Scheduling WebSocket reconnect attempt #${this.reconnectAttempts} in ${delay / 1000} seconds...`);
 
     this.reconnectTimeoutId = setTimeout(() => {
-      this.connectWebSocket(); // Intentar conectar de nuevo
+      this.connectWebSocket(localStorage.getItem('tiktok_apiKey')); // Intentar conectar de nuevo
     }, delay);
   }
 
@@ -172,10 +181,12 @@ class SocketManager {
     // Add the new event data
     // Store back to localStorage
     localStorageManager.set(event, data);
-    // LOG AND GET localStorageManager DATA
-    console.log("localStorageManager",localStorageManager.getAll());
   }
-
+  private kickhandlerdata(event: any, data: any): void {
+    logger.log("event", event, data, 'KickLive');
+    console.log("event", 'KickLive', event, data);
+    this.KickEmitter.emit(event, data);
+  }
   public joinplatform(data: JoinPlatformparams): void {
     this.socket.emit('join-platform', data);
   }
@@ -192,6 +203,9 @@ class SocketManager {
   public getTiktokEmitter(): Emitter {
     return this.TiktokEmitter;
   }
+  public getKickEmitter(): Emitter {
+    return this.KickEmitter;
+  }
 }
 
 const socketManager = new SocketManager();
@@ -199,5 +213,6 @@ const socketManager = new SocketManager();
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
 export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
+export const KickEmitter = socketManager.getKickEmitter();
 export {localStorageManager}
 export default socketManager;
