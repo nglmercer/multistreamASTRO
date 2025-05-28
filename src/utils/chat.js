@@ -71,6 +71,7 @@ function getMessagestring(message, { emotes }) {
 }
 async function mapChatMessagetochat(data) {
     return {
+        user: data.sender,
         comment: data.content,
         type: data.type,
         uniqueId: data.sender?.username,
@@ -223,6 +224,11 @@ const handlevent = async (data) => {
     const newhtml =webcomponentevent(data, { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" });
     appendMessage(newhtml, "eventscontainer");
 }
+const handlekickChat = async (data, aditionaldata = { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" }) => {
+    const parsedata = await mapChatMessagetochat(data);
+    const newhtml = webcomponentchat(parsedata, aditionaldata);
+    appendMessage(newhtml, "chatcontainer");
+}
 function webcomponentchat(data, additionaldata = {}) {
     const content = [
         { type: 'text', value: data.nickname, title: data.uniqueId, class: 'username-text' },
@@ -333,5 +339,6 @@ export {
     handlegift,
     mapEvent,
     arrayevents,
-    lastElement
+    lastElement,
+    handlekickChat
 }

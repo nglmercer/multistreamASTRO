@@ -1,3 +1,4 @@
+import { KickEmitter } from '@utils/socketManager';
 import {socket,TiktokEmitter,tiktokLiveEvents, localStorageManager } from '/src/utils/socketManager.ts';
 
 const eventSelect = document.getElementById('tiktok-event-select');
@@ -69,7 +70,7 @@ function handleEmitEvent() {
     console.log(`Simulating emit: Event='${selectedEventName}', Data=`, eventData);
     // THE CORE ACTION: Emit the event using the imported Emitter instance
     TiktokEmitter.emit(selectedEventName, eventData);
-
+    KickEmitter.emit(selectedEventName, eventData);
     statusDiv.textContent = `Successfully emitted "${selectedEventName}" event. Check console or listeners.`;
 
     // Optional: Briefly highlight the status

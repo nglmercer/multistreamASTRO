@@ -186,6 +186,7 @@ class SocketManager {
     logger.log("event", event, data, 'KickLive');
     console.log("event", 'KickLive', event, data);
     this.KickEmitter.emit(event, data);
+    localStorageManager.set(event, data);
   }
   public joinplatform(data: JoinPlatformparams): void {
     this.socket.emit('join-platform', data);
@@ -212,7 +213,8 @@ const socketManager = new SocketManager();
 
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
-export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
 export const KickEmitter = socketManager.getKickEmitter();
-export {localStorageManager}
+export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
+export const kickLiveEvents = socketManager.kickLiveEvents;
+export {localStorageManager,socketManager}
 export default socketManager;

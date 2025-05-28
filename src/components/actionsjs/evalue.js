@@ -14,17 +14,27 @@ import { HttpRequestExecutor } from "src/fetch/executor";
     eventsDB: { name: 'Events', version: 1, store: 'events' },
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
 */
-import {socket,TiktokEmitter,tiktokLiveEvents, localStorageManager } from '@utils/socketManager.ts';
+import {socket,TiktokEmitter,tiktokLiveEvents, localStorageManager, KickEmitter,kickLiveEvents } from '@utils/socketManager.ts';
 
 tiktokLiveEvents.forEach(event => {
     TiktokEmitter.on(event, async (data) => {
         switcheventDb(event, data);
     });
 });
+kickLiveEvents.forEach(event => {
+    KickEmitter.on(event, async (data) => {
+        console.log("KickEmitter",event,data);
+        if (event === "ChatMessage") {
+            const polifyedData = polifyfillEvalueKick(data);
+            switcheventDb(event, polifyedData);
+        }
+    });
+});
 console.log("init", TiktokEmitter);
 
 // Configuración de reglas para diferentes tipos de eventos
 const eventRules = {
+
     chat: {
         roleChecks: {
             "any": (data) => true,
@@ -137,13 +147,38 @@ function evalueBits(array, data) {
 function evalueLikes(array, data) {
     return evaluateRules(array, data, 'likes');
 }
-
+function polifyfillEvalueKick(data){
+    /*KickEmitter.onAny ChatMessage 
+content: "hola pepe como estas"
+​
+created_at: "2025-05-28T23:23:57+00:00"
+​
+id: "1b6f9404-a314-44c1-9389-d4a766bf6b5d"
+​
+metadata: Object { message_ref: "1748474637226" }
+​
+sender: Object { id, username, slug, identity }
+​​
+id: 57654164
+identity: Object { color: "#93EBE0", badges: (1) […] }
+slug: "memelcer"
+username: "memelcer"
+​​​
+type: "message"*/
+    const Mapdata = {
+        "comment": data.content,
+        "uniqueId": data.sender.username,
+        ...data
+    }
+    return Mapdata;
+}
 function switcheventDb(event, eventData) {
     const dbEvents = {
         "chat": databases.commentEventsDB,
         "gift": databases.giftEventsDB,
         "bits": databases.bitsEventsDB,
         "likes": databases.likesEventsDB,
+        "ChatMessage":databases.commentEventsDB,
     };
     
     if (dbEvents[event]) {
@@ -152,6 +187,9 @@ function switcheventDb(event, eventData) {
             let result;
             
             switch (event) {
+                case 'ChatMessage':
+                    result = evalueChat(array, polifyfillEvalueKick(eventData));
+                    break;
                 case 'chat':
                     result = evalueChat(array, eventData);
                     break;

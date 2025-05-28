@@ -572,13 +572,13 @@ function getBadgeDetails(sceneType,{level,url}) {
   }
 ]
  */
-import { webcomponentevent, appendMessage, handlechat, handlegift, mapEvent, arrayevents,lastElement } from '/src/utils/chat.js';
+import { webcomponentevent, appendMessage, handlechat, handlegift, mapEvent, arrayevents,lastElement,handlekickChat } from 'src/utils/chat.js';
 
-import { TiktokEmitter, socket } from '/src/utils/socketManager';
-import { openPopup, returnexploreroptions, setPopupOptions,returnOptions } from '/src/components/menu/menuutils.js';
+import { TiktokEmitter, socket, KickEmitter,socketManager  } from 'src/utils/socketManager';
+import { openPopup, returnexploreroptions, setPopupOptions,returnOptions } from 'src/components/menu/menuutils.js';
 import {
     playTextwithproviderInfo
-} from '/src/components/voicecomponents/initconfig.js';	
+} from 'src/components/voicecomponents/initconfig.js';	
 TiktokEmitter.on('chat', async (data) => {
 //  console.log("TiktokEmitter",data);
   handlechat(data);
@@ -589,6 +589,18 @@ TiktokEmitter.on('gift', async (data) => {
 });
 TiktokEmitter.on('play_arrow', async (data) => {
 //  console.log("TiktokEmitter",data);
+});
+KickEmitter.onAny((event, data) => {
+  const obj = socketManager.kickLiveEvents.reduce((acc, curr) => {
+    acc[curr] = curr;
+    return acc;
+  }, {});
+  if (event === obj.ChatMessage){
+    console.log("KickEmitter.onAny ChatMessage",data);
+    handlekickChat(data);
+  } else {
+    console.log("KickEmitter.onAny else",event, data);
+  }
 });
 const chatcontainer = document.getElementById('chatcontainer');
 chatcontainer.addEventListener('message-menu',(event)=>{
