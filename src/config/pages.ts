@@ -13,7 +13,7 @@ export const pagesConfigA = {
   2: { name: "Actions", slot: "Actions", icon: "settings" },
   3: { name: "Volume", slot: "voice", icon: "volume_down" }, // Nombre cambiado a "Volume" para claridad
   4: { name: "Favorites", slot: "page-4", icon: "favorite" },
-  5: { name: "Settings", slot: "page-5", icon: "settings" },
+  5: { name: "Settings", slot: "Setconfig", icon: "settings" },
 };
 
 export const pagesConfigB = {

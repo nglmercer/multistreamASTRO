@@ -1,0 +1,54 @@
+---
+import SidebarLayout from '../layouts/SidebarLayout.astro';
+// Importa el componente SolidJS
+import ReplacerConfigForm from '../components/replace/ReplacerConfigForm.jsx';
+
+// Estos son los valores por defecto que pasarás al componente SolidJS
+const defaultReplacementsData = {
+  uniqueId: { dataKey: "uniqueId", defaultValue: "testUser" },
+  uniqueid: { dataKey: "uniqueId", defaultValue: "testUser" },
+  nickname: { dataKey: "nickname", defaultValue: "testUser" },
+  comment: { dataKey: "comment", defaultValue: "testComment" },
+  "{milestoneLikes}": { dataKey: "likeCount", defaultValue: "50testLikes" },
+  "{likes}": { dataKey: "likeCount", defaultValue: "50testLikes" },
+  message: { dataKey: "comment", defaultValue: "testcomment" },
+  giftName: { dataKey: "giftName", defaultValue: "testgiftName" },
+  giftname: { dataKey: "giftName", defaultValue: "testgiftName" },
+  repeatCount: { dataKey: "repeatCount", defaultValue: "123" },
+  repeatcount: { dataKey: "repeatCount", defaultValue: "123" },
+  playername: { dataKey: "playerName", defaultValue: "@a" },
+  diamonds: { dataKey: "diamondCount", defaultValue: "50testDiamonds" },
+  likecount: { dataKey: "likeCount", defaultValue: "50testLikes" },
+  followRole: { dataKey: "followRole", defaultValue: "followRole 0" },
+  userId: { dataKey: "userId", defaultValue: "1235646" },
+  teamMemberLevel: { dataKey: "teamMemberLevel", defaultValue: "teamMemberLevel 0" },
+  subMonth: { dataKey: "subMonth", defaultValue: "subMonth 0" }
+};
+
+// Podrías definir otros valores iniciales para las props aquí si es necesario
+const initialInstanceId = "default";
+const initialRemoveBackslashes = true;
+const initialUseLocalStorage = true;
+
+---
+
+<SidebarLayout title="Mi Aplicación" activeConfig="A">
+	<div slot="logo">
+		<h1 class="logo-text">Logo</h1>
+	</div>
+
+	<div class="content">
+    {/* 
+      Renderiza el componente SolidJS aquí, pasando los datos iniciales como props.
+      client:only="solid-js" asegura que el componente se renderice e hidrate en el cliente.
+    */}
+    <ReplacerConfigForm 
+      client:only="solid-js"
+
+    />
+	</div>
+</SidebarLayout>
+
+<style is:global>
+  /* Puedes mantener estilos globales aquí o moverlos si son específicos del componente */
+</style>

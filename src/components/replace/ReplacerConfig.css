@@ -1,0 +1,267 @@
+/* Contenedor principal de la aplicación */
+.replacer-app-container {
+  min-height: 100vh;
+  padding: 1.5rem; /* p-6 */
+  box-sizing: border-box;
+}
+
+/* Tarjeta principal de configuración */
+.config-card {
+  max-width: 72rem; /* max-w-6xl */
+  margin: 0 auto; /* mx-auto */
+  background-color: #ffffff; /* bg-white */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+}
+
+.config-card-header {
+  background-color: #4f46e5; /* bg-indigo-600 */
+  color: #ffffff; /* text-white */
+  padding: 1.5rem; /* p-6 */
+  border-top-left-radius: 0.5rem; /* rounded-t-lg */
+  border-top-right-radius: 0.5rem;
+}
+
+.main-title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: bold; /* font-bold */
+  margin: 0 0 0.5rem 0; /* mt-2 for paragraph */
+}
+
+.subtitle {
+  opacity: 0.9;
+  margin: 0;
+}
+
+.config-card-body {
+  padding: 1.5rem; /* p-6 */
+}
+/* Usa el selector de búho para el espaciado entre secciones, etc. */
+.config-card-body > * + * {
+  margin-top: 2rem; /* space-y-8 */
+}
+
+
+/* Secciones de configuración */
+.config-section {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+}
+.general-config-section {
+  background-color: #f9fafb; /* bg-gray-50 */
+}
+.test-area-section {
+  background-color: #eff6ff; /* bg-blue-50 */
+}
+
+.section-title {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600; /* font-semibold */
+  color: #374151; /* text-gray-700 */
+  margin-top: 0;
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+
+/* Contenedores Grid */
+.grid-container {
+  display: grid;
+  gap: 1rem; /* gap-4 */
+}
+.grid-container.two-columns {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) { /* md: */
+  .grid-container.two-columns {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.grid-container.responsive-columns { /* for test area */
+    grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) { /* lg: */
+    .grid-container.responsive-columns {
+        grid-template-columns: repeat(2, 1fr); /* grid-cols-1 lg:grid-cols-2 */
+        gap: 1.5rem; /* gap-6 */
+    }
+}
+
+
+/* Estilos de Formulario Genéricos */
+.form-group {
+  margin-bottom: 1rem; /* For spacing if not in grid */
+}
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #374151; /* text-gray-700 */
+  margin-bottom: 0.5rem; /* mb-2 */
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  border-radius: 0.375rem; /* rounded-md */
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  padding: 0.5rem 0.75rem; /* px-3 py-2 */
+  box-sizing: border-box;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #4f46e5; /* focus:border-indigo-500 */
+  box-shadow: 0 0 0 1px #4f46e5; /* focus:ring-1 focus:ring-indigo-500 */
+  outline: none;
+}
+
+.form-textarea {
+  resize: vertical;
+}
+
+/* Checkboxes */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* space-x-6 approx, but vertical now */
+  padding-top: 1.5rem; /* pt-6 if aligning with input */
+}
+@media (min-width: 768px) {
+  .checkbox-group {
+    flex-direction: row;
+    align-items: center; /* items-center */
+    gap: 1.5rem; /* space-x-6 */
+  }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.form-checkbox {
+  border-radius: 0.25rem; /* rounded */
+  border-color: #d1d5db; /* border-gray-300 */
+  color: #4f46e5; /* text-indigo-600 */
+  margin-right: 0.5rem; /* ml-2 on span */
+}
+.form-checkbox:focus {
+  box-shadow: 0 0 0 1px #4f46e5; /* focus:ring-indigo-500 */
+  outline: none;
+}
+
+.checkbox-text {
+  font-size: 0.875rem; /* text-sm */
+  color: #374151; /* text-gray-700 */
+}
+
+
+/* Área de Pruebas específica */
+.test-input-group > * + * {
+  margin-top: 1rem; /* space-y-4 */
+}
+
+.test-result-output {
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.375rem; /* rounded-md */
+  padding: 1rem; /* p-4 */
+  min-height: 200px;
+  font-family: monospace; /* font-mono */
+  font-size: 0.875rem; /* text-sm */
+  white-space: pre-wrap;
+  overflow-wrap: break-word; /* Para evitar desbordamiento horizontal */
+  overflow-y: auto;
+}
+.test-result-output.success {
+  background-color: #f0fdf4; /* bg-green-50 */
+  color: #166534; /* text-green-900, changed for better contrast*/
+  border-color: #a7f3d0; /* Slightly darker green border */
+}
+.test-result-output.error {
+  background-color: #fef2f2; /* bg-red-50 */
+  color: #991b1b; /* text-red-700 */
+  border-color: #fecaca; /* Slightly darker red border */
+}
+
+/* Lista de Reemplazos (espaciado entre items) */
+.replacements-list > * + * {
+  margin-top: 1rem; /* space-y-4 */
+}
+
+
+/* Botones */
+.button {
+  padding: 0.5rem 1rem; /* px-4 py-2 or px-6 py-2 */
+  border-radius: 0.375rem; /* rounded-md */
+  border: none;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  display: inline-flex; /* For icon alignment */
+  align-items: center;
+  gap: 0.5rem; /* gap-2 */
+  text-decoration: none; /* Para enlaces que parecen botones */
+}
+.button-full-width {
+    width: 100%;
+    justify-content: center;
+}
+
+.button-primary {
+  background-color: #4f46e5; /* bg-indigo-600 */
+}
+.button-primary:hover {
+  background-color: #4338ca; /* hover:bg-indigo-700 */
+}
+
+.button-success {
+  background-color: #16a34a; /* bg-green-600 */
+}
+.button-success:hover {
+  background-color: #15803d; /* hover:bg-green-700 */
+}
+
+.button-danger {
+  background-color: #dc2626; /* bg-red-600 */
+}
+.button-danger:hover {
+  background-color: #b91c1c; /* hover:bg-red-700 */
+}
+
+.button-warning {
+  background-color: #ca8a04; /* bg-yellow-600 */
+}
+.button-warning:hover {
+  background-color: #a16207; /* hover:bg-yellow-700 */
+}
+
+.button-info {
+  background-color: #2563eb; /* bg-blue-600 */
+}
+.button-info:hover {
+  background-color: #1d4ed8; /* hover:bg-blue-700 */
+}
+
+/* Contenedor de Botones de Acción */
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap; /* flex-wrap */
+  gap: 1rem; /* gap-4 */
+  justify-content: flex-end; /* justify-end */
+  padding-top: 1.5rem; /* pt-6 */
+  border-top: 1px solid #e5e7eb; /* border-t */
+}

@@ -7,7 +7,7 @@ const pages = {
     2: { name: "Action", slot: "Action" },
     3: { name: "History", slot: "page-3" },
     4: { name: "Favorites", slot: "page-4" },
-    5: { name: "Settings", slot: "page-5" },
+    5: { name: "Settings", slot: "Setconfig" },
 };
 class BaseMainContent extends LitElement {
     // Propiedad estática para la configuración, definida por la fábrica.
