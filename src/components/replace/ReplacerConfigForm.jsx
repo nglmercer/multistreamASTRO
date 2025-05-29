@@ -1,9 +1,10 @@
 // ReplacerConfig.jsx
 import { createSignal, createEffect, For } from 'solid-js';
-import ReplacementItemForm from './ReplacementItemForm'; // Importar el nuevo componente
-import './ReplacerConfig.css'; // Importar el CSS principal
+import ReplacementItemForm from './ReplacementItemForm';
+import HighlightedResult from './HighlightedResult'; // Nuevo componente
+import './ReplacerConfig.css';
 
-// Clase ConfigurableReplacer (sin cambios, se mantiene igual que en tu código original)
+// Clase ConfigurableReplacer (sin cambios)
 class ConfigurableReplacer {
   constructor(options = {}) {
     this.config = {
@@ -64,6 +65,67 @@ class ConfigurableReplacer {
     }
   }
 
+  // Método mejorado que devuelve tanto el resultado como los mapeos de reemplazo
+  replaceWithTracking(input, data = {}) {
+    const replacementMap = new Map();
+    const result = this.processRecursivelyWithTracking(input, data, replacementMap);
+    return { result, replacementMap };
+  }
+
+  processRecursivelyWithTracking(input, data, replacementMap) {
+    if (input === null || input === undefined) {
+      return input;
+    }
+
+    if (typeof input === "string") {
+      return this.replaceInStringWithTracking(input, data, replacementMap);
+    }
+
+    if (Array.isArray(input)) {
+      return input.map(item => this.processRecursivelyWithTracking(item, data, replacementMap));
+    }
+
+    if (typeof input === "object" && input.constructor === Object) {
+      const result = {};
+      for (const [key, value] of Object.entries(input)) {
+        result[key] = this.processRecursivelyWithTracking(value, data, replacementMap);
+      }
+      return result;
+    }
+
+    return input;
+  }
+
+  replaceInStringWithTracking(text, data, replacementMap) {
+    let replacedText = text;
+
+    Object.entries(this.config.replacements).forEach(([pattern, options]) => {
+      const { dataKey, defaultValue } = options;
+      const replaceValue = data[dataKey] || defaultValue;
+      const regex = new RegExp(this.escapeRegExp(pattern), "g");
+      
+      // Buscar todas las coincidencias para rastrear los reemplazos
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        replacementMap.set(String(replaceValue), {
+          original: pattern,
+          dataKey: dataKey,
+          replaced: String(replaceValue)
+        });
+        regex.lastIndex = 0; // Reset para evitar bucle infinito
+        break;
+      }
+      
+      replacedText = replacedText.replace(regex, String(replaceValue));
+    });
+
+    if (this.config.removeBackslashes) {
+      replacedText = replacedText.replace(/\\/g, "");
+    }
+
+    return replacedText;
+  }
+
   replace(input, data = {}) {
     return this.processRecursively(input, data);
   }
@@ -114,15 +176,15 @@ class ConfigurableReplacer {
   }
 }
 
-
 export default function ReplacerConfig() {
   const [instanceId, setInstanceId] = createSignal("default");
   const [removeBackslashes, setRemoveBackslashes] = createSignal(true);
   const [useLocalStorage, setUseLocalStorage] = createSignal(true);
   const [replacements, setReplacements] = createSignal([]);
-  const [testInput, setTestInput] = createSignal('{"usuario": "uniqueId", "mensaje": "comment", "likes": "likes"}');
+  const [testInput, setTestInput] = createSignal('{"usuario": "uniqueId", "mensaje": "comment", "likes": "{likes}"}');
   const [testData, setTestData] = createSignal('{"uniqueId": "usuario123", "comment": "¡Hola mundo!", "likeCount": "999"}');
   const [testResult, setTestResult] = createSignal("");
+  const [replacementMap, setReplacementMap] = createSignal(new Map());
   const [resultError, setResultError] = createSignal(false);
 
   let replacer = new ConfigurableReplacer();
@@ -231,7 +293,10 @@ export default function ReplacerConfig() {
       replacer.config.replacements = currentReplacements;
       replacer.config.removeBackslashes = removeBackslashes();
       
-      const result = replacer.replace(parsedInput, testDataObj);
+      // Usar el método con tracking para obtener mapeo de reemplazos
+      const { result, replacementMap: newReplacementMap } = replacer.replaceWithTracking(parsedInput, testDataObj);
+      
+      setReplacementMap(newReplacementMap);
       
       if (typeof result === 'object') {
         setTestResult(JSON.stringify(result, null, 2));
@@ -242,6 +307,7 @@ export default function ReplacerConfig() {
     } catch (error) {
       setTestResult(`❌ Error: ${error.message}`);
       setResultError(true);
+      setReplacementMap(new Map());
     }
   };
 
@@ -359,7 +425,7 @@ export default function ReplacerConfig() {
           {/* Área de Pruebas */}
           <section class="config-section test-area-section">
             <h2 class="section-title">Probar Reemplazos</h2>
-            <div class="grid-container responsive-columns"> {/* Changed to responsive-columns for better CSS control */}
+            <div class="grid-container responsive-columns">
               <div class="test-input-group">
                 <div class="form-group">
                   <label for="testInput" class="form-label">Entrada de Prueba</label>
@@ -393,11 +459,18 @@ export default function ReplacerConfig() {
               </div>
               <div class="test-result-group">
                 <label class="form-label">Resultado</label>
-                <div 
-                  class={`test-result-output ${resultError() ? 'error' : 'success'}`}
-                >
-                  {testResult() || "Resultado aparecerá aquí..."}
-                </div>
+                {!resultError() && testResult() ? (
+                  <HighlightedResult 
+                    result={testResult()} 
+                    replacementMap={replacementMap()} 
+                  />
+                ) : (
+                  <div 
+                    class={`test-result-output ${resultError() ? 'error' : 'success'}`}
+                  >
+                    {testResult() || "Resultado aparecerá aquí..."}
+                  </div>
+                )}
               </div>
             </div>
           </section>
