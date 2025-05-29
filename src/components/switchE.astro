@@ -25,7 +25,6 @@ const switchId = `${id}_check`;
 <div
   class={`field-wrapper ${checked ? '' : 'hidden'}`}
   data-field={id}
-  data-show-if={id}
   data-field-type={label || "text"}
 >
   <slot />
@@ -45,15 +44,19 @@ const switchId = `${id}_check`;
   const switchElement = document.getElementById(switchId);
   const elementWrapper = document.querySelector(`[data-field="${id}"]`);
   console.log(`Switch ${id} initialized with checked=${checked}`, switchElement, elementWrapper);
-  if (switchElement) {
-    switchElement.addEventListener("change", (event) => {
-      const valuesw = (event.detail?.value || switchElement.value)
-      const IsChecked = (valuesw === "on" || valuesw === true || valuesw === "true");
-      console.log(`Switch ${id}`,IsChecked);
-      if (!elementWrapper) return;
-      elementWrapper.classList.toggle("hidden",!IsChecked);
-      
-    });
-  }
+  function initlistenersform(){
+    if (!switchElement) return;
+      switchElement.addEventListener("change", (event) => {
+        const valuesw = (event.detail?.value || switchElement.value)
+        const IsChecked = (valuesw === "on" || valuesw === true || valuesw === "true");
+        if (!elementWrapper) return;
+        elementWrapper.classList.toggle("hidden",!IsChecked);
+        console.log(`Switch ${id} changed to ${IsChecked}`, elementWrapper);
+      });
+    
+      console.log("elementWrapper initialized", elementWrapper);
+      return elementWrapper;
+    }
+    initlistenersform()
   });
 </script>

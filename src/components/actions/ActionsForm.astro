@@ -204,11 +204,9 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
       fieldWrappers.forEach(wrapper => {
         const showIfData = wrapper.getAttribute('data-show-if');
         if (!showIfData) return;
-        console.log('Evaluating show condition for:', showIfData);
         try {
           const condition = safeParse(showIfData);
           const shouldShow = this.evaluateShowCondition(condition);
-          
           this.toggleFieldVisibility(wrapper, shouldShow);
         } catch (error) {
           console.error('Error evaluating show condition:', error, showIfData);

@@ -1,6 +1,7 @@
 import {getAllDataFromDatabase, databases} from '@components/actionsjs/idb.js';
 import logger from '@utils/logger.js';
 import {flattenObject, unflattenObject, replaceVariables} from '@utils/utils.js';
+import { ConfigurableReplacer } from '@components/replace/ConfigurableReplacer.js';
 import {
     playTextwithproviderInfo
 } from '@components/voicecomponents/initconfig.js';
@@ -14,7 +15,7 @@ import { executeHttpRequest } from "src/fetch/executor";
     eventsDB: { name: 'Events', version: 1, store: 'events' },
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
 */
-import {socket,TiktokEmitter,tiktokLiveEvents, localStorageManager, KickEmitter,kickLiveEvents } from '@utils/socketManager.ts';
+import {socket,TiktokEmitter,tiktokLiveEvents, KickEmitter,kickLiveEvents } from '@utils/socketManager.ts';
 
 tiktokLiveEvents.forEach(event => {
     TiktokEmitter.on(event, async (data) => {
@@ -235,7 +236,7 @@ function processMatchedItems(items, eventData, eventType) {
                     }
                     if (C.giftId || C.giftName) playnow = true; 
                     console.log("playnow",playnow)
-                    playTextwithproviderInfo(replaceVariables(A.text,C),undefined,playnow);
+                    playTextwithproviderInfo(ReplacesValues(A.text,C),undefined,playnow);
                 }
             },
             "overlay": {
@@ -258,8 +259,9 @@ function processMatchedItems(items, eventData, eventType) {
                     console.log("fetchForm", A, B, C, ev);
                     const { check, value } = A;
                     if (check && value){
-                        const result = await executeHttpRequest(value);
-                        console.log("fetchForm result", result);
+                        const proccessValude = ReplacesValues(value, C);
+                        const result = await executeHttpRequest(proccessValude);
+                        console.log("fetchForm result proccessValude", result,proccessValude);
                     }
                 }
             }
@@ -353,6 +355,14 @@ function updateRules(eventType, newRules) {
 //         "exactLength": (item, data) => data.comment?.length === parseInt(item.value)  // Agregar nuevo comparador
 //     }
 // });
-
+function ReplacesValues(input, data){
+    const replacer = new ConfigurableReplacer();
+    const localgetStorageData = localStorage.getItem(`configReplacer_default`);
+    if (localgetStorageData && typeof localgetStorageData === 'object') {
+        replacer.config = localgetStorageData;
+    }
+    const result = replacer.replaceWithTracking(input, data);
+    return result.result;
+}
 
 export { switcheventDb, updateRules };

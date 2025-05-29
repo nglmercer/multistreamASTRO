@@ -106,7 +106,8 @@ class ConfigurableReplacer {
     if (!this.config.useLocalStorage) return;
 
     try {
-      const savedConfig = localStorage.getItem(`configReplacer_${this.config.instanceId}`);
+        const instanceId = this.config.instanceId || "default";
+      const savedConfig = localStorage.getItem(`configReplacer_${instanceId}`);
       if (savedConfig) {
         const parsedConfig: Partial<Config> = JSON.parse(savedConfig);
         
