@@ -1,20 +1,23 @@
 // HighlightedResult.jsx
+import { createMemo, For, Show } from 'solid-js';
 import './HighlightedResult.css';
 
 function HighlightedResult(props) {
-  const { result, replacementMap } = props;
+  // Función auxiliar para escapar caracteres especiales en regex
+  const escapeRegExp = (string) => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
 
   // Función para procesar el texto y resaltar los valores reemplazados
   const processText = (text) => {
-    if (!text || !replacementMap || replacementMap.size === 0) {
+    if (!text || !props.replacementMap || props.replacementMap.size === 0) {
       return text;
     }
 
-    let processedText = text;
     const replacements = [];
     
     // Crear un mapa de todos los valores que fueron reemplazados
-    replacementMap.forEach((info, replacedValue) => {
+    props.replacementMap.forEach((info, replacedValue) => {
       const regex = new RegExp(`(${escapeRegExp(replacedValue)})`, 'g');
       let match;
       
@@ -71,16 +74,16 @@ function HighlightedResult(props) {
     return elements;
   };
 
-  // Función auxiliar para escapar caracteres especiales en regex
-  const escapeRegExp = (string) => {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  };
+  // Memo reactivo para el contenido formateado
+  const formattedContent = createMemo(() => {
+    console.log('HighlightedResult re-rendering with:', {
+      result: props.result,
+      mapSize: props.replacementMap?.size || 0
+    });
 
-  // Función para formatear JSON con highlighting
-  const formatJsonWithHighlighting = (jsonString) => {
     try {
       // Intentar parsear para verificar si es JSON válido
-      const parsed = JSON.parse(jsonString);
+      const parsed = JSON.parse(props.result);
       
       // Formatear el JSON con indentación
       const formatted = JSON.stringify(parsed, null, 2);
@@ -88,47 +91,72 @@ function HighlightedResult(props) {
       // Dividir en líneas para procesar cada una
       const lines = formatted.split('\n');
       
-      return (
-        <div class="json-container">
-          {lines.map((line, index) => (
-            <div key={index} class="json-line">
-              <span class="line-number">{index + 1}</span>
-              <span class="json-content">
-                {processText(line)}
-              </span>
-            </div>
-          ))}
-        </div>
-      );
+      return {
+        type: 'json',
+        lines: lines
+      };
     } catch (e) {
       // Si no es JSON válido, procesar como texto normal
-      return <div class="text-content">{processText(jsonString)}</div>;
+      return {
+        type: 'text',
+        content: props.result
+      };
     }
-  };
+  });
+
+  // Memo reactivo para las entradas del mapa de reemplazos
+  const replacementEntries = createMemo(() => {
+    if (!props.replacementMap || props.replacementMap.size === 0) {
+      return [];
+    }
+    return Array.from(props.replacementMap.entries());
+  });
 
   return (
     <div class="highlighted-result-container">
       <div class="test-result-output success highlighted">
-        {formatJsonWithHighlighting(result)}
+        <Show 
+          when={formattedContent().type === 'json'}
+          fallback={
+            <div class="text-content">
+              {processText(formattedContent().content)}
+            </div>
+          }
+        >
+          <div class="json-container">
+            <For each={formattedContent().lines}>
+              {(line, index) => (
+                <div class="json-line">
+                  <span class="line-number">{index() + 1}</span>
+                  <span class="json-content">
+                    {processText(line)}
+                  </span>
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
       </div>
       
       {/* Leyenda de colores */}
-      {replacementMap && replacementMap.size > 0 && (
+      <Show when={props.replacementMap && props.replacementMap.size > 0}>
         <div class="replacement-legend">
           <div class="legend-title">Valores Reemplazados:</div>
           <div class="legend-items">
-            {Array.from(replacementMap.entries()).map(([replacedValue, info], index) => (
-              <div key={index} class="legend-item">
-                <span class="legend-color highlighted-value"></span>
-                <span class="legend-text">
-                  <code>"{info.original}"</code> → <strong>"{replacedValue}"</strong>
-                  <small> (desde {info.dataKey})</small>
-                </span>
-              </div>
-            ))}
+            <For each={replacementEntries()}>
+              {([replacedValue, info], index) => (
+                <div class="legend-item">
+                  <span class="legend-color highlighted-value"></span>
+                  <span class="legend-text">
+                    <code>"{info.original}"</code> → <strong>"{replacedValue}"</strong>
+                    <small> ({info.dataKey})</small>
+                  </span>
+                </div>
+              )}
+            </For>
           </div>
         </div>
-      )}
+      </Show>
     </div>
   );
 }

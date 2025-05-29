@@ -52,10 +52,8 @@
 
 .json-content {
   flex: 1;
-  padding: 0 16px;
   color: #e4e4e4;
   white-space: pre;
-  overflow-x: auto;
 }
 
 /* Contenido de texto simple */
@@ -256,10 +254,6 @@
     min-width: 35px;
     padding: 0 8px;
     font-size: 11px;
-  }
-  
-  .json-content {
-    padding: 0 12px;
   }
   
   .highlighted-value {
