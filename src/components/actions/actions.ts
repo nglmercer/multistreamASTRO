@@ -107,11 +107,12 @@ function getFormData(): Record<string, any> | null {
     // Obtener elementos adicionales con validación
     const fetchForm = document.querySelector("#fetchForm_check") as HTMLInputElement;
     const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
+    const fetchConfigValue = fetchConfig ? (fetchConfig.getConfig() || fetchConfig.value) : {};
 
     return {
       ...data,
       fetchForm_check: fetchForm?.value || "",
-      fetchForm_value: fetchConfig?.value || {},
+      fetchForm_value: fetchConfigValue || {},
     };
   } catch (error) {
     console.error("Error getting form data:", error);

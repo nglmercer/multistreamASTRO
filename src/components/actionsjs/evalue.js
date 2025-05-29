@@ -4,7 +4,7 @@ import {flattenObject, unflattenObject, replaceVariables} from '@utils/utils.js'
 import {
     playTextwithproviderInfo
 } from '@components/voicecomponents/initconfig.js';
-import { HttpRequestExecutor } from "src/fetch/executor";
+import { executeHttpRequest } from "src/fetch/executor";
 
 /*
     commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
@@ -148,17 +148,13 @@ function evalueLikes(array, data) {
     return evaluateRules(array, data, 'likes');
 }
 function polifyfillEvalueKick(data){
-    /*KickEmitter.onAny ChatMessage 
+    /*KickEmitter ChatMessage 
 content: "hola pepe como estas"
-​
 created_at: "2025-05-28T23:23:57+00:00"
-​
 id: "1b6f9404-a314-44c1-9389-d4a766bf6b5d"
-​
 metadata: Object { message_ref: "1748474637226" }
-​
 sender: Object { id, username, slug, identity }
-​​
+
 id: 57654164
 identity: Object { color: "#93EBE0", badges: (1) […] }
 slug: "memelcer"
@@ -260,7 +256,11 @@ function processMatchedItems(items, eventData, eventType) {
                 verify: ["check"],
                 callback: async (A, B, C, ev) => {
                     console.log("fetchForm", A, B, C, ev);
-                    
+                    const { check, value } = A;
+                    if (check && value){
+                        const result = await executeHttpRequest(value);
+                        console.log("fetchForm result", result);
+                    }
                 }
             }
         }

@@ -34,7 +34,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     <title>{title}</title>
   </head>
   <body>
-    <dialog-container id="ActionDialog">
+    <dialog-container id="ActionDialog" style="position: absolute;">
       <div class="modal__container">
         <Actiontest/>
       </div>
@@ -90,12 +90,27 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
       <main class="main-content">
         <slot />
       </main>
-      <button class="float-btn" onclick="document.getElementById('ActionDialog').show()">
+      <button class="float-btn" id="MainModalshow">
         <span class="material-symbols-outlined">
           view_headline
         </span>
       </button>
     </div>
+    <script>
+      import { DialogContainer } from "src/litcomponents/custom-modal";
+      const ActionDialog = document.getElementById('ActionDialog') as DialogContainer;
+      const MainModalshow = document.getElementById('MainModalshow');
+      function listenerModalMenu(){
+        if (!MainModalshow) return;
+        if (!ActionDialog) return;
+        MainModalshow.addEventListener('click', () => {
+          ActionDialog.show();
+        });
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+        listenerModalMenu();
+      });
+    </script>
   </body>
 </html>
 
