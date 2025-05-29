@@ -406,7 +406,7 @@ class ConfigurableReplacer {
   constructor(options = {}) {
     // Valores por defecto para las opciones
     this.config = {
-      instanceId: options.instanceId || "default",
+      instanceId: "default",
       replacements: options.replacements || this.getDefaultReplacements(),
       removeBackslashes:
         options.removeBackslashes !== undefined

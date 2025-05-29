@@ -9,27 +9,29 @@ export default function TestReplacer(props) {
   const [testResult, setTestResult] = createSignal("");
   const [replacementMap, setReplacementMap] = createSignal(new Map());
   const [resultError, setResultError] = createSignal(false);
+  const currentReplacements = {};
 
   // Crear una instancia reactiva del replacer basada en las props
   const replacer = createMemo(() => {
-    const currentReplacements = {};
     props.replacements.forEach(r => {
-      if (r.pattern.trim() && r.dataKey.trim()) {
-        currentReplacements[r.pattern] = {
-          dataKey: r.dataKey,
-          defaultValue: r.defaultValue
-        };
-      }
+        if (r.pattern.trim() && r.dataKey.trim()) {
+            currentReplacements[r.pattern] = {
+            dataKey: r.dataKey,
+            defaultValue: r.defaultValue
+            };
+        }
     });
-
     return new ConfigurableReplacer({
-      instanceId: props.instanceId,
-      replacements: currentReplacements,
-      removeBackslashes: props.removeBackslashes,
-      useLocalStorage: props.useLocalStorage
+            replacements: currentReplacements,
+            removeBackslashes: props.removeBackslashes,
+            useLocalStorage: true
+        });
     });
-  });
-
+    const getStorageData =(key="default") => {
+        if (!localStorage) return null;
+        const data = localStorage.getItem(`configReplacer_${key}`);
+        return data ? JSON.parse(data) : null;
+    };
   const testReplace = () => {
     try {
       let parsedInput;
@@ -47,7 +49,10 @@ export default function TestReplacer(props) {
 
       // Usar la instancia reactiva actual
       const currentReplacer = replacer();
-      
+      const localgetStorageData = getStorageData(props.instanceId);
+      if (localgetStorageData && typeof localgetStorageData === 'object') {
+        currentReplacer.config = localgetStorageData;
+      }
       // Usar el método con tracking para obtener mapeo de reemplazos
       const { result, replacementMap: newReplacementMap } = currentReplacer.replaceWithTracking(parsedInput, testDataObj);
       

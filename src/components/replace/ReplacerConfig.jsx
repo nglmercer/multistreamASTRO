@@ -26,10 +26,10 @@ export default function ReplacerConfig() {
 
   const loadSavedConfig = () => {
     try {
-      const savedConfig = localStorage.getItem(`configReplacer_${instanceId()}`);
+      const savedConfig = localStorage.getItem(`configReplacer_default`);
       if (savedConfig) {
         const config = JSON.parse(savedConfig);
-        setInstanceId(config.instanceId || "default");
+        setInstanceId("default");
         setRemoveBackslashes(config.removeBackslashes === undefined ? true : config.removeBackslashes);
         setUseLocalStorage(config.useLocalStorage === undefined ? true : config.useLocalStorage);
         

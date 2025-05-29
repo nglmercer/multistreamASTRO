@@ -62,10 +62,6 @@
   margin-bottom: 0;
 }
 
-.general-config-section {
-  background: linear-gradient(135deg, var(--color-blue-50), var(--color-cyan-50));
-  border-color: var(--color-blue-200);
-}
 
 .test-area-section {
   background: linear-gradient(135deg, var(--color-indigo-50), var(--color-violet-50));
@@ -322,10 +318,6 @@
 
 /* Modo oscuro */
 @media (prefers-color-scheme: dark) {
-  .general-config-section {
-    background: linear-gradient(135deg, var(--color-blue-900), var(--color-cyan-900));
-    border-color: var(--color-blue-700);
-  }
 
   .test-area-section {
     background: linear-gradient(135deg, var(--color-indigo-900), var(--color-violet-900));

@@ -1,37 +1,54 @@
 // ReplacerConfigForm.jsx
-import { createSignal, createEffect, For } from 'solid-js';
+import { createSignal, createEffect, For, createMemo } from 'solid-js';
+import { createStore, produce } from 'solid-js/store';
 import ReplacementItemForm from './ReplacementItemForm';
 import { ConfigurableReplacer } from './ConfigurableReplacer';
 
 export default function ReplacerConfigForm(props) {
+  // Convertir el array de props a un store para actualizaciones granulares
+  const [replacements, setReplacements] = createStore([]);
+  
+  // Sincronizar el store con las props cuando cambien (para importación)
+  createEffect(() => {
+    setReplacements(props.replacements || []);
+  });
+  
+  // Actualizar las props cuando cambie el store local
+  createEffect(() => {
+    props.onReplacementsChange(replacements);
+  });
+
   const addReplacement = () => {
-    props.onReplacementsChange(prev => [...prev, {
+    const newReplacement = {
       id: Date.now() + Math.random(),
       pattern: "",
       dataKey: "",
       defaultValue: ""
-    }]);
+    };
+    setReplacements(prev => [...prev, newReplacement]);
   };
 
   const removeReplacement = (id) => {
-    props.onReplacementsChange(prev => prev.filter(r => r.id !== id));
+    setReplacements(prev => prev.filter(r => r.id !== id));
   };
 
+  // Esta función actualiza solo el elemento específico sin afectar otros
   const updateReplacement = (id, field, value) => {
-    props.onReplacementsChange(prev => prev.map(r =>
-      r.id === id ? { ...r, [field]: value } : r
-    ));
+    setReplacements(
+      replacement => replacement.id === id,
+      field,
+      value
+    );
   };
 
   const saveConfiguration = () => {
     const config = {
-      instanceId: props.instanceId,
       removeBackslashes: props.removeBackslashes,
       useLocalStorage: props.useLocalStorage,
       replacements: {}
     };
 
-    props.replacements.forEach(r => {
+    replacements.forEach(r => {
       if (r.pattern.trim() && r.dataKey.trim()) {
         config.replacements[r.pattern] = {
           dataKey: r.dataKey,
@@ -42,19 +59,21 @@ export default function ReplacerConfigForm(props) {
 
     const replacer = new ConfigurableReplacer(config);
     replacer.saveConfig();
-    alert('✅ Configuración guardada exitosamente!');
+    if (localStorage) {
+      localStorage.setItem(`configReplacer_default`, JSON.stringify(config));
+    }
+    console.log('Configuración guardada:', config);
   };
 
   const exportConfig = () => {
     const config = {
-      instanceId: props.instanceId,
       removeBackslashes: props.removeBackslashes,
       useLocalStorage: props.useLocalStorage,
       replacements: {},
       exportedAt: new Date().toISOString()
     };
 
-    props.replacements.forEach(r => {
+    replacements.forEach(r => {
       if (r.pattern.trim() && r.dataKey.trim()) {
         config.replacements[r.pattern] = {
           dataKey: r.dataKey,
@@ -86,9 +105,9 @@ export default function ReplacerConfigForm(props) {
       reader.onload = (e) => {
         try {
           const config = JSON.parse(e.target.result);
-          props.onInstanceIdChange(config.instanceId || 'default');
-          props.onRemoveBackslashesChange(config.removeBackslashes === undefined ? true : config.removeBackslashes);
-          props.onUseLocalStorageChange(config.useLocalStorage === undefined ? true : config.useLocalStorage);
+          props.onInstanceIdChange('default');
+          props.onRemoveBackslashesChange(true);
+          props.onUseLocalStorageChange(true);
           
           if (config.replacements) {
             const importedReplacements = Object.entries(config.replacements).map(([pattern, options]) => ({
@@ -97,7 +116,7 @@ export default function ReplacerConfigForm(props) {
               dataKey: options.dataKey,
               defaultValue: options.defaultValue
             }));
-            props.onReplacementsChange(importedReplacements);
+            setReplacements(importedReplacements);
           }
           alert('✅ Configuración importada exitosamente!');
         } catch (error) {
@@ -111,43 +130,7 @@ export default function ReplacerConfigForm(props) {
 
   return (
     <>
-      {/* Configuración General */}
-      <section class="config-section general-config-section">
-        <h2 class="section-title">Configuración General</h2>
-        <div class="grid-container two-columns">
-          <div class="form-group">
-            <label for="instanceId" class="form-label">Instance ID</label>
-            <input 
-              id="instanceId"
-              type="text" 
-              value={props.instanceId}
-              onInput={(e) => props.onInstanceIdChange(e.target.value)}
-              class="form-input"
-              placeholder="default"
-            />
-          </div>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={props.removeBackslashes}
-                onChange={(e) => props.onRemoveBackslashesChange(e.target.checked)}
-                class="form-checkbox"
-              />
-              <span class="checkbox-text">Remover Backslashes</span>
-            </label>
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                checked={props.useLocalStorage}
-                onChange={(e) => props.onUseLocalStorageChange(e.target.checked)}
-                class="form-checkbox"
-              />
-              <span class="checkbox-text">Usar Local Storage</span>
-            </label>
-          </div>
-        </div>
-      </section>
+
 
       {/* Configuración de Reemplazos */}
       <section class="config-section">
@@ -163,12 +146,14 @@ export default function ReplacerConfigForm(props) {
         </div>
         
         <div class="replacements-list">
-          <For each={props.replacements}>
-            {(replacement) => (
+          <For each={replacements} fallback={<div>No hay reemplazos configurados</div>}>
+            {(replacement, index) => (
               <ReplacementItemForm
                 replacement={replacement}
                 onUpdate={updateReplacement}
                 onRemove={removeReplacement}
+                // Clave única para evitar re-renders innecesarios
+                key={replacement.id}
               />
             )}
           </For>
