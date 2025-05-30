@@ -302,7 +302,6 @@ class ObjectTableLit extends BaseLitElement {
     }
     // _emitEv ya está en BaseLitElement y dispara 'internal-action'
 }
-customElements.define('object-table-lit', ObjectTableLit);
 
 
 // ================================================
@@ -439,7 +438,6 @@ class ObjectCardsLit extends BaseLitElement {
     }
     // _emitEv ya está en BaseLitElement
 }
-customElements.define('object-cards-lit', ObjectCardsLit);
 
 // ================================================
 // Componente ObjectFlexListLit (Actualizado para usar variables CSS)
@@ -554,7 +552,6 @@ class ObjectFlexListLit extends BaseLitElement {
     }
     // _emitEv ya está en BaseLitElement
 }
-customElements.define('object-flex-list-lit', ObjectFlexListLit);
 
 
 // ================================================
@@ -781,4 +778,42 @@ class GridManagerLit extends LitElement {
     }
 }
 
-customElements.define('grid-manager-lit', GridManagerLit);
+function registerComponents(components) {
+    const registered = [];
+    const skipped = [];
+    
+    for (const [tagName, componentClass] of Object.entries(components)) {
+        if (!customElements.get(tagName)) {
+            try {
+                customElements.define(tagName, componentClass);
+                registered.push(tagName);
+            } catch (error) {
+                console.error(`❌ Error registering ${tagName}:`, error);
+            }
+        } else {
+            skipped.push(tagName);
+        }
+    }
+    
+    console.log(`✅ Registered ${registered.length} components:`, registered);
+    if (skipped.length > 0) {
+        console.log(`⚠️ Skipped ${skipped.length} already registered:`, skipped);
+    }
+    
+    return { registered, skipped };
+}
+
+// Uso:
+const result = registerComponents({
+    'grid-manager-lit': GridManagerLit,
+    'object-table-lit': ObjectTableLit,
+    'object-cards-lit': ObjectCardsLit,
+    'object-flex-list-lit': ObjectFlexListLit
+});
+
+export {
+    GridManagerLit,
+    ObjectTableLit,
+    ObjectCardsLit,
+    ObjectFlexListLit,  
+}
