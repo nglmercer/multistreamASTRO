@@ -1,27 +1,241 @@
-<div
-class="tiktok-event-simulator"
-style="padding: 15px; margin: 15px 0; border-radius: 5px;"
->
-<h4>Simulate TikTok Event</h4>
-<p>
-  Select an event type below (populated from localStorage) and click "Emit"
-  to simulate it using TiktokEmitter.
-</p>
-<div>
-  <label for="tiktok-event-select">Event Type:</label>
-  <select
-    id="tiktok-event-select"
-    style="margin-left: 5px; margin-right: 10px;"
-  >
-    <option value="">-- Select Event --</option>
-  </select>
-  <button id="emit-tiktok-event-button" disabled>Emit Selected Event</button
-  >
+---
+// TikTokEventSimulator.astro
+// Props interface (si necesitas pasar props)
+import { UserProfile } from '@components/solid/userConnect';
+export interface Props {
+  title?: string;
+  showDescription?: boolean;
+}
+
+const { 
+  title = "Simulate TikTok Event", 
+  showDescription = true 
+} = Astro.props;
+function onConnect(e:any) {
+        console.log('Connected:', e);
+}
+function onDisconnect() {
+        console.log('Disconnected:');
+}
+---
+
+<div class="tiktok-event-simulator">
+  <UserProfile 
+    minimal 
+    groupId="tiktok_login" 
+    platform="tiktok"
+    client:only="solid-js"
+    data-component="tiktok-profile"
+    onConnectionStatusChanged={onConnect}
+    onUserDisconnected={onDisconnect}
+  />
+  
+  <UserProfile 
+    minimal 
+    groupId="kick_login" 
+    platform="kick"
+    client:only="solid-js"
+    data-component="kick-profile"
+    onConnectionStatusChanged={onConnect}
+    onUserDisconnected={onDisconnect}
+  />
+
+  <h4>🎭 {title}</h4>
+  {showDescription && (
+    <p>
+      Select an event type below (populated from localStorage) and click "Emit"
+      to simulate it using TiktokEmitter and KickEmitter.
+    </p>
+  )}
+  <div class="control-group">
+    <label for="tiktok-event-select">Event Type:</label>
+    <select id="tiktok-event-select">
+      <option value="">-- Select Event --</option>
+    </select>
+    <button id="emit-tiktok-event-button" disabled>🚀 Emit Selected Event</button>
+  </div>
+  <div id="tiktok-event-status"></div>
 </div>
-<div
-  id="tiktok-event-status"
-  style="margin-top: 10px; font-style: italic; min-height: 1.2em;"
->
-</div>
-</div>
+
+<style>
+  .tiktok-event-simulator {
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .tiktok-event-simulator:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .tiktok-event-simulator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .tiktok-event-simulator:hover::before {
+    opacity: 1;
+  }
+
+  .tiktok-event-simulator h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.4em;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .tiktok-event-simulator p {
+    margin: 0 0 20px 0;
+    opacity: 0.9;
+    line-height: 1.5;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+  }
+
+  .control-group label {
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+  }
+
+  #tiktok-event-select {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    font-size: 14px;
+    min-width: 200px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  #tiktok-event-select:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  }
+
+  #tiktok-event-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  #emit-tiktok-event-button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+  }
+
+  #emit-tiktok-event-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ee5a24, #ff6b6b);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+  }
+
+  #emit-tiktok-event-button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  #emit-tiktok-event-button:disabled {
+    background: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  #tiktok-event-status {
+    margin-top: 15px;
+    min-height: 1.4em;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-style: italic;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+  }
+
+  #tiktok-event-status:empty {
+    background: transparent;
+    padding: 0;
+  }
+
+  /* Status type styles */
+  :global(.status-success) {
+    background: rgba(46, 204, 113, 0.2) !important;
+    border-left: 4px solid #2ecc71;
+    color: #d5f5e3 !important;
+  }
+
+  :global(.status-error) {
+    background: rgba(231, 76, 60, 0.2) !important;
+    border-left: 4px solid #e74c3c;
+    color: #fadbd8 !important;
+  }
+
+  :global(.status-info) {
+    background: rgba(52, 152, 219, 0.2) !important;
+    border-left: 4px solid #3498db;
+    color: #d6eaf8 !important;
+  }
+
+  /* Responsive design */
+  @media (max-width: 600px) {
+    .control-group {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    #tiktok-event-select,
+    #emit-tiktok-event-button {
+      width: 100%;
+    }
+  }
+
+  /* Loading animation */
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+
+  :global(.loading) {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+</style>
+
 <script src="/src/components/menu/actionoptions.js"></script>

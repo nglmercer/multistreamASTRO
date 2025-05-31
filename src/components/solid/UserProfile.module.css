@@ -1,0 +1,205 @@
+/* UserProfile.module.css */
+.userProfile {
+    display: block;
+    width: fit-content;
+  }
+  
+  .container {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 8px;
+    color: #fff;
+    justify-items: center;
+    align-items: center;
+    width: 250px;
+    box-sizing: border-box;
+  }
+  
+  .container.minimal {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: 1fr;
+    gap: 8px;
+    padding: 8px;
+    background-color: transparent;
+    width: auto;
+    border-radius: 25px;
+    min-width: 200px;
+  }
+  
+  .profileWrapper {
+    position: relative;
+    display: inline-block;
+    grid-row: 1 / 2;
+    grid-column: 1 / 2;
+    line-height: 0;
+  }
+  
+  .statusIndicator {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid var(--platform-color);
+    transition: background-color 0.3s ease;
+    box-sizing: border-box;
+  }
+  
+  .container.minimal .statusIndicator {
+    width: 12px;
+    height: 12px;
+    bottom: 0;
+    right: 0;
+    border-width: 1.5px;
+  }
+  
+  .statusIndicator.offline { 
+    background-color: #808080; 
+  }
+  
+  .statusIndicator.online { 
+    background-color: #4CAF50; 
+  }
+  
+  .statusIndicator.away { 
+    background-color: #FFC107; 
+  }
+  
+  .statusIndicator.busy { 
+    background-color: #f44336; 
+  }
+  
+  .profileImage {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--platform-color);
+    box-shadow: 0 4px 12px var(--platform-shadow);
+    transition: all 0.3s ease;
+    display: block;
+  }
+  
+  .profileImage.icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--platform-background);
+    padding: 5px;
+    box-sizing: border-box;
+  }
+  
+  .profileImage.icon svg {
+    width: 70%;
+    height: 70%;
+    fill: var(--platform-text-color);
+  }
+  
+  .container.minimal .profileImage {
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+  }
+  
+  .container.minimal .profileImage.icon svg {
+    width: 60%;
+    height: 60%;
+  }
+  
+  .profileImage:hover {
+    transform: scale(1.05);
+    border-color: var(--platform-hover-color);
+  }
+  
+  .input {
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 2px solid transparent;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    grid-row: 2 / 3;
+    grid-column: 1 / 2;
+  }
+  
+  .container.minimal .input {
+    padding: 6px 10px;
+    font-size: 13px;
+    grid-row: 1 / 2;
+    grid-column: 2 / 3;
+    border-radius: 15px;
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  .input:focus {
+    outline: none;
+    border-color: var(--platform-hover-color);
+    background-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 10px var(--platform-hover-shadow);
+  }
+  
+  .input::placeholder {
+    color: #bbb;
+    opacity: 0.8;
+  }
+  
+  .input:disabled {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-color: transparent;
+    color: #aaa;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  .button {
+    width: 100%;
+    padding: 10px 20px;
+    background: var(--button-gradient);
+    color: var(--platform-text-color);
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    grid-row: 3 / 4;
+    grid-column: 1 / 2;
+  }
+  
+  .container.minimal .button {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 12px;
+    grid-row: 1 / 2;
+    grid-column: 3 / 4;
+    border-radius: 15px;
+  }
+  
+  .button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px var(--platform-shadow);
+  }
+  
+  .button:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
+  }
+  
+  .button.connected {
+    background: linear-gradient(135deg, #e94560 0%, #c23152 100%);
+  }
+  
+  .button.connected:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 10px rgba(233, 69, 96, 0.3);
+  }

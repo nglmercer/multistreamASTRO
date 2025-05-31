@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js'; // Para atributos opcionales
 import { map } from 'lit/directives/map.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { registerComponents } from './register';
 function safeParse(value) {
   try {
     if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
@@ -801,10 +802,6 @@ function safeParse(value) {
   }
 }
 
-
-customElements.define('c-dlg', CDlg);
-customElements.define('dlg-cont', DlgCont);
-customElements.define('c-inp', CInp);
 class ObjEditFrm extends LitElement {
   static styles = css`
       /* Tus estilos existentes */
@@ -1089,7 +1086,6 @@ class ObjEditFrm extends LitElement {
       `;
   }
 }
-customElements.define('obj-edit-frm', ObjEditFrm);
 
 
 class DynObjDisp extends LitElement {
@@ -1319,7 +1315,14 @@ class DynObjDisp extends LitElement {
       `;
   }
 }
-customElements.define('dyn-obj-disp', DynObjDisp);
+const components = {
+    'dyn-obj-disp': DynObjDisp,
+    'obj-edit-frm': ObjEditFrm,
+    'c-dlg': CDlg,
+    'dlg-cont': DlgCont,
+    'c-inp': CInp
+};
+const result = registerComponents(components);
 export {
     DynObjDisp,
     ObjEditFrm,
