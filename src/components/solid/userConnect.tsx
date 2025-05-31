@@ -6,7 +6,11 @@ import { platformIcons, platformThemes } from './userconstants';
 import { createInitialState, getCSSVariables } from './utils';
 import { useGroupState } from './hooks';
 import styles from './UserProfile.module.css';
-
+import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+const logger = new BrowserLogger('solidjs')
+  .setPrefix('SOLIDJS')
+  .enableDebug()
+  .setLevel(LogLevel.DEBUG);
 export const UserProfile = (props: UserProfileProps) => {
   // Crear estado inicial con la plataforma especificada en props
   const initialState = createInitialState(props.platform);
@@ -70,7 +74,7 @@ export const UserProfile = (props: UserProfileProps) => {
 
   // Función para actualizar el estado completo
   const updateConnectionState = (newState: Partial<UserProfileState>) => {
-    console.log('Updating connection state:', newState);
+    logger.log('Updating connection state:', newState);
     setState(prev => ({ ...prev, ...newState }));
     
     // Ejecutar callbacks apropiados
@@ -82,11 +86,11 @@ export const UserProfile = (props: UserProfileProps) => {
   const handleConnect = async () => {
     const username = inputValue().trim();
     if (!username || isConnecting() || state.connected) {
-      console.log('Connect blocked:', { username: !!username, isConnecting: isConnecting(), connected: state.connected });
+      logger.log('Connect blocked:', { username: !!username, isConnecting: isConnecting(), connected: state.connected });
       return;
     }
 
-    console.log('Starting connection process for:', username);
+    logger.log('Starting connection process for:', username);
     setIsConnecting(true);
     
     // Cambiar a estado "busy/connecting"
@@ -112,7 +116,7 @@ export const UserProfile = (props: UserProfileProps) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Button clicked - Current state:', { 
+    logger.log('Button clicked - Current state:', { 
       connected: state.connected, 
       connectionStatus: state.connectionStatus,
       isConnecting: isConnecting()
@@ -137,9 +141,9 @@ export const UserProfile = (props: UserProfileProps) => {
   };
 
   const connect = async (username: string) => {
-    console.log('=== CONNECT START ===');
-    console.log('Executing connect for username:', username);
-    console.log('Current state before connect:', { connected: state.connected, status: state.connectionStatus });
+    logger.log('=== CONNECT START ===');
+    logger.log('Executing connect for username:', username);
+    logger.log('Current state before connect:', { connected: state.connected, status: state.connectionStatus });
     
     // Simular conexión async (reemplaza con tu lógica real)
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -151,7 +155,7 @@ export const UserProfile = (props: UserProfileProps) => {
       connectionStatus: 'online' as const
     };
     
-    console.log('Updating state to connected:', newState);
+    logger.log('Updating state to connected:', newState);
     updateConnectionState(newState);
 
     // Ejecutar callback de conexión exitosa
@@ -164,13 +168,13 @@ export const UserProfile = (props: UserProfileProps) => {
       console.error('Error in onUserConnected callback:', error);
     }
     
-    console.log('=== CONNECT END ===');
+    logger.log('=== CONNECT END ===');
   };
 
   const disconnect = () => {
-    console.log('=== DISCONNECT START ===');
-    console.log('Executing disconnect');
-    console.log('Current state before disconnect:', { connected: state.connected, status: state.connectionStatus });
+    logger.log('=== DISCONNECT START ===');
+    logger.log('Executing disconnect');
+    logger.log('Current state before disconnect:', { connected: state.connected, status: state.connectionStatus });
     
     // Actualizar inmediatamente a estado desconectado
     const newState = {
@@ -178,7 +182,7 @@ export const UserProfile = (props: UserProfileProps) => {
       connectionStatus: 'offline' as const
     };
     
-    console.log('Updating state to disconnected:', newState);
+    logger.log('Updating state to disconnected:', newState);
     updateConnectionState(newState);
 
     // Ejecutar callback de desconexión
@@ -188,7 +192,7 @@ export const UserProfile = (props: UserProfileProps) => {
       console.error('Error in onUserDisconnected callback:', error);
     }
     
-    console.log('=== DISCONNECT END ===');
+    logger.log('=== DISCONNECT END ===');
   };
 
   const setPlatform = (platform: UserProfileState['platform']) => {
@@ -200,7 +204,7 @@ export const UserProfile = (props: UserProfileProps) => {
   };
 
   const setConnectionStatus = (status: UserProfileState['connectionStatus']) => {
-    console.log('Setting connection status to:', status);
+    logger.log('Setting connection status to:', status);
     updateConnectionState({
       connectionStatus: status,
       connected: status !== 'offline'
@@ -273,14 +277,14 @@ export const UserProfile = (props: UserProfileProps) => {
 
   // Debug effect para monitorear cambios de estado
   createEffect(() => {
-    console.log('=== STATE CHANGE ===');
-    console.log('Connected:', state.connected);
-    console.log('Username:', state.username);
-    console.log('Connection Status:', state.connectionStatus);
-    console.log('Platform:', state.platform);
-    console.log('Input Value:', inputValue());
-    console.log('Is Connecting:', isConnecting());
-    console.log('==================');
+    logger.log('=== STATE CHANGE ===');
+    logger.log('Connected:', state.connected);
+    logger.log('Username:', state.username);
+    logger.log('Connection Status:', state.connectionStatus);
+    logger.log('Platform:', state.platform);
+    logger.log('Input Value:', inputValue());
+    logger.log('Is Connecting:', isConnecting());
+    logger.log('==================');
   });
 
   return (

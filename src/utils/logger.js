@@ -56,7 +56,7 @@ class Logger {
   }
   
   // Ejemplo de uso:
-  const logger = new Logger({debug: true, info: true}, false);
+export  const logger = new Logger({debug: true, info: true}, false);
   
   
   // Añadir categorías dinámicamente
@@ -78,5 +78,5 @@ class Logger {
   logger.addCategory('event', true);
 
   logger.toggleCategory('event', false);
-  
+  logger.addCategory('solidjs', true);
 export default logger;
