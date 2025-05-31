@@ -12,6 +12,8 @@ export const UserProfile = (props: UserProfileProps) => {
   const initialState = createInitialState(props.platform);
   const [state, setState] = createStore<UserProfileState>(initialState);
   const [inputValue, setInputValue] = createSignal('');
+  const [isConnecting, setIsConnecting] = createSignal(false);
+  
   const uniqueId = Math.random().toString(36).substring(2, 9);
 
   // Initialize group state management
@@ -40,7 +42,7 @@ export const UserProfile = (props: UserProfileProps) => {
     const timeoutId = setTimeout(() => {
       saveToLocalStorage();
       updateGroupElements();
-    }, 100); // Pequeño delay para evitar múltiples saves
+    }, 100);
 
     return () => clearTimeout(timeoutId);
   });
@@ -66,71 +68,127 @@ export const UserProfile = (props: UserProfileProps) => {
     }
   };
 
-  const handleConnect = () => {
-    const username = inputValue().trim();
-    if (username) {
-      connect(username);
+  // Función para actualizar el estado completo
+  const updateConnectionState = (newState: Partial<UserProfileState>) => {
+    console.log('Updating connection state:', newState);
+    setState(prev => ({ ...prev, ...newState }));
+    
+    // Ejecutar callbacks apropiados
+    if (newState.connectionStatus) {
+      props.onConnectionStatusChanged?.({ status: newState.connectionStatus });
     }
   };
 
-  const handleDisconnect = () => {
-    disconnect();
+  const handleConnect = async () => {
+    const username = inputValue().trim();
+    if (!username || isConnecting() || state.connected) {
+      console.log('Connect blocked:', { username: !!username, isConnecting: isConnecting(), connected: state.connected });
+      return;
+    }
+
+    console.log('Starting connection process for:', username);
+    setIsConnecting(true);
+    
+    // Cambiar a estado "busy/connecting"
+    updateConnectionState({
+      connectionStatus: 'busy'
+    });
+
+    try {
+      await connect(username);
+    } catch (error) {
+      console.error('Connection failed:', error);
+      updateConnectionState({
+        connected: false,
+        connectionStatus: 'offline'
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // Función para manejar el click del botón principal
+  const handleButtonClick = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Button clicked - Current state:', { 
+      connected: state.connected, 
+      connectionStatus: state.connectionStatus,
+      isConnecting: isConnecting()
+    });
+    
+    if (state.connected) {
+        disconnect();
+    } else {
+      handleConnect();
+    }
   };
 
   const handleInputChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
     const value = target.value;
     setInputValue(value);
+    
     // Solo actualizar el username en el estado si no está conectado
     if (!state.connected) {
       setState('username', value);
     }
   };
 
-  const connect = (username: string) => {
-    console.log('Connecting with username:', username);
+  const connect = async (username: string) => {
+    console.log('=== CONNECT START ===');
+    console.log('Executing connect for username:', username);
+    console.log('Current state before connect:', { connected: state.connected, status: state.connectionStatus });
     
-    // Actualizar estado de forma batch para evitar renders múltiples
-    setState(prevState => ({
-      ...prevState,
+    // Simular conexión async (reemplaza con tu lógica real)
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Actualizar a estado conectado
+    const newState = {
       connected: true,
       username: username,
       connectionStatus: 'online' as const
-    }));
+    };
     
-    // Ejecutar callback después de que el estado se haya actualizado
-    setTimeout(() => {
-      try {
-        props.onUserConnected?.({ 
-          username: username, 
-          state: { ...state, connected: true, username, connectionStatus: 'online' } 
-        });
-        console.log('onUserConnected callback executed');
-      } catch (error) {
-        console.error('Error executing onUserConnected callback:', error);
-      }
-    }, 0);
+    console.log('Updating state to connected:', newState);
+    updateConnectionState(newState);
+
+    // Ejecutar callback de conexión exitosa
+    try {
+      props.onUserConnected?.({ 
+        username: username, 
+        state: { ...state, ...newState }
+      });
+    } catch (error) {
+      console.error('Error in onUserConnected callback:', error);
+    }
+    
+    console.log('=== CONNECT END ===');
   };
 
   const disconnect = () => {
-    console.log('Disconnecting...');
+    console.log('=== DISCONNECT START ===');
+    console.log('Executing disconnect');
+    console.log('Current state before disconnect:', { connected: state.connected, status: state.connectionStatus });
     
-    // Actualizar estado de forma batch
-    setState(prevState => ({
-      ...prevState,
+    // Actualizar inmediatamente a estado desconectado
+    const newState = {
       connected: false,
       connectionStatus: 'offline' as const
-    }));
+    };
     
-    // Ejecutar callback después de que el estado se haya actualizado
-    setTimeout(() => {
-      try {
-        props.onUserDisconnected?.();
-        console.log('onUserDisconnected callback executed');
-      } catch (error) {
-        console.error('Error executing onUserDisconnected callback:', error);
-      }
-    }, 0);
+    console.log('Updating state to disconnected:', newState);
+    updateConnectionState(newState);
+
+    // Ejecutar callback de desconexión
+    try {
+      props.onUserDisconnected?.();
+    } catch (error) {
+      console.error('Error in onUserDisconnected callback:', error);
+    }
+    
+    console.log('=== DISCONNECT END ===');
   };
 
   const setPlatform = (platform: UserProfileState['platform']) => {
@@ -142,22 +200,11 @@ export const UserProfile = (props: UserProfileProps) => {
   };
 
   const setConnectionStatus = (status: UserProfileState['connectionStatus']) => {
-    setState(prevState => ({
-      ...prevState,
+    console.log('Setting connection status to:', status);
+    updateConnectionState({
       connectionStatus: status,
       connected: status !== 'offline'
-    }));
-    
-    setTimeout(() => {
-      try {
-        props.onConnectionStatusChanged?.({ 
-          status: status 
-        });
-        console.log('onConnectionStatusChanged callback executed');
-      } catch (error) {
-        console.error('Error executing onConnectionStatusChanged callback:', error);
-      }
-    }, 0);
+    });
   };
 
   const setProfileImage = (url: string) => {
@@ -168,7 +215,9 @@ export const UserProfile = (props: UserProfileProps) => {
   createEffect(() => {
     if (props.ref) {
       props.ref({
-        setState: (newState: any) => setState(newState),
+        setState: (newState: Partial<UserProfileState>) => {
+          updateConnectionState(newState);
+        },
         getState: () => state,
         id: uniqueId,
         setPlatform,
@@ -182,7 +231,7 @@ export const UserProfile = (props: UserProfileProps) => {
 
   const containerClasses = () => [
     styles.container,
-    state.connected ? styles.connected : '',
+    state.connected ? styles.connected : styles.disconnected,
     props.minimal ? styles.minimal : ''
   ].filter(Boolean).join(' ');
 
@@ -191,16 +240,47 @@ export const UserProfile = (props: UserProfileProps) => {
     styles[state.connectionStatus]
   ].join(' ');
 
-  const buttonClasses = () => state.connected ? `${styles.button} ${styles.connected}` : styles.button;
+  const buttonClasses = () => {
+    if (state.connected) {
+      return `${styles.button} ${styles.connected}`;
+    } else if (isConnecting()) {
+      return `${styles.button} ${styles.connecting}`;
+    } else {
+      return styles.button;
+    }
+  };
+
+  // Determinar si el botón debe estar deshabilitado
+  const isButtonDisabled = () => {
+    if (isConnecting()) {
+      return true; // Siempre deshabilitado mientras conecta
+    }
+    
+    if (state.connected) {
+      return false; // Disconnect siempre habilitado cuando está conectado
+    } else {
+      return inputValue().trim().length === 0; // Connect solo habilitado con input válido
+    }
+  };
+
+  // Texto del botón según el estado
+  const getButtonText = () => {
+    if (isConnecting()) {
+      return 'Connecting...';
+    }
+    return state.connected ? 'Disconnect' : 'Connect';
+  };
 
   // Debug effect para monitorear cambios de estado
   createEffect(() => {
-    console.log('State changed:', {
-      connected: state.connected,
-      username: state.username,
-      connectionStatus: state.connectionStatus,
-      platform: state.platform
-    });
+    console.log('=== STATE CHANGE ===');
+    console.log('Connected:', state.connected);
+    console.log('Username:', state.username);
+    console.log('Connection Status:', state.connectionStatus);
+    console.log('Platform:', state.platform);
+    console.log('Input Value:', inputValue());
+    console.log('Is Connecting:', isConnecting());
+    console.log('==================');
   });
 
   return (
@@ -223,10 +303,11 @@ export const UserProfile = (props: UserProfileProps) => {
         />
         <button 
           class={buttonClasses()}
-          onClick={state.connected ? handleDisconnect : handleConnect}
-          disabled={!state.connected && !inputValue().trim()}
+          onClick={handleButtonClick}
+          disabled={isButtonDisabled()}
+          type="button"
         >
-          {state.connected ? 'Disconnect' : 'Connect'}
+          {getButtonText()}
         </button>
       </div>
     </div>
