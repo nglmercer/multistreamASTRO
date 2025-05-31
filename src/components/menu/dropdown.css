@@ -1,0 +1,81 @@
+    /* DROPDOWN.CSS */
+    .dropdown-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .dropdown-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .dropdown-button:active {
+      transform: translateY(0);
+    }
+
+    .dropdown-arrow {
+      transition: transform 0.2s ease;
+      font-size: 12px;
+    }
+
+    .dropdown-arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      /* Defaults, JS will override if needed */
+      top: 100%; 
+      left: 0; 
+      /* IMPORTANTE: Quitar right: 0; para que el JS pueda controlar el ancho y la posición horizontal.
+         O, si quieres que por defecto ocupe el ancho del botón, usa min-width. */
+      /* right: 0; */ 
+      min-width: 100%; /* Que sea al menos tan ancho como el botón */
+      width: max-content; /* Permite que el contenido determine el ancho, útil para menús más anchos que el botón */
+      max-width: calc(100vw - 20px); /* Evita que sea más ancho que el viewport (con un pequeño margen) */
+
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      margin-top: 4px; /* JS lo ajustará o usará margin-bottom si abre hacia arriba */
+      overflow: hidden; /* Opcional: si el contenido es muy largo, podría necesitar `overflow-y: auto;` y `max-height` dinámico */
+      opacity: 0;
+      transform: translateY(-10px); /* Animación inicial para abrir hacia abajo */
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    /* Estilos para cuando se abre hacia arriba (JS puede cambiar la animación si es necesario) */
+    .dropdown-menu[style*="bottom: 100%"] { /* Selector un poco frágil, una clase sería mejor */
+        transform: translateY(10px); /* Animación inicial para abrir hacia arriba */
+    }
+
+    .dropdown-menu.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .dropdown-content {
+      padding: 8px;
+      max-height: 70vh; /* Ejemplo: Limitar altura y permitir scroll interno */
+      overflow-y: auto;
+    }

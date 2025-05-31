@@ -4,7 +4,6 @@
   * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
   }
 
   html {
@@ -28,7 +27,7 @@
     width: var(--sidebar-width);
     background-color: var(--secondary-bg);
     border-right: 1px solid var(--border-color);
-    position: fixed;
+    position: absolute;
     height: 100vh;
     padding: 1rem;
     transition: var(--theme-transition);

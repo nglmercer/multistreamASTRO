@@ -1,0 +1,471 @@
+---
+// ButtonDropdownAstro.astro
+
+export interface Props {
+    buttonText: string;
+    class?: string;
+    id?: string;
+}
+
+const {
+    buttonText,
+    class: className = "",
+    id = Math.random().toString(36).substring(2, 9),
+} = Astro.props;
+---
+
+<div class={`dropdown-container ${className}`} id={`dropdown-container-${id}`}>
+    <button class="dropdown-button" id={`astro-dropdown-btn-${id}`}>
+        {buttonText}
+        <span class="dropdown-arrow">▼</span>
+    </button>
+
+    <div class="dropdown-menu" id={`astro-dropdown-menu-${id}`}>
+        <div class="dropdown-content">
+            <slot />
+        </div>
+    </div>
+</div>
+
+<script define:vars={{ id }}>
+    const button = document.getElementById(`astro-dropdown-btn-${id}`);
+    const menu = document.getElementById(`astro-dropdown-menu-${id}`);
+    const arrow = button?.querySelector(".dropdown-arrow");
+    const container = document.getElementById(`dropdown-container-${id}`);
+
+    let isOpen = false;
+
+    function getBestPosition() {
+        if (!button || !menu) return null;
+
+        const buttonRect = button.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        // Hacer el menú temporalmente visible para medir sus dimensiones
+        const originalDisplay = menu.style.display;
+        const originalVisibility = menu.style.visibility;
+        const originalOpacity = menu.style.opacity;
+        
+        menu.style.display = 'block';
+        menu.style.visibility = 'hidden';
+        menu.style.opacity = '0';
+        menu.style.position = 'absolute';
+        menu.style.top = '0';
+        menu.style.left = '0';
+        menu.style.right = 'auto';
+        menu.style.bottom = 'auto';
+        
+        const menuRect = menu.getBoundingClientRect();
+        
+        // Restaurar estilos originales
+        menu.style.display = originalDisplay;
+        menu.style.visibility = originalVisibility;
+        menu.style.opacity = originalOpacity;
+
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const margin = 8; // Margen de seguridad
+
+        // Calcular espacios disponibles
+        const spaceAbove = buttonRect.top - margin;
+        const spaceBelow = viewportHeight - buttonRect.bottom - margin;
+        const spaceLeft = buttonRect.left - margin;
+        const spaceRight = viewportWidth - buttonRect.right - margin;
+
+        // Determinar la mejor posición vertical
+        let verticalPosition = 'below'; // default
+        let availableHeight = spaceBelow;
+
+        if (menuRect.height > spaceBelow && spaceAbove > spaceBelow) {
+            verticalPosition = 'above';
+            availableHeight = spaceAbove;
+        }
+
+        // Determinar la mejor posición horizontal
+        let horizontalPosition = 'left-align'; // default: alinear con el borde izquierdo del botón
+        
+        // Si el menú se desborda por la derecha
+        if (buttonRect.left + menuRect.width > viewportWidth - margin) {
+            // Intentar alinear con el borde derecho del botón
+            if (buttonRect.right - menuRect.width >= margin) {
+                horizontalPosition = 'right-align';
+            } else {
+                // Si aún se desborda, centrarlo en el viewport
+                horizontalPosition = 'center';
+            }
+        }
+
+        // Si el menú es muy ancho, intentar reducir su ancho máximo
+        const maxWidth = Math.min(
+            viewportWidth - 2 * margin,
+            Math.max(buttonRect.width, 300) // Mínimo 300px o el ancho del botón
+        );
+
+        return {
+            vertical: verticalPosition,
+            horizontal: horizontalPosition,
+            availableHeight,
+            maxWidth,
+            buttonRect,
+            containerRect,
+            margin
+        };
+    }
+
+    function positionMenu() {
+        if (!button || !menu) return;
+
+        const position = getBestPosition();
+        if (!position) return;
+
+        // Resetear todos los estilos de posicionamiento
+        menu.style.top = '';
+        menu.style.bottom = '';
+        menu.style.left = '';
+        menu.style.right = '';
+        menu.style.marginTop = '';
+        menu.style.marginBottom = '';
+        menu.style.transform = '';
+
+        // Establecer ancho máximo
+        menu.style.maxWidth = `${position.maxWidth}px`;
+
+        // Posicionamiento vertical
+        if (position.vertical === 'above') {
+            menu.style.bottom = '100%';
+            menu.style.marginBottom = `${position.margin}px`;
+            menu.classList.add('dropdown-above');
+            menu.classList.remove('dropdown-below');
+        } else {
+            menu.style.top = '100%';
+            menu.style.marginTop = `${position.margin}px`;
+            menu.classList.add('dropdown-below');
+            menu.classList.remove('dropdown-above');
+        }
+
+        // Posicionamiento horizontal
+        switch (position.horizontal) {
+            case 'right-align':
+                menu.style.right = '0';
+                menu.style.left = 'auto';
+                break;
+            case 'center':
+                menu.style.left = '50%';
+                menu.style.transform = 'translateX(-50%)';
+                break;
+            default: // 'left-align'
+                menu.style.left = '0';
+                menu.style.right = 'auto';
+                break;
+        }
+
+        // Limitar altura si es necesario
+        if (position.availableHeight < 200) { // Si hay poco espacio vertical
+            menu.style.maxHeight = `${Math.max(position.availableHeight, 150)}px`;
+            const content = menu.querySelector('.dropdown-content');
+            if (content) {
+                content.style.overflowY = 'auto';
+                content.style.maxHeight = `${Math.max(position.availableHeight - 20, 130)}px`;
+            }
+        } else {
+            menu.style.maxHeight = '';
+            const content = menu.querySelector('.dropdown-content');
+            if (content) {
+                content.style.overflowY = '';
+                content.style.maxHeight = '';
+            }
+        }
+
+        // Ajuste final: verificar si aún se sale del viewport
+        requestAnimationFrame(() => {
+            const finalRect = menu.getBoundingClientRect();
+            
+            // Ajuste horizontal fino
+            if (finalRect.left < position.margin) {
+                const shift = position.margin - finalRect.left;
+                if (menu.style.transform.includes('translateX')) {
+                    const currentTransform = menu.style.transform;
+                    menu.style.transform = currentTransform.replace(
+                        /translateX\([^)]+\)/,
+                        `translateX(calc(-50% + ${shift}px))`
+                    );
+                } else {
+                    const currentLeft = parseFloat(menu.style.left) || 0;
+                    menu.style.left = `${currentLeft + shift}px`;
+                }
+            } else if (finalRect.right > window.innerWidth - position.margin) {
+                const shift = finalRect.right - (window.innerWidth - position.margin);
+                if (menu.style.transform.includes('translateX')) {
+                    const currentTransform = menu.style.transform;
+                    menu.style.transform = currentTransform.replace(
+                        /translateX\([^)]+\)/,
+                        `translateX(calc(-50% - ${shift}px))`
+                    );
+                } else if (menu.style.right !== 'auto' && menu.style.right !== '') {
+                    const currentRight = parseFloat(menu.style.right) || 0;
+                    menu.style.right = `${currentRight + shift}px`;
+                } else {
+                    const currentLeft = parseFloat(menu.style.left) || 0;
+                    menu.style.left = `${currentLeft - shift}px`;
+                }
+            }
+        });
+    }
+
+    function toggleDropdown() {
+        isOpen = !isOpen;
+        menu?.classList.toggle("open", isOpen);
+        arrow?.classList.toggle("open", isOpen);
+
+        if (isOpen && menu) {
+            // Usar requestAnimationFrame para asegurar que los estilos se apliquen
+            requestAnimationFrame(() => {
+                positionMenu();
+            });
+        } else if (menu) {
+            // Resetear estilos al cerrar
+            resetMenuStyles();
+        }
+    }
+
+    function closeDropdown() {
+        if (!isOpen) return;
+        isOpen = false;
+        menu?.classList.remove("open");
+        arrow?.classList.remove("open");
+        if (menu) {
+            resetMenuStyles();
+        }
+    }
+
+    function resetMenuStyles() {
+        menu.style.top = '';
+        menu.style.bottom = '';
+        menu.style.left = '';
+        menu.style.right = '';
+        menu.style.marginTop = '';
+        menu.style.marginBottom = '';
+        menu.style.transform = '';
+        menu.style.maxWidth = '';
+        menu.style.maxHeight = '';
+        menu.classList.remove('dropdown-above', 'dropdown-below');
+        
+        const content = menu.querySelector('.dropdown-content');
+        if (content) {
+            content.style.overflowY = '';
+            content.style.maxHeight = '';
+        }
+    }
+
+    // Event listeners
+    button?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleDropdown();
+    });
+
+    document.addEventListener("click", (e) => {
+        if (container && !container.contains(e.target) && isOpen) {
+            closeDropdown();
+        }
+    });
+
+    menu?.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+
+    // Reposicionar en cambio de tamaño de ventana
+    window.addEventListener('resize', () => {
+        if (isOpen) {
+            requestAnimationFrame(() => {
+                positionMenu();
+            });
+        }
+    });
+
+    // Reposicionar en scroll (opcional, útil si el dropdown está en un contenedor con scroll)
+    window.addEventListener('scroll', () => {
+        if (isOpen) {
+            requestAnimationFrame(() => {
+                positionMenu();
+            });
+        }
+    }, { passive: true });
+
+</script>
+
+<style>
+/* DROPDOWN.CSS MEJORADO */
+/* DROPDOWN.CSS MEJORADO CON SOPORTE PARA MODO OSCURO/CLARO */
+
+:root {
+    /* Paleta de Colores - Modo Claro (Por defecto) */
+    --dropdown-bg-gradient-start: #667eea;
+    --dropdown-bg-gradient-end: #764ba2;
+    --dropdown-button-text-color: white;
+    --dropdown-button-shadow-color: rgba(102, 126, 234, 0.3);
+    --dropdown-button-shadow-hover-color: rgba(102, 126, 234, 0.4);
+
+    --dropdown-menu-bg-color: white;
+    --dropdown-menu-border-color: #e2e8f0;
+    --dropdown-menu-shadow-color: rgba(0, 0, 0, 0.15);
+    --dropdown-menu-text-color: #333; /* Color de texto para items del menú */
+
+    --scrollbar-track-bg-color: #f1f1f1;
+    --scrollbar-thumb-bg-color: #c1c1c1;
+    --scrollbar-thumb-hover-bg-color: #a8a8a8;
+
+    /* Opcional: colores base de la página para contexto */
+    --page-bg-color: #f9fafb;
+    --page-text-color: #1f2937;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Paleta de Colores - Modo Oscuro */
+        --dropdown-bg-gradient-start: #5a67d8; /* Un poco más oscuro/menos saturado */
+        --dropdown-bg-gradient-end: #5a4ba2;   /* Un poco más oscuro/menos saturado */
+        --dropdown-button-text-color: #e2e8f0; /* Texto más claro */
+        --dropdown-button-shadow-color: rgba(30, 41, 59, 0.5); /* Sombra más oscura para dark mode */
+        --dropdown-button-shadow-hover-color: rgba(30, 41, 59, 0.7);
+
+        --dropdown-menu-bg-color: #2d3748; /* Gris oscuro */
+        --dropdown-menu-border-color: #4a5568; /* Borde un poco más claro que el fondo */
+        --dropdown-menu-shadow-color: rgba(0, 0, 0, 0.4); /* Sombra más visible en fondo oscuro */
+        --dropdown-menu-text-color: #e2e8f0; /* Texto claro para items del menú */
+
+        --scrollbar-track-bg-color: #1a202c; /* Track oscuro */
+        --scrollbar-thumb-bg-color: #4a5568; /* Thumb más claro */
+        --scrollbar-thumb-hover-bg-color: #718096; /* Thumb hover más claro aún */
+
+        /* Opcional: colores base de la página para contexto */
+        --page-bg-color: #1a202c;
+        --page-text-color: #e2e8f0;
+    }
+}
+
+/* Estilos base que no cambian con el tema, pero pueden usar variables de contexto si es necesario */
+body {
+    background-color: var(--page-bg-color);
+    color: var(--page-text-color);
+    /* ... otros estilos base del body ... */
+}
+
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-button {
+    background: linear-gradient(135deg, var(--dropdown-bg-gradient-start) 0%, var(--dropdown-bg-gradient-end) 100%);
+    color: var(--dropdown-button-text-color);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--dropdown-button-shadow-color);
+}
+
+.dropdown-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--dropdown-button-shadow-hover-color);
+}
+
+.dropdown-button:active {
+    transform: translateY(0);
+}
+
+.dropdown-arrow {
+    transition: transform 0.2s ease;
+    font-size: 12px;
+    /* El color de la flecha se hereda del botón (var(--dropdown-button-text-color)) */
+}
+
+.dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    min-width: 100%;
+    width: max-content;
+    background: var(--dropdown-menu-bg-color);
+    border: 1px solid var(--dropdown-menu-border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px var(--dropdown-menu-shadow-color);
+    z-index: 1000;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    color: var(--dropdown-menu-text-color); /* Color de texto para el contenido del menú */
+
+    /* Valores por defecto que serán sobrescritos por JS */
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+}
+
+/* Animaciones para diferentes direcciones */
+.dropdown-menu.dropdown-above {
+    transform: translateY(10px) scale(0.95);
+}
+
+.dropdown-menu.dropdown-below {
+    transform: translateY(-10px) scale(0.95);
+}
+
+.dropdown-menu.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.dropdown-content {
+    padding: 8px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Estilos para scroll personalizado */
+.dropdown-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-content::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-bg-color);
+    border-radius: 3px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-bg-color);
+    border-radius: 3px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover-bg-color);
+}
+
+/* Responsive: En pantallas pequeñas, usar ancho completo */
+@media (max-width: 480px) {
+    .dropdown-menu {
+        left: 0 !important;
+        right: 0 !important;
+        transform: none !important;
+        min-width: 100%;
+        width: 100%;
+        max-width: none !important;
+    }
+
+    .dropdown-menu.open {
+        transform: translateY(0) scale(1) !important;
+    }
+}
+</style>
