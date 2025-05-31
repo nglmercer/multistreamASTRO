@@ -35,12 +35,12 @@ export interface PlatformTheme {
     disconnect?: () => void;
   }
   
-export interface UserProfileProps {
-  minimal?: boolean;
-  groupId?: string;
-  platform?: 'tiktok' | 'kick' | 'youtube' | 'twitch' | 'discord' | string; // Agrega las plataformas que tengas disponibles
-  ref?: (component: UserProfileComponent) => void;
-  onUserConnected?: (data: { username: string; state: UserProfileState }) => void;
-  onUserDisconnected?: () => void;
-  onConnectionStatusChanged?: (data: { status: UserProfileState['connectionStatus'] }) => void;
-}
+  export interface UserProfileProps {
+    minimal?: boolean;
+    groupId?: string;
+    platform?: 'tiktok' | 'kick' | 'youtube' | 'twitch' | 'discord' | string;
+    ref?: (component: UserProfileComponent) => void;
+    onUserConnected?: (data: { username: string; state: UserProfileState }) => void;
+    onUserDisconnected?: () => void;
+    onConnectionStatusChanged?: (data: { status: UserProfileState['connectionStatus'] }) => void;
+  }

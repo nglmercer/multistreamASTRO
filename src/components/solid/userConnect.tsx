@@ -1,5 +1,5 @@
 // UserProfile.tsx
-import { createSignal, createEffect } from 'solid-js';
+import { createSignal, createEffect, onMount } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import type { UserProfileProps, UserProfileState, UserProfileComponent } from './userTypes';
 import { platformIcons, platformThemes } from './userconstants';
@@ -24,7 +24,7 @@ export const UserProfile = (props: UserProfileProps) => {
   );
 
   // Initialize on mount
-  createEffect(() => {
+  onMount(() => {
     initializeState();
   });
 
@@ -35,10 +35,14 @@ export const UserProfile = (props: UserProfileProps) => {
     }
   });
 
-  // Save to localStorage when state changes
+  // Save to localStorage when state changes (with debouncing)
   createEffect(() => {
-    saveToLocalStorage();
-    updateGroupElements();
+    const timeoutId = setTimeout(() => {
+      saveToLocalStorage();
+      updateGroupElements();
+    }, 100); // Pequeño delay para evitar múltiples saves
+
+    return () => clearTimeout(timeoutId);
   });
 
   const renderProfileImage = () => {
@@ -63,8 +67,9 @@ export const UserProfile = (props: UserProfileProps) => {
   };
 
   const handleConnect = () => {
-    if (inputValue().trim()) {
-      connect(inputValue().trim());
+    const username = inputValue().trim();
+    if (username) {
+      connect(username);
     }
   };
 
@@ -74,29 +79,58 @@ export const UserProfile = (props: UserProfileProps) => {
 
   const handleInputChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
-    setInputValue(target.value);
-    setState('username', target.value);
+    const value = target.value;
+    setInputValue(value);
+    // Solo actualizar el username en el estado si no está conectado
+    if (!state.connected) {
+      setState('username', value);
+    }
   };
 
   const connect = (username: string) => {
-    setState({
-      ...state,
+    console.log('Connecting with username:', username);
+    
+    // Actualizar estado de forma batch para evitar renders múltiples
+    setState(prevState => ({
+      ...prevState,
       connected: true,
       username: username,
-      connectionStatus: 'online'
-    });
+      connectionStatus: 'online' as const
+    }));
     
-    props.onUserConnected?.({ username: state.username, state: { ...state } });
+    // Ejecutar callback después de que el estado se haya actualizado
+    setTimeout(() => {
+      try {
+        props.onUserConnected?.({ 
+          username: username, 
+          state: { ...state, connected: true, username, connectionStatus: 'online' } 
+        });
+        console.log('onUserConnected callback executed');
+      } catch (error) {
+        console.error('Error executing onUserConnected callback:', error);
+      }
+    }, 0);
   };
 
   const disconnect = () => {
-    setState({
-      ...state,
-      connected: false,
-      connectionStatus: 'offline'
-    });
+    console.log('Disconnecting...');
     
-    props.onUserDisconnected?.();
+    // Actualizar estado de forma batch
+    setState(prevState => ({
+      ...prevState,
+      connected: false,
+      connectionStatus: 'offline' as const
+    }));
+    
+    // Ejecutar callback después de que el estado se haya actualizado
+    setTimeout(() => {
+      try {
+        props.onUserDisconnected?.();
+        console.log('onUserDisconnected callback executed');
+      } catch (error) {
+        console.error('Error executing onUserDisconnected callback:', error);
+      }
+    }, 0);
   };
 
   const setPlatform = (platform: UserProfileState['platform']) => {
@@ -108,13 +142,22 @@ export const UserProfile = (props: UserProfileProps) => {
   };
 
   const setConnectionStatus = (status: UserProfileState['connectionStatus']) => {
-    setState({
-      ...state,
+    setState(prevState => ({
+      ...prevState,
       connectionStatus: status,
       connected: status !== 'offline'
-    });
+    }));
     
-    props.onConnectionStatusChanged?.({ status: state.connectionStatus });
+    setTimeout(() => {
+      try {
+        props.onConnectionStatusChanged?.({ 
+          status: status 
+        });
+        console.log('onConnectionStatusChanged callback executed');
+      } catch (error) {
+        console.error('Error executing onConnectionStatusChanged callback:', error);
+      }
+    }, 0);
   };
 
   const setProfileImage = (url: string) => {
@@ -150,6 +193,16 @@ export const UserProfile = (props: UserProfileProps) => {
 
   const buttonClasses = () => state.connected ? `${styles.button} ${styles.connected}` : styles.button;
 
+  // Debug effect para monitorear cambios de estado
+  createEffect(() => {
+    console.log('State changed:', {
+      connected: state.connected,
+      username: state.username,
+      connectionStatus: state.connectionStatus,
+      platform: state.platform
+    });
+  });
+
   return (
     <div class={styles.userProfile}>
       <div class={containerClasses()} style={getCSSVariables(state.platform)}>
@@ -171,6 +224,7 @@ export const UserProfile = (props: UserProfileProps) => {
         <button 
           class={buttonClasses()}
           onClick={state.connected ? handleDisconnect : handleConnect}
+          disabled={!state.connected && !inputValue().trim()}
         >
           {state.connected ? 'Disconnect' : 'Connect'}
         </button>

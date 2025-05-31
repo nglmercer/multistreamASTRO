@@ -17,6 +17,9 @@ function onConnect(e:any) {
 function onDisconnect() {
         console.log('Disconnected:');
 }
+function onConnectionStatusChanged(e:any) {
+        console.log('Connection Status Changed:', e);
+}
 ---
 
 <div class="tiktok-event-simulator">
@@ -26,7 +29,8 @@ function onDisconnect() {
     platform="tiktok"
     client:only="solid-js"
     data-component="tiktok-profile"
-    onConnectionStatusChanged={onConnect}
+    onUserConnected={onConnect}
+    onConnectionStatusChanged={onConnectionStatusChanged}
     onUserDisconnected={onDisconnect}
   />
   
@@ -36,7 +40,8 @@ function onDisconnect() {
     platform="kick"
     client:only="solid-js"
     data-component="kick-profile"
-    onConnectionStatusChanged={onConnect}
+    onUserConnected={onConnect}
+    onConnectionStatusChanged={onConnectionStatusChanged}
     onUserDisconnected={onDisconnect}
   />
 
