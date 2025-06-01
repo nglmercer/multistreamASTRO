@@ -32,7 +32,7 @@ class BrowserLogger {
         level: LogLevel.INFO,
         enableDebug: false,
         enableCaller: false,
-        enableTimestamp: true
+        enableTimestamp: false
     };
     private static loggers: BrowserLogger[] = [];
 

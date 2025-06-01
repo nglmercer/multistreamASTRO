@@ -1,7 +1,6 @@
 ---
 // TikTokEventSimulator.astro
 // Props interface (si necesitas pasar props)
-import { UserProfile } from '@components/solid/userConnect';
 export interface Props {
   title?: string;
   showDescription?: boolean;
@@ -11,39 +10,9 @@ const {
   title = "Simulate TikTok Event", 
   showDescription = true 
 } = Astro.props;
-function onConnect(e:any) {
-        console.log('Connected:', e);
-}
-function onDisconnect() {
-        console.log('Disconnected:');
-}
-function onConnectionStatusChanged(e:any) {
-        console.log('Connection Status Changed:', e);
-}
----
 
+---
 <div class="tiktok-event-simulator">
-  <UserProfile 
-    minimal 
-    groupId="tiktok_login" 
-    platform="tiktok"
-    client:only="solid-js"
-    data-component="tiktok-profile"
-    onUserConnected={onConnect}
-    onConnectionStatusChanged={onConnectionStatusChanged}
-    onUserDisconnected={onDisconnect}
-  />
-  
-  <UserProfile 
-    minimal 
-    groupId="kick_login" 
-    platform="kick"
-    client:only="solid-js"
-    data-component="kick-profile"
-    onUserConnected={onConnect}
-    onConnectionStatusChanged={onConnectionStatusChanged}
-    onUserDisconnected={onDisconnect}
-  />
 
   <h4>🎭 {title}</h4>
   {showDescription && (

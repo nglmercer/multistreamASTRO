@@ -1,0 +1,37 @@
+---
+import ButtonDropdownSolid from "@components/solid/ButtonDropdownSolid";
+import { UserProfile } from "@components/solid/userConnect";
+function onConnect(e: any) {
+  console.log("Connected:", e);
+}
+function onDisconnect() {
+  console.log("Disconnected:");
+}
+function onConnectionStatusChanged(e: any) {
+  console.log("Connection Status Changed:", e);
+}
+---
+
+<ButtonDropdownSolid client:only="solid-js" buttonText="Login">
+  <UserProfile
+    minimal
+    groupId="tiktok_login"
+    platform="tiktok"
+    client:only="solid-js"
+    data-component="tiktok-profile"
+    onUserConnected={onConnect}
+    onConnectionStatusChanged={onConnectionStatusChanged}
+    onUserDisconnected={onDisconnect}
+  />
+
+  <UserProfile
+    minimal
+    groupId="kick_login"
+    platform="kick"
+    client:only="solid-js"
+    data-component="kick-profile"
+    onUserConnected={onConnect}
+    onConnectionStatusChanged={onConnectionStatusChanged}
+    onUserDisconnected={onDisconnect}
+  />
+</ButtonDropdownSolid>

@@ -1,0 +1,166 @@
+/* DROPDOWN.CSS MEJORADO CON SOPORTE PARA MODO OSCURO/CLARO */
+
+:root {
+    /* Paleta de Colores - Modo Claro (Por defecto) */
+    --dropdown-bg-gradient-start: #667eea;
+    --dropdown-bg-gradient-end: #764ba2;
+    --dropdown-button-text-color: white;
+    --dropdown-button-shadow-color: rgba(102, 126, 234, 0.3);
+    --dropdown-button-shadow-hover-color: rgba(102, 126, 234, 0.4);
+
+    --dropdown-menu-bg-color: white;
+    --dropdown-menu-border-color: #e2e8f0;
+    --dropdown-menu-shadow-color: rgba(0, 0, 0, 0.15);
+    --dropdown-menu-text-color: #333; /* Color de texto para items del menú */
+
+    --scrollbar-track-bg-color: #f1f1f1;
+    --scrollbar-thumb-bg-color: #c1c1c1;
+    --scrollbar-thumb-hover-bg-color: #a8a8a8;
+
+    /* Opcional: colores base de la página para contexto */
+    --page-bg-color: #f9fafb;
+    --page-text-color: #1f2937;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Paleta de Colores - Modo Oscuro */
+        --dropdown-bg-gradient-start: #5a67d8; /* Un poco más oscuro/menos saturado */
+        --dropdown-bg-gradient-end: #5a4ba2;   /* Un poco más oscuro/menos saturado */
+        --dropdown-button-text-color: #e2e8f0; /* Texto más claro */
+        --dropdown-button-shadow-color: rgba(30, 41, 59, 0.5); /* Sombra más oscura para dark mode */
+        --dropdown-button-shadow-hover-color: rgba(30, 41, 59, 0.7);
+
+        --dropdown-menu-bg-color: #2d3748; /* Gris oscuro */
+        --dropdown-menu-border-color: #4a5568; /* Borde un poco más claro que el fondo */
+        --dropdown-menu-shadow-color: rgba(0, 0, 0, 0.4); /* Sombra más visible en fondo oscuro */
+        --dropdown-menu-text-color: #e2e8f0; /* Texto claro para items del menú */
+
+        --scrollbar-track-bg-color: #1a202c; /* Track oscuro */
+        --scrollbar-thumb-bg-color: #4a5568; /* Thumb más claro */
+        --scrollbar-thumb-hover-bg-color: #718096; /* Thumb hover más claro aún */
+
+        /* Opcional: colores base de la página para contexto */
+        --page-bg-color: #1a202c;
+        --page-text-color: #e2e8f0;
+    }
+}
+
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-button {
+    background: linear-gradient(135deg, var(--dropdown-bg-gradient-start) 0%, var(--dropdown-bg-gradient-end) 100%);
+    color: var(--dropdown-button-text-color);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--dropdown-button-shadow-color);
+}
+
+.dropdown-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--dropdown-button-shadow-hover-color);
+}
+
+.dropdown-button:active {
+    transform: translateY(0);
+}
+
+.dropdown-arrow {
+    transition: transform 0.2s ease;
+    font-size: 12px;
+    /* El color de la flecha se hereda del botón (var(--dropdown-button-text-color)) */
+}
+
+.dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    min-width: 100%;
+    width: max-content;
+    background: var(--dropdown-menu-bg-color);
+    border: 1px solid var(--dropdown-menu-border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px var(--dropdown-menu-shadow-color);
+    z-index: 1000;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    color: var(--dropdown-menu-text-color); /* Color de texto para el contenido del menú */
+
+    /* Valores por defecto que serán sobrescritos por JS */
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+}
+
+/* Animaciones para diferentes direcciones */
+.dropdown-menu.dropdown-above {
+    transform: translateY(10px) scale(0.95);
+}
+
+.dropdown-menu.dropdown-below {
+    transform: translateY(-10px) scale(0.95);
+}
+
+.dropdown-menu.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.dropdown-content {
+    padding: 8px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Estilos para scroll personalizado */
+.dropdown-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-content::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-bg-color);
+    border-radius: 3px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-bg-color);
+    border-radius: 3px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover-bg-color);
+}
+
+/* Responsive: En pantallas pequeñas, usar ancho completo */
+@media (max-width: 480px) {
+    .dropdown-menu {
+        left: 0 !important;
+        right: 0 !important;
+        transform: none !important;
+        min-width: 100%;
+        width: 100%;
+        max-width: none !important;
+    }
+
+    .dropdown-menu.open {
+        transform: translateY(0) scale(1) !important;
+    }
+}

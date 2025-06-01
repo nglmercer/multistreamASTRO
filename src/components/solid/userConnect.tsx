@@ -1,37 +1,108 @@
-// UserProfile.tsx
-import { createSignal, createEffect, onMount } from 'solid-js';
+// UserProfile.tsx (Fixed Event Handling)
+import { createSignal, createEffect, onMount, onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import type { UserProfileProps, UserProfileState, UserProfileComponent } from './userTypes';
 import { platformIcons, platformThemes } from './userconstants';
 import { createInitialState, getCSSVariables } from './utils';
-import { useGroupState } from './hooks';
+import { createGroupStore, getGroupStore, deleteGroupStore } from './groupStore';
 import styles from './UserProfile.module.css';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
-const logger = new BrowserLogger('solidjs')
-  .setPrefix('SOLIDJS')
-  .enableDebug()
+import { socket } from '@utils/socketManager.ts';
+const logger = new BrowserLogger('userConnect.tsx')
   .setLevel(LogLevel.DEBUG);
+
 export const UserProfile = (props: UserProfileProps) => {
-  // Crear estado inicial con la plataforma especificada en props
-  const initialState = createInitialState(props.platform);
-  const [state, setState] = createStore<UserProfileState>(initialState);
   const [inputValue, setInputValue] = createSignal('');
   const [isConnecting, setIsConnecting] = createSignal(false);
   
   const uniqueId = Math.random().toString(36).substring(2, 9);
 
-  // Initialize group state management
-  const { initializeState, saveToLocalStorage, updateGroupElements } = useGroupState(
-    props.groupId,
-    state,
-    setState,
-    setInputValue,
-    uniqueId
-  );
+  // Si hay groupId, usar store compartido, sino crear store individual
+  const initialState = createInitialState(props.platform);
+  let state: UserProfileState;
+  let setState: (update: Partial<UserProfileState> | ((prev: UserProfileState) => UserProfileState)) => void;
+  let isSharedState = false;
 
-  // Initialize on mount
+  if (props.groupId) {
+    // Estado compartido - SOLO pasar callbacks al primer componente del grupo
+    const callbacks = {
+      onUserConnected: props.onUserConnected,
+      onUserDisconnected: props.onUserDisconnected,
+      onConnectionStatusChanged: props.onConnectionStatusChanged
+    };
+
+    const groupStore = createGroupStore(props.groupId, initialState, callbacks);
+    state = groupStore.store;
+    setState = groupStore.setStore;
+    isSharedState = true;
+
+    // Suscribirse a cambios del store compartido
+    onMount(() => {
+      const callback = () => {
+        // Sincronizar inputValue cuando el estado compartido cambie
+        if (state.username !== inputValue()) {
+          setInputValue(state.username || '');
+        }
+      };
+      
+      groupStore.subscribers.add(callback);
+      
+      // Cleanup
+      onCleanup(() => {
+        groupStore.subscribers.delete(callback);
+        // Decrementar contador y limpiar si es necesario
+        deleteGroupStore(props.groupId!);
+      });
+    });
+  } else {
+    // Estado individual (fallback al comportamiento original)
+    const [individualStore, setIndividualStore] = createStore<UserProfileState>(initialState);
+    state = individualStore;
+    setState = (update) => {
+      const prevState = { ...individualStore };
+      setIndividualStore(update);
+      
+      // Para estado individual, ejecutar callbacks directamente
+      executeIndividualCallbacks(prevState, individualStore);
+    };
+  }
+
+  // Función para ejecutar callbacks en estado individual
+  const executeIndividualCallbacks = (prevState: UserProfileState, newState: UserProfileState) => {
+    // Callback para cambio de estado de conexión
+    if (prevState.connectionStatus !== newState.connectionStatus && props.onConnectionStatusChanged) {
+      try {
+        props.onConnectionStatusChanged({ status: newState.connectionStatus });
+      } catch (error) {
+        console.error('Error in onConnectionStatusChanged callback:', error);
+      }
+    }
+    
+    // Callback para conexión exitosa
+    if (!prevState.connected && newState.connected && props.onUserConnected) {
+      try {
+        props.onUserConnected({ 
+          username: newState.username, 
+          state: newState 
+        });
+      } catch (error) {
+        console.error('Error in onUserConnected callback:', error);
+      }
+    }
+    
+    // Callback para desconexión
+    if (prevState.connected && !newState.connected && props.onUserDisconnected) {
+      try {
+        props.onUserDisconnected();
+      } catch (error) {
+        console.error('Error in onUserDisconnected callback:', error);
+      }
+    }
+  };
+
+  // Inicializar inputValue con el username del estado
   onMount(() => {
-    initializeState();
+    setInputValue(state.username || '');
   });
 
   // Efecto para actualizar la plataforma cuando cambie la prop
@@ -39,16 +110,6 @@ export const UserProfile = (props: UserProfileProps) => {
     if (props.platform && props.platform !== state.platform) {
       setPlatform(props.platform as UserProfileState['platform']);
     }
-  });
-
-  // Save to localStorage when state changes (with debouncing)
-  createEffect(() => {
-    const timeoutId = setTimeout(() => {
-      saveToLocalStorage();
-      updateGroupElements();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
   });
 
   const renderProfileImage = () => {
@@ -72,15 +133,9 @@ export const UserProfile = (props: UserProfileProps) => {
     }
   };
 
-  // Función para actualizar el estado completo
   const updateConnectionState = (newState: Partial<UserProfileState>) => {
     logger.log('Updating connection state:', newState);
     setState(prev => ({ ...prev, ...newState }));
-    
-    // Ejecutar callbacks apropiados
-    if (newState.connectionStatus) {
-      props.onConnectionStatusChanged?.({ status: newState.connectionStatus });
-    }
   };
 
   const handleConnect = async () => {
@@ -93,7 +148,6 @@ export const UserProfile = (props: UserProfileProps) => {
     logger.log('Starting connection process for:', username);
     setIsConnecting(true);
     
-    // Cambiar a estado "busy/connecting"
     updateConnectionState({
       connectionStatus: 'busy'
     });
@@ -111,11 +165,10 @@ export const UserProfile = (props: UserProfileProps) => {
     }
   };
 
-  // Función para manejar el click del botón principal
   const handleButtonClick = (e: Event) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    console.log('Button clicked:', e);
     logger.log('Button clicked - Current state:', { 
       connected: state.connected, 
       connectionStatus: state.connectionStatus,
@@ -136,19 +189,17 @@ export const UserProfile = (props: UserProfileProps) => {
     
     // Solo actualizar el username en el estado si no está conectado
     if (!state.connected) {
-      setState('username', value);
+      setState({'username': value});
     }
   };
 
   const connect = async (username: string) => {
     logger.log('=== CONNECT START ===');
     logger.log('Executing connect for username:', username);
-    logger.log('Current state before connect:', { connected: state.connected, status: state.connectionStatus });
     
-    // Simular conexión async (reemplaza con tu lógica real)
+    // Simular conexión async
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Actualizar a estado conectado
+    socket.emit('join-platform', { uniqueId: username, platform: state.platform });
     const newState = {
       connected: true,
       username: username,
@@ -157,26 +208,13 @@ export const UserProfile = (props: UserProfileProps) => {
     
     logger.log('Updating state to connected:', newState);
     updateConnectionState(newState);
-
-    // Ejecutar callback de conexión exitosa
-    try {
-      props.onUserConnected?.({ 
-        username: username, 
-        state: { ...state, ...newState }
-      });
-    } catch (error) {
-      console.error('Error in onUserConnected callback:', error);
-    }
     
     logger.log('=== CONNECT END ===');
   };
 
   const disconnect = () => {
     logger.log('=== DISCONNECT START ===');
-    logger.log('Executing disconnect');
-    logger.log('Current state before disconnect:', { connected: state.connected, status: state.connectionStatus });
     
-    // Actualizar inmediatamente a estado desconectado
     const newState = {
       connected: false,
       connectionStatus: 'offline' as const
@@ -184,20 +222,13 @@ export const UserProfile = (props: UserProfileProps) => {
     
     logger.log('Updating state to disconnected:', newState);
     updateConnectionState(newState);
-
-    // Ejecutar callback de desconexión
-    try {
-      props.onUserDisconnected?.();
-    } catch (error) {
-      console.error('Error in onUserDisconnected callback:', error);
-    }
     
     logger.log('=== DISCONNECT END ===');
   };
 
   const setPlatform = (platform: UserProfileState['platform']) => {
     if (platformThemes[platform]) {
-      setState('platform', platform);
+      setState({'platform': platform});
     } else {
       console.warn(`UserProfile: Platform "${platform}" not recognized.`);
     }
@@ -212,7 +243,7 @@ export const UserProfile = (props: UserProfileProps) => {
   };
 
   const setProfileImage = (url: string) => {
-    setState('imageUrl', url || '/favicon.svg');
+    setState({'imageUrl': url || '/favicon.svg'});
   };
 
   // Expose methods via ref
@@ -254,20 +285,18 @@ export const UserProfile = (props: UserProfileProps) => {
     }
   };
 
-  // Determinar si el botón debe estar deshabilitado
   const isButtonDisabled = () => {
     if (isConnecting()) {
-      return true; // Siempre deshabilitado mientras conecta
+      return true;
     }
     
     if (state.connected) {
-      return false; // Disconnect siempre habilitado cuando está conectado
+      return false;
     } else {
-      return inputValue().trim().length === 0; // Connect solo habilitado con input válido
+      return inputValue().trim().length === 0;
     }
   };
 
-  // Texto del botón según el estado
   const getButtonText = () => {
     if (isConnecting()) {
       return 'Connecting...';
@@ -275,9 +304,11 @@ export const UserProfile = (props: UserProfileProps) => {
     return state.connected ? 'Disconnect' : 'Connect';
   };
 
-  // Debug effect para monitorear cambios de estado
+  // Debug effect
   createEffect(() => {
     logger.log('=== STATE CHANGE ===');
+    logger.log('Group ID:', props.groupId);
+    logger.log('Shared State:', isSharedState);
     logger.log('Connected:', state.connected);
     logger.log('Username:', state.username);
     logger.log('Connection Status:', state.connectionStatus);

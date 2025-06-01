@@ -1,8 +1,7 @@
 ---
 import { pagesConfigA, pagesConfigB } from '../config/pages';
 import Actiontest from '@components/menu/actiontest.astro';
-import UserProfile from '@components/user/userConnect.astro';
-import Dropdown from '@components/menu/dropdown.astro';
+import UserLogin from '@components/user/userLogin.astro';
 interface Props {
   title?: string;
   activeConfig?: 'A' | 'B';
@@ -43,8 +42,9 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
       {/* Mobile Navbar */}
       <nav class="mobile-nav">
         <div class="nav-content">
-          <div class="logo">
-            <slot name="logo" />
+          <div class="login-mobile">
+            <UserLogin
+            ></UserLogin>
           </div>
           <div class="nav-buttons">
             {
@@ -57,14 +57,9 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
               ))
             }
           </div>
-          <div class="login-mobile">
-              <Dropdown
-                buttonText="Login"
-                >
-                <div>
-                  <UserProfile></UserProfile>
-                </div>
-              </Dropdown>
+
+          <div class="logo">
+            <slot name="logo" />
           </div>
         </div>
       </nav>
@@ -76,13 +71,8 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
             <slot name="logo" />
           </div>
           <div class="login-desktop">
-            <Dropdown
-            buttonText="Login"
-            >
-            <div>
-              <UserProfile></UserProfile>
-            </div>
-          </Dropdown>
+            <UserLogin
+            ></UserLogin>
           </div>
           <div class="nav-buttons">
             {
