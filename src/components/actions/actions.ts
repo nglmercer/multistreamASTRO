@@ -3,7 +3,7 @@ import {
   IndexedDBManager,
   Emitter,
   getAllDataFromDatabase,
-} from "../actionsjs/idb.js";
+} from "../../utils/idb.ts";
 import { HttpRequestConfig } from "src/litcomponents/fetchcomponent";
 import { HttpRequestExecutor } from "src/fetch/executor";
 import { DialogContainer } from "src/litcomponents/custom-modal.js";

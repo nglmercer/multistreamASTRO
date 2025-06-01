@@ -1,5 +1,5 @@
 // /src/pages/events/events.js (o tu ruta)
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/components/actionsjs/idb.js'; // Ajusta ruta
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '/src/components/actionsjs/idb.ts'; // Ajusta ruta
 import {
     openDynamicModal,
     initializeTables,

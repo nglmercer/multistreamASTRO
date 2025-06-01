@@ -1,4 +1,4 @@
-import { IndexedDBManager, DBObserver, getAllDataFromDatabase } from './idb.js';
+import { IndexedDBManager, getAllDataFromDatabase } from '../idb.ts';
 
 class UserProcessor {
     constructor(dbManager) {
@@ -123,8 +123,7 @@ const dbConfig = {
 };
 
 // --- Inicialización ---
-const idbObserver = new DBObserver(); // Opcional, si quieres reaccionar a cambios
-const dbManager = new IndexedDBManager(dbConfig, idbObserver);
+const dbManager = new IndexedDBManager(dbConfig);
 const userProcessor = new UserProcessor(dbManager);
 
 async function setupData(event, data) {

@@ -1,4 +1,4 @@
-import {getAllDataFromDatabase, databases} from '@components/actionsjs/idb.js';
+import {getAllDataFromDatabase, databases} from '@utils/idb.js';
 import logger from '@utils/logger.js';
 import {flattenObject, unflattenObject, replaceVariables} from '@utils/utils.js';
 import { ConfigurableReplacer } from '@components/replace/ConfigurableReplacer.js';
@@ -6,7 +6,7 @@ import {
     playTextwithproviderInfo
 } from '@components/voicecomponents/initconfig.js';
 import { executeHttpRequest } from "src/fetch/executor";
-
+import { initializeEventSaver, saveEventData } from './eventSaver.js'; // Ajusta la ruta
 /*
     commentEventsDB: { name: 'commentEvents', version: 1, store: 'commentEvents' },
     giftEventsDB: { name: 'giftEvents', version: 1, store: 'giftEvents' },
@@ -16,10 +16,22 @@ import { executeHttpRequest } from "src/fetch/executor";
     ActionsDB: { name: 'Actions', version: 1, store: 'actions' },
 */
 import {socket,TiktokEmitter,tiktokLiveEvents, KickEmitter,kickLiveEvents } from '@utils/socketManager.ts';
-
+const allEventsToLog = [
+  ...kickLiveEvents.map(eventName => ({ platform: 'kick', eventName })),
+  ...tiktokLiveEvents.map(eventName => ({ platform: 'tiktok', eventName }))
+];
+async function setupEventHandling() {
+    return await initializeEventSaver(allEventsToLog); // Pasar la lista de eventos a configurar
+}
+setupEventHandling().then(() => {
+    console.log("Event handling setup complete.");
+}).catch(error => {
+    console.error("Error setting up event handling:", error);
+});
 tiktokLiveEvents.forEach(event => {
     TiktokEmitter.on(event, async (data) => {
         switcheventDb(event, data);
+        await saveEventData('tiktok', event, data);
     });
 });
 kickLiveEvents.forEach(event => {
@@ -27,6 +39,7 @@ kickLiveEvents.forEach(event => {
         console.log("KickEmitter",event,data);
         if (event === "ChatMessage") {
             const polifyedData = polifyfillEvalueKick(data);
+            await saveEventData('kick', event, data);
             switcheventDb(event, polifyedData);
         }
     });

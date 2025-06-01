@@ -8,8 +8,8 @@ import { createGroupStore, getGroupStore, deleteGroupStore } from './groupStore'
 import styles from './UserProfile.module.css';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
 import { socket } from '@utils/socketManager.ts';
-const logger = new BrowserLogger('userConnect.tsx')
-  .setLevel(LogLevel.DEBUG);
+const logger = new BrowserLogger('userConnect.tsx');
+/*   .setLevel(LogLevel.DEBUG); */
 
 export const UserProfile = (props: UserProfileProps) => {
   const [inputValue, setInputValue] = createSignal('');

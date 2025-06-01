@@ -1,5 +1,5 @@
 // /src/pages/actions/actions.js (o tu ruta)
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '../actionsjs/idb.js';
+import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '../../utils/idb.ts';
 import {
     initializeTables,
     updateTableData,
