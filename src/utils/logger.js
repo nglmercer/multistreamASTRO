@@ -48,7 +48,36 @@ class Logger {
             console.groupEnd();
         }
     }
-  
+    warn(category, ...messages) {
+        if (this.isCategoryEnabled(category)) {
+            console.group(`[${category.toUpperCase()}]`);
+            messages.forEach(message => {
+                let logMessage = this.showCategoryName ? `${category}: ` : '';
+                
+                if (typeof message === 'object') {
+                    console.warn(message); // Formato tabular para arrays y objetos
+                } else {
+                    console.warn(logMessage + message);  // Agrega prefijo de categoría en el caso de strings y otros tipos
+                }
+            });
+            console.groupEnd();
+        }
+    }
+    error(category, ...messages) {
+        if (this.isCategoryEnabled(category)) {
+            console.group(`[${category.toUpperCase()}]`);
+            messages.forEach(message => {
+                let logMessage = this.showCategoryName ? `${category}: ` : '';
+                
+                if (typeof message === 'object') {
+                    console.error(message); // Formato tabular para arrays y objetos
+                } else {
+                    console.error(logMessage + message);  // Agrega prefijo de categoría en el caso de strings y otros tipos
+                }
+            });
+            console.groupEnd();
+        }
+    }
     // Método para listar todas las categorías de log existentes
     listCategories() {
         return Object.keys(this.categories);
