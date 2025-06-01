@@ -272,12 +272,12 @@ class AudioQueue {
    * Plays the next audio in queue
    */
   async next(): Promise<boolean> {
+    this.stopCurrentPlayback();
+    this.isPlaying = false;
     if (this.mode === 'loop' && this.queue.length > 0) {
-      this.stopCurrentPlayback();
       this._processQueue();
       return true;
     } else if (this.mode === 'archive' && this.queue.length > 0) {
-      this.stopCurrentPlayback();
       this._processQueue();
       return true;
     }

@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import Emitter, { emitter } from './Emitter';
 import logger from './logger';
 import LocalStorageManager from './LocalStorageManager'
-import {setupData} from '../utils/userdata/UserProcessor.js';
+import {setupData,type EventType} from './userdata/UserProcessor.ts';
 
 interface JoinPlatformparams {
   uniqueId: string;
@@ -85,7 +85,7 @@ class SocketManager {
 
     this.tiktokLiveEvents.forEach(event => {
       this.socket.on(event, async (data: any) => {
-        setupData(event,data);
+        setupData(event as EventType,data);
         this.tiktokhandlerdata(event, data);
       });
     });
