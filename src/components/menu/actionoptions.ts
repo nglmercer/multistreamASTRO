@@ -1,6 +1,6 @@
 // tiktok-event-simulator.ts
 import { socket, TiktokEmitter, KickEmitter, tiktokLiveEvents, localStorageManager } from 'src/utils/socketManager';
-
+import { nextSpeech } from '@components/voicecomponents/initconfig';
 // Types
 interface EventData {
   [key: string]: any;
@@ -173,12 +173,28 @@ const initializeSimulator = (): void => {
     console.error('Failed to initialize TikTok Event Simulator:', error);
   }
 };
-
+function initializeStopSpeaking() {
+  const button = document.getElementById('skip-play-button');
+  if (!button)return;
+  button.addEventListener('click', async () => {
+  try {
+    await nextSpeech();
+    console.log('Stop speaking initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize stop speaking:', error);
+  }
+  }
+  );
+};
 // Initialize immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeSimulator);
-} else {
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeSimulator();
+      initializeStopSpeaking();
+    });
+  } else {
   initializeSimulator();
+  initializeStopSpeaking();
 }
 
 export { TikTokEventSimulator };

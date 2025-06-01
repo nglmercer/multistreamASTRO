@@ -1,6 +1,6 @@
 import { buildTTSConfigData,TTSConfigManager  } from './tts_config.js';
 import { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeechProvider } from './tts_provider.js';
-import { AudioQueue } from './audio_queue.js'; // Assuming file name
+import { AudioQueue } from './audio_queue.ts'; // Assuming file name
 import { TiktokEmitter } from '/src/utils/socketManager';
 TiktokEmitter.on('play_arrow', async (data) => {
   console.log("TiktokEmitter",data);
@@ -11,7 +11,7 @@ let providerInfo;
 let ttsConfigData;
 let currentProviders = {}; // Para instancias de proveedores
 let selectedProviderName;
-const audioQueue = new AudioQueue(currentProviders);
+const audioQueue = new AudioQueue(currentProviders, { mode: 'loop'});
 
 function updateStatus(message) {
     console.log(`Status: ${message}`);
@@ -224,6 +224,24 @@ async  function playTextwithproviderInfo(textToSpeak, Providername = selectedPro
         }
     }
 }
+async function stopSpeaking() {
+    if (audioQueue){
+        await audioQueue._processQueue();
+        updateStatus("Stopped all speech playback.");
+    }else {
+        console.warn("AudioQueue not initialized, stopping all providers.");
+        Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
+    }
+}
+async function nextSpeech() {
+    if (audioQueue){
+        audioQueue.next();
+    } else {
+        console.warn("AudioQueue is empty or not initialized.");
+    }
+}
 export {
-    playTextwithproviderInfo
+    playTextwithproviderInfo,
+    stopSpeaking,
+    nextSpeech
 }

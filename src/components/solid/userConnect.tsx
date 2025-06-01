@@ -198,7 +198,7 @@ export const UserProfile = (props: UserProfileProps) => {
     logger.log('Executing connect for username:', username);
     
     // Simular conexión async
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 500));
     socket.emit('join-platform', { uniqueId: username, platform: state.platform });
     const newState = {
       connected: true,
