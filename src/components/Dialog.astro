@@ -181,11 +181,6 @@
   }
 
   // Extender Window para incluir showDialog
-  declare global {
-    interface Window {
-      showDialog: (title: string, acceptText?: string, rejectText?: string) => Promise<boolean>;
-    }
-  }
 
   class DialogManager {
     private dialogContainer: HTMLElement | null = null;
@@ -290,9 +285,5 @@
       return dialog.show(title, acceptText, rejectText);
     };
   });
-  declare global {
-    interface Window {
-      showDialog: (title: string, acceptText?: string, rejectText?: string) => Promise<boolean>;
-    }
-  }
+
 </script>

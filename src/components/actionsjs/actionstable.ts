@@ -53,6 +53,10 @@ async function initTablelisteners() {
       window.showDialog(`eliminar elemento con ID: ${id}`, 'aceptar', 'cancelar')
       .then(async (result:boolean) => {
         console.log("Resultado de la confirmación:", result);
+        if (result){
+            const deleteResult = await actionDbManager.deleteData(id);
+            actionEmitter.emit("deleteAction", deleteResult);
+        }
       })
       .catch((error: boolean) => {
         console.error("Error al mostrar el diálogo de confirmación:", error);
@@ -61,9 +65,9 @@ async function initTablelisteners() {
   });
 }
 
-actionEmitter.onAny((event:string,data) => {
+actionEmitter.onAny(async(event:string,data) => {
     console.log("event", `Evento emitido: ${event}`, data);
-    refreshTable();
+    await refreshTable();
 });
 setTimeout(() => {
   actionEmitter.emit("exampleEvent", {
@@ -84,6 +88,7 @@ async function refreshTable(elementtable = managerEl) {
         return;
     }
     table.data = await renderdata();
+    return table.data;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

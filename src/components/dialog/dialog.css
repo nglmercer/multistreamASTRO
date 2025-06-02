@@ -1,0 +1,166 @@
+:root {
+  --dialog-overlay-bg: rgba(0, 0, 0, 0.5);
+  --dialog-box-bg: white;
+  --dialog-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  --dialog-title-color: #1f2937;
+  --dialog-message-color: #4b5563;
+  --dialog-btn-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --dialog-accept-bg-start: #10b981;
+  --dialog-accept-bg-end: #059669;
+  --dialog-accept-hover-bg-start: #059669;
+  --dialog-accept-hover-bg-end: #047857;
+  --dialog-accept-text-color: white;
+  --dialog-reject-bg-start: #ef4444;
+  --dialog-reject-bg-end: #dc2626;
+  --dialog-reject-hover-bg-start: #dc2626;
+  --dialog-reject-hover-bg-end: #b91c1c;
+  --dialog-reject-text-color: white;
+  --dialog-border-radius: 12px;
+  --dialog-padding: 2rem;
+  --dialog-btn-padding: 0.75rem 1.5rem;
+  --dialog-btn-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dialog-overlay-bg: rgba(0, 0, 0, 0.7);
+    --dialog-box-bg: #1f2937; /* Más oscuro para el fondo del modal */
+    --dialog-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --dialog-title-color: #e2e8f0;
+    --dialog-message-color: #9ca3af;
+    --dialog-btn-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Estilos del cuerpo solo para demostración de tema oscuro/claro */
+body.demo-body { 
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: var(--dialog-box-bg); /* Usando una variable de diálogo para el fondo del body */
+  color: var(--dialog-title-color); /* Usando una variable de diálogo para el texto del body */
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0; /* Equivalente a top, right, bottom, left = 0 */
+  background: var(--dialog-overlay-bg);
+  display: flex; /* Se gestiona por JS, pero el estado base es flex */
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden; /* Mejor para accesibilidad y rendimiento que display:none para transiciones */
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.dialog-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dialog-box {
+  background: var(--dialog-box-bg);
+  padding: var(--dialog-padding);
+  border-radius: var(--dialog-border-radius);
+  box-shadow: var(--dialog-box-shadow);
+  max-width: 450px;
+  width: calc(100% - 2 * var(--dialog-padding)); /* Considera el padding del overlay */
+  transform: scale(0.95);
+  transition: transform 0.3s ease-in-out, background-color 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+}
+
+.dialog-overlay.show .dialog-box {
+  transform: scale(1);
+}
+
+.dialog-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.375rem; /* Un poco más grande */
+  font-weight: 600;
+  color: var(--dialog-title-color);
+  line-height: 1.4;
+  transition: color 0.3s ease;
+}
+
+.dialog-message {
+  margin: 0 0 1.75rem 0;
+  font-size: 1rem;
+  color: var(--dialog-message-color);
+  line-height: 1.6;
+  transition: color 0.3s ease;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap; /* Para botones en móviles si no caben */
+}
+
+.dialog-btn {
+  padding: var(--dialog-btn-padding);
+  border: none;
+  border-radius: var(--dialog-btn-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px; /* Ancho mínimo para mejor apariencia */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.dialog-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--dialog-btn-hover-shadow);
+}
+
+.dialog-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.dialog-accept {
+  background: linear-gradient(135deg, var(--dialog-accept-bg-start), var(--dialog-accept-bg-end));
+  color: var(--dialog-accept-text-color);
+}
+
+.dialog-accept:hover {
+  background: linear-gradient(135deg, var(--dialog-accept-hover-bg-start), var(--dialog-accept-hover-bg-end));
+}
+
+.dialog-reject {
+  background: linear-gradient(135deg, var(--dialog-reject-bg-start), var(--dialog-reject-bg-end));
+  color: var(--dialog-reject-text-color);
+}
+
+.dialog-reject:hover {
+  background: linear-gradient(135deg, var(--dialog-reject-hover-bg-start), var(--dialog-reject-hover-bg-end));
+}
+
+/* Botón de ejemplo para abrir el diálogo */
+.demo-button-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 20px;
+}
+
+.demo-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--dialog-title-color);
+  background-color: transparent;
+  color: var(--dialog-title-color);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.demo-button:hover {
+  background-color: var(--dialog-title-color);
+  color: var(--dialog-box-bg); /* Usar el color de fondo del modal para el texto del botón en hover */
+}

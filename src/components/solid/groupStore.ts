@@ -38,7 +38,6 @@ export function createGroupStore(
   // Intentar cargar estado guardado
   const savedState = loadStateFromStorage(groupId);
   const finalInitialState = savedState ? { ...initialState, ...savedState } : initialState;
-  
   const [store, setStore] = createStore<UserProfileState>(finalInitialState);
   const subscribers = new Set<() => void>();
 

@@ -8,8 +8,8 @@ import { createGroupStore, getGroupStore, deleteGroupStore } from './groupStore'
 import styles from './UserProfile.module.css';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
 import { socket } from '@utils/socketManager.ts';
-const logger = new BrowserLogger('userConnect.tsx');
-/*   .setLevel(LogLevel.DEBUG); */
+const logger = new BrowserLogger('userConnect.tsx')
+   .setLevel(LogLevel.LOG);
 
 export const UserProfile = (props: UserProfileProps) => {
   const [inputValue, setInputValue] = createSignal('');
@@ -46,7 +46,33 @@ export const UserProfile = (props: UserProfileProps) => {
       };
       
       groupStore.subscribers.add(callback);
-      
+        const isValidUsername = state.username && state.username.trim().length > 0;
+        const isValidPlatform = state.platform && Object.keys(platformIcons).includes(state.platform);
+        if (isValidUsername && isValidPlatform && state.connected) {
+          console.log(`Ready to connect to ${state.username} on ${state.platform}`);
+                window.showQueuedDialog({
+                      title: `Connect to ${state.platform}`,
+                      message: `Are you sure you want to connect as ${state.username}?`,
+                      rejectText: 'Cancel',
+                      acceptText: 'Connect',
+                      onClose: (result) => {
+                        console.log('Dialog closed with result:', result);
+                        if (result) {
+                          // Aquí podrías llamar a connect() si es necesario
+                          connect(state.username);
+                        } else {
+                          disconnect();
+                        }
+                      }
+                      
+                  })
+                  .then(result => {
+                    console.log('Dialog result:', result);
+                  })
+                  .catch(error => {
+                    console.error('Dialog error:', error);
+                  });
+        }
       // Cleanup
       onCleanup(() => {
         groupStore.subscribers.delete(callback);
