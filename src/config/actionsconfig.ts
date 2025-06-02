@@ -99,7 +99,8 @@ const defaultFormConfig: FormConfig = {
   id: { 
     label: 'ID', 
     type: 'text', 
-    readonly: true 
+    readonly: true,
+    hidden: true
   },
   type: { 
     hidden: true 

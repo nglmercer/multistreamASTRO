@@ -55,7 +55,7 @@ const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules))
           
           // Using CInput
           const checkbox = document.createElement('c-input') as CInput;
-          checkbox.setAttribute('type', 'checkbox');
+          checkbox.setAttribute('type', 'switch');
           checkbox.setAttribute('id', checkboxId);
           
           // Set initial checked state for c-input
@@ -71,12 +71,11 @@ const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules))
           const label = document.createElement('label');
           label.setAttribute('for', checkboxId);
           label.className = 'flex-grow cursor-pointer';
-          label.textContent = `Activar ${middlewareConfig.type} (para ${eventType})`;
+          label.textContent = `${middlewareConfig.type} (${eventType})`;
           
           const description = document.createElement('span');
           description.className = 'text-sm text-gray-600 ml-auto';
-          description.textContent = `(Currently: ${isCheckedInitially ? 'Activado' : 'Desactivado'})`;
-          
+          description.textContent = `(${isCheckedInitially ? 'Activado' : 'Desactivado'})`;
           checkbox.addEventListener('change', async (e) => {
             // For CInput, the value might be in e.target.value or e.target.checked
             // Let's assume CInput component correctly sets its `value` property

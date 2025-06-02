@@ -1,18 +1,22 @@
-import { LitElement, html, css, type PropertyValues,type TemplateResult } from 'lit';
+import {
+    InputHandlerFactory,
+    FileInputHandler,
+    TextInputHandler,
+    NumberInputHandler,
+    TextareaInputHandler,
+    CheckboxInputHandler,
+    SelectInputHandler,
+    RadioInputHandler
+} from './Cinput/inputs.ts'
+import type {
+    InputType,
+    InputReturnType,
+    IInputHandler,
+    InputContext,
+    Option
+} from './Cinput/Types.ts';
+import { LitElement, html, css, type PropertyValues, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
-import { map } from 'lit/directives/map.js';
-
-// Define interfaces for options
-interface Option {
-    value: string;
-    label: string;
-}
-
-// Define input types
-type InputType = 'text' | 'textarea' | 'select' | 'checkbox' | 'switch' | 'boolean' | 'radio' |
-    'number' | 'email' | 'password' | 'tel' | 'url' | 'date' | 'time' | 'datetime-local' | 'string' | 'File' | 'file' | 'color' | 'range';
-type InputReturnType = string | boolean | number | string[] | null | undefined | object;
 
 function safeParse(value: InputReturnType): InputReturnType {
     if (value == null || typeof value !== 'string') {
@@ -21,554 +25,166 @@ function safeParse(value: InputReturnType): InputReturnType {
 
     const trimmed = value.trim();
     if (!(trimmed.startsWith('{') || trimmed.startsWith('['))) {
-        return value;
+        return value; // Not JSON-like
     }
 
     try {
         return JSON.parse(trimmed);
     } catch {
+        // Try to fix common "sloppy" JSON issues before giving up
         try {
-            const fixedJson = trimmed
-                .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')
-                .replace(/:\s*'([^']+)'/g, ': "$1"');
+            // Add quotes around keys: {key: val} -> {"key": val}
+            let fixedJson = trimmed.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+            // Replace single quotes with double quotes for string values: 'val' -> "val"
+            fixedJson = fixedJson.replace(/:\s*'([^']*)'/g, ': "$1"');
+            // Handle trailing commas in objects and arrays (more complex, basic attempt)
+            fixedJson = fixedJson.replace(/,\s*([}\]])/g, '$1');
             return JSON.parse(fixedJson);
         } catch (error) {
-            console.error("Error al parsear JSON:", error, "Valor recibido:", value);
-            return value;
+            console.error("Error al parsear JSON después de intentar corregir:", error, "Valor original:", value);
+            return value; // Return original string if all parsing fails
         }
-    }
-}
-
-// Base interface that all input handlers must implement
-interface IInputHandler {
-    render(context: InputContext): TemplateResult;
-    parseValue(val: string | null | undefined | string[] | boolean | number): string | boolean | number | string[] | null;
-    handleChange(evt: Event, context: InputContext): string | boolean | string[] | null;
-    handleInput?(evt: Event, context: InputContext): void;
-    isValid(context: InputContext): boolean;
-    reset(context: InputContext): string | boolean | null | string[] | undefined;
-    getSelectedOption?(context: InputContext): string | null;
-}
-
-// Context object that contains all the component properties and methods
-interface InputContext {
-    id?: string;
-    name?: string;
-    value?: string;
-    placeholder?: string;
-    disabled: boolean;
-    readonly: boolean;
-    min?: number;
-    max?: number;
-    step?: number;
-    darkmode: boolean;
-    options: Option[];
-    required: boolean;
-    pattern?: string;
-    handleChange?: (evt: Event) => string | boolean | string[] | null;
-    multiple: boolean;
-    title?: string;
-    internalValue?: string | boolean | number | string[] | null;
-    shadowRoot?: ShadowRoot | null;
-    emitEvent: (name: string, data: unknown) => void;
-    parseValueForInternal: (val: string | null | undefined | string[] | boolean | number) => string | boolean | number | string[] | null;
-}
-
-// Text-based input handler (text, email, password, etc.)
-class TextInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        const inputType = context.value === 'string' ? 'text' : context.value;
-        return html`
-            <input
-                class="input-element"
-                type=${inputType}
-                id=${ifDefined(context.id)}
-                name=${ifDefined(context.name)}
-                value=${context.internalValue === null ? '' : String(context.internalValue)}
-                placeholder=${ifDefined(context.placeholder)}
-                ?disabled=${context.disabled}
-                ?readonly=${context.readonly}
-                ?required=${context.required}
-                min=${context.min}
-                max=${context.max}
-                step=${context.step}
-                title=${ifDefined(context.title)}
-                pattern=${ifDefined(context.pattern)}
-                @change=${(evt: Event) => this.handleChange(evt, context)}
-                @input=${(evt: Event) => this.handleInput?.(evt, context)}
-            >
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): string | boolean | number | string[] | null {
-        if (val === null || val === undefined) {
-            return '';
-        }
-        return String(val);
-    }
-
-    handleChange(evt: Event, context: InputContext): string {
-        const inputElement = evt.target as HTMLInputElement;
-        return inputElement.value;
-    }
-
-    handleInput(evt: Event, context: InputContext): void {
-        const inputElement = evt.target as HTMLInputElement;
-        if (inputElement.pattern) {
-            const allowedPattern = new RegExp(inputElement.pattern, 'g');
-            const matches = inputElement.value.match(allowedPattern);
-            inputElement.value = matches ? matches.join('') : '';
-        }
-    }
-
-    isValid(context: InputContext): boolean {
-        const inputElement = context.shadowRoot?.querySelector('.input-element') as HTMLInputElement;
-        return inputElement ? inputElement.checkValidity() : true;
-    }
-
-    reset(context: InputContext): string {
-        return '';
-    }
-}
-
-// Number input handler
-class NumberInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        return html`
-            <input
-                class="input-element"
-                type="number"
-                id=${ifDefined(context.id)}
-                name=${ifDefined(context.name)}
-                value=${context.internalValue === null ? '' : String(context.internalValue)}
-                placeholder=${ifDefined(context.placeholder)}
-                ?disabled=${context.disabled}
-                ?readonly=${context.readonly}
-                ?required=${context.required}
-                min=${context.min}
-                max=${context.max}
-                step=${context.step}
-                title=${ifDefined(context.title)}
-                pattern=${ifDefined(context.pattern)}
-                @change=${(evt: Event) => this.handleChange(evt, context)}
-            >
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): number | null {
-        if (val === '' || val === null || val === undefined) {
-            return null;
-        }
-        const num = Number(val);
-        return isNaN(num) ? null : num;
-    }
-
-    handleChange(evt: Event, context: InputContext): string {
-        const inputElement = evt.target as HTMLInputElement;
-        return inputElement.value;
-    }
-
-    isValid(context: InputContext): boolean {
-        const inputElement = context.shadowRoot?.querySelector('.input-element') as HTMLInputElement;
-        return inputElement ? inputElement.checkValidity() : true;
-    }
-
-    reset(context: InputContext): string {
-        return '';
-    }
-}
-
-// Textarea input handler
-class TextareaInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        return html`
-            <textarea
-                class="input-element"
-                id=${ifDefined(context.id)}
-                name=${ifDefined(context.name)}
-                .value=${context.internalValue === null ? '' : String(context.internalValue)}
-                placeholder=${ifDefined(context.placeholder)}
-                ?disabled=${context.disabled}
-                ?readonly=${context.readonly}
-                ?required=${context.required}
-                title=${ifDefined(context.title)}
-                pattern=${ifDefined(context.pattern)}
-                @change=${(evt: Event) => this.handleChange(evt, context)}
-            ></textarea>
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): string {
-        if (val === null || val === undefined) {
-            return '';
-        }
-        return String(val);
-    }
-
-    handleChange(evt: Event, context: InputContext): string {
-        const inputElement = evt.target as HTMLTextAreaElement;
-        return inputElement.value;
-    }
-
-    isValid(context: InputContext): boolean {
-        const inputElement = context.shadowRoot?.querySelector('.input-element') as HTMLTextAreaElement;
-        return inputElement ? inputElement.checkValidity() : true;
-    }
-
-    reset(context: InputContext): string {
-        return '';
-    }
-}
-
-// Checkbox/Switch input handler
-class CheckboxInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        return html`
-            <label class="sw">
-                <input
-                    class="input-element"
-                    type="checkbox"
-                    id=${ifDefined(context.id)}
-                    name=${ifDefined(context.name)}
-                    .checked=${Boolean(context.internalValue)}
-                    ?disabled=${context.disabled}
-                    ?readonly=${context.readonly}
-                    ?required=${context.required}
-                    title=${ifDefined(context.title)}
-                    @change=${(evt: Event) => this.handleChange(evt, context)}
-                >
-                <span class="sldr"></span>
-            </label>
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): boolean {
-        return String(val).toLowerCase() === 'true';
-    }
-
-    handleChange(evt: Event, context: InputContext): boolean {
-        const inputElement = evt.target as HTMLInputElement;
-        return inputElement.checked;
-    }
-
-    isValid(context: InputContext): boolean {
-        const inputElement = context.shadowRoot?.querySelector('.input-element') as HTMLInputElement;
-        return inputElement ? inputElement.checkValidity() : true;
-    }
-
-    reset(context: InputContext): boolean {
-        return false;
-    }
-}
-
-// Select input handler
-class SelectInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        return html`
-            <select
-                class="input-element"
-                id=${ifDefined(context.id)}
-                name=${ifDefined(context.name)}
-                .value=${!context.multiple ? (context.internalValue === null ? '' : String(context.internalValue)) : undefined}
-                ?disabled=${context.disabled}
-                ?readonly=${context.readonly}
-                ?required=${context.required}
-                title=${ifDefined(context.title)}
-                @change=${context.handleChange}
-                ?multiple=${context.multiple}
-            >
-                ${map(context.options, (opt) => {
-                    const isSelected = context.multiple
-                        ? Array.isArray(context.internalValue) && context.internalValue.includes(String(opt.value))
-                        : String(opt.value) == String(context.internalValue ?? '');
-
-                    return html`
-                        <option value=${opt.value} ?selected=${isSelected}>
-                            ${opt.label}
-                        </option>
-                    `;
-                })}
-            </select>
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): string | string[] {
-        if (val === null || val === undefined) {
-            return '';
-        }
-
-        // This will be handled by the main component based on multiple property
-        return String(val);
-    }
-
-    handleChange(evt: Event, context: InputContext): string | string[] {
-        const selectElement = evt.target as HTMLSelectElement;
-        if (context.multiple) {
-            return Array.from(selectElement.selectedOptions).map(option => option.value);
-        }
-        return selectElement.value;
-    }
-
-    isValid(context: InputContext): boolean {
-        const inputElement = context.shadowRoot?.querySelector('.input-element') as HTMLSelectElement;
-        return inputElement ? inputElement.checkValidity() : true;
-    }
-
-    reset(context: InputContext): string | string[] {
-        return context.multiple ? [] : '';
-    }
-
-    getSelectedOption(context: InputContext): string | null {
-        const select = context.shadowRoot?.querySelector('.input-element') as HTMLSelectElement;
-        return select ? select.value : null;
-    }
-}
-
-
-// Radio input handler
-class RadioInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        return html`
-            ${map(context.options, (opt) => html`
-                <label>
-                    <input 
-                        type="radio"
-                        id=${`${context.id || context.name}_${opt.value}`}
-                        name=${ifDefined(context.name)}
-                        value=${opt.value}
-                        .checked=${opt.value == context.internalValue}
-                        ?disabled=${context.disabled}
-                        ?readonly=${context.readonly}
-                        ?required=${context.required}
-                        title=${ifDefined(context.title)}
-                        @change=${(evt: Event) => this.handleChange(evt, context)}
-                    >
-                    ${opt.label}
-                </label>
-            `)}
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): string | null {
-        if (val === null || val === undefined) {
-            return null;
-        }
-        return String(val);
-    }
-
-    handleChange(evt: Event, context: InputContext): string | null {
-        const checkedRadio = context.shadowRoot?.querySelector(`input[name="${context.name}"]:checked`) as HTMLInputElement;
-        return checkedRadio ? checkedRadio.value : null;
-    }
-
-    isValid(context: InputContext): boolean {
-        if (context.required) {
-            const checkedRadio = context.shadowRoot?.querySelector(`input[name="${context.name}"]:checked`);
-            return checkedRadio !== null;
-        }
-        return true;
-    }
-
-    reset(context: InputContext): null {
-        const radioInputs = context.shadowRoot?.querySelectorAll(`input[name="${context.name}"]`);
-        radioInputs?.forEach(r => (r as HTMLInputElement).checked = false);
-        return null;
-    }
-}
-
-// File input handler
-class FileInputHandler implements IInputHandler {
-    render(context: InputContext): TemplateResult {
-        return html`
-            <input
-                class="input-element"
-                id=${ifDefined(context.id)}
-                type="file"
-                name=${ifDefined(context.name)}
-                placeholder=${ifDefined(context.placeholder)}
-                ?disabled=${context.disabled}
-                ?readonly=${context.readonly}
-                ?required=${context.required}
-                title=${ifDefined(context.title)}
-                pattern=${ifDefined(context.pattern)}
-                @change=${(evt: Event) => this.handleChange(evt, context)}
-            >
-        `;
-    }
-
-    parseValue(val: string | null | undefined | string[] | boolean | number): string {
-        if (val === null || val === undefined) {
-            return '';
-        }
-        return String(val);
-    }
-
-    handleChange(evt: Event, context: InputContext): string {
-        const inputElement = evt.target as HTMLInputElement;
-        return inputElement.value;
-    }
-
-    isValid(context: InputContext): boolean {
-        const inputElement = context.shadowRoot?.querySelector('.input-element') as HTMLInputElement;
-        return inputElement ? inputElement.checkValidity() : true;
-    }
-
-    reset(context: InputContext): string {
-        return '';
-    }
-}
-
-// Factory class to create input handlers
-class InputHandlerFactory {
-    private static handlers: Map<string, IInputHandler> = new Map();
-
-    static {
-        // Initialize handlers in static block to avoid type inference issues
-        this.handlers.set('text', new TextInputHandler());
-        this.handlers.set('string', new TextInputHandler());
-        this.handlers.set('email', new TextInputHandler());
-        this.handlers.set('password', new TextInputHandler());
-        this.handlers.set('tel', new TextInputHandler());
-        this.handlers.set('url', new TextInputHandler());
-        this.handlers.set('date', new TextInputHandler());
-        this.handlers.set('time', new TextInputHandler());
-        this.handlers.set('datetime-local', new TextInputHandler());
-        this.handlers.set('color', new TextInputHandler());
-        this.handlers.set('range', new TextInputHandler());
-        this.handlers.set('number', new NumberInputHandler());
-        this.handlers.set('textarea', new TextareaInputHandler());
-        this.handlers.set('checkbox', new CheckboxInputHandler());
-        this.handlers.set('switch', new CheckboxInputHandler());
-        this.handlers.set('boolean', new CheckboxInputHandler());
-        this.handlers.set('select', new SelectInputHandler());
-        this.handlers.set('radio', new RadioInputHandler());
-        this.handlers.set('file', new FileInputHandler());
-        this.handlers.set('File', new FileInputHandler());
-    }
-
-    static getHandler(type: InputType): IInputHandler {
-        const handler = this.handlers.get(type);
-        if (!handler) {
-            console.warn(`Handler for input type '${type}' not found, using text handler`);
-            return this.handlers.get('text')!;
-        }
-        return handler;
-    }
-
-    // Allows adding custom handlers
-    static registerHandler(type: string, handler: IInputHandler): void {
-        this.handlers.set(type, handler);
     }
 }
 
 export class CInput extends LitElement {
-    // Properties with decorators
     @property({ type: String, reflect: true }) type: InputType = 'text';
     @property({ type: String, reflect: true }) name?: string;
-    @property({ type: String }) value?: string = '';
+    @property({ type: String }) value?: string = ''; // Always string for attribute compatibility
     @property({ type: String, reflect: true }) placeholder?: string;
     @property({ type: Boolean, reflect: true }) disabled: boolean = false;
     @property({ type: Boolean, reflect: true }) readonly: boolean = false;
-    @property({ type: Number, reflect: true }) min?: number;
-    @property({ type: Number, reflect: true }) max?: number;
+    @property({ type: Number, reflect: true }) min?: number; // For number: min value; for text/textarea: minlength
+    @property({ type: Number, reflect: true }) max?: number; // For number: max value; for text/textarea: maxlength
     @property({ type: Number, reflect: true }) step?: number;
     @property({ type: Boolean, reflect: true }) darkmode: boolean = false;
     @property({ type: Array }) options: Option[] = [];
     @property({ type: Boolean, reflect: true }) required: boolean = false;
-    @property({ type: String, reflect: true }) pattern?: string;
-    @property({ type: Boolean, reflect: true }) multiple: boolean = false;
+    @property({ type: String, reflect: true }) pattern?: string; // For text: regex; for file: accept mime types
+    @property({ type: Boolean, reflect: true }) multiple: boolean = false; // For select and file
 
-    // Internal state properties
     @state() private _isValid: boolean = true;
-    @state() private _internalValue?: string | boolean | number | string[] | null;
-    @state() private _currentHandler?: IInputHandler;
+    @state() private _internalValue?: InputReturnType;
+    @state() private _currentHandler!: IInputHandler; // Will be initialized in constructor/willUpdate
 
     constructor() {
         super();
+        this._updateHandler();
+        // Initialize _internalValue from value property
+        // This will be handled by willUpdate on first update too
+        this._internalValue = this._parseValueForInternal(this.value);
+    }
+
+    private _updateHandler() {
         this._currentHandler = InputHandlerFactory.getHandler(this.type);
     }
 
-    // Handle attribute changes
     attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null): void {
         super.attributeChangedCallback(name, oldVal, newVal);
 
         if (name === 'type' && newVal !== oldVal) {
-            this._currentHandler = InputHandlerFactory.getHandler(newVal as InputType);
+            this._updateHandler();
+            // When type changes, re-parse current value if handler type changes meaning of value
+            this._internalValue = this._parseValueForInternal(this.value);
         }
 
         if (name === 'options' && newVal !== oldVal && typeof newVal === 'string') {
             try {
-                const arrayOptions = safeParse(newVal);
-                if (!Array.isArray(arrayOptions)) {
-                    console.warn(`Options attribute for c-inp [${this.id || this.name}] is not an array`);
+                const parsedOptions = safeParse(newVal);
+                if (Array.isArray(parsedOptions)) {
+                    this.options = parsedOptions.every(opt => typeof opt === 'object' && 'value' in opt && 'label' in opt)
+                        ? parsedOptions
+                        : [];
+                } else {
+                    console.warn(`Options attribute for c-input [${this.id || this.name || 'unnamed'}] is not a valid array string. Received:`, newVal);
+                    this.options = [];
                 }
-                this.options = Array.isArray(arrayOptions) ? arrayOptions : [];
             } catch (e) {
-                console.error(`Error parsing options attribute for c-inp [${this.id || this.name}]:`, e);
+                console.error(`Error parsing options attribute for c-input [${this.id || this.name || 'unnamed'}]:`, e);
                 this.options = [];
             }
         }
 
+        // This ensures that if the `value` attribute is changed externally,
+        // `_internalValue` is updated accordingly. `willUpdate` handles property changes.
         if (name === 'value' && newVal !== oldVal) {
+             // This path is primarily for direct attribute manipulation in HTML or setAttribute
             this._internalValue = this._parseValueForInternal(newVal);
         }
     }
 
-    // Update lifecycle hook
     willUpdate(changedProperties: PropertyValues): void {
         if (changedProperties.has('type')) {
-            this._currentHandler = InputHandlerFactory.getHandler(this.type);
+            this._updateHandler();
+            // Re-evaluate internalValue with new handler if type changed meaning of value
+            this._internalValue = this._parseValueForInternal(this.value);
         }
 
         if (changedProperties.has('value')) {
-            this._internalValue = this._parseValueForInternal(this.value);
+            // This handles programmatic changes to this.value
+            const newPublicValue = changedProperties.get('value');
+            // Only update _internalValue if the public `value` string representation
+            // is different from what _internalValue would stringify to.
+            // This avoids loops if _handleInputChange sets this.value.
+            let currentInternalAsString: string;
+            if (Array.isArray(this._internalValue)) {
+                currentInternalAsString = JSON.stringify(this._internalValue);
+            } else if (this._internalValue instanceof File || this._internalValue instanceof FileList) {
+                 // For File/FileList, direct comparison of `this.value` (string) is tricky.
+                 // The change usually comes from user interaction, not setting `this.value` to a file string.
+                 // So, if `this.value` changes, we trust it and parse.
+                 currentInternalAsString = this.value ?? ''; // Placeholder, file comparison is complex
+            }
+            else {
+                currentInternalAsString = (this._internalValue === null || this._internalValue === undefined) ? '' : String(this._internalValue);
+            }
+
+            if (newPublicValue !== currentInternalAsString) {
+                 this._internalValue = this._parseValueForInternal(this.value);
+            }
+        }
+        
+        if (changedProperties.has('options') && typeof this.options === 'string') {
+             // If options are set as a string property (e.g. from framework bindings not handling arrays well)
+            try {
+                const parsedOptions = safeParse(this.options as any);
+                 if (Array.isArray(parsedOptions)) {
+                    this.options = parsedOptions.every(opt => typeof opt === 'object' && 'value' in opt && 'label' in opt)
+                        ? parsedOptions
+                        : [];
+                } else {
+                     this.options = [];
+                }
+            } catch(e) {
+                this.options = [];
+            }
         }
 
         if (changedProperties.has('multiple')) {
             const oldMultiple = changedProperties.get('multiple') as boolean;
-
-            if (this.multiple && !oldMultiple && !Array.isArray(this._internalValue)) {
-                this._internalValue = (this._internalValue !== null && this._internalValue !== undefined && this._internalValue !== '')
-                    ? [String(this._internalValue)]
-                    : [];
-            } else if (!this.multiple && oldMultiple && Array.isArray(this._internalValue)) {
-                this._internalValue = this._internalValue.length > 0 ? this._internalValue[0] : '';
+            // If multiple changes, re-parse internal value
+            if (this.multiple !== oldMultiple) {
+                this._internalValue = this._parseValueForInternal(this.value);
             }
         }
     }
 
-    // Parse value for internal storage based on input type
-    private _parseValueForInternal(val: string | null | undefined | string[] | boolean | number): string | boolean | number | string[] | null {
+    private _parseValueForInternal(val: InputReturnType): InputReturnType {
         if (!this._currentHandler) {
-            return val as any;
+            // Handler not ready, return raw or best guess (string)
+            return (val === null || val === undefined) ? null : String(val);
         }
-
-        if (this.multiple && this.type === 'select') {
-            if (Array.isArray(val)) {
-                return val.map(String);
-            }
-
-            if (typeof val === 'string') {
-                try {
-                    const parsed = JSON.parse(val);
-                    return Array.isArray(parsed) ? parsed.map(String) : [];
-                } catch (e) {
-                    return val ? [String(val)] : [];
-                }
-            }
-
-            return [];
+        if (this.type === 'select' && this._currentHandler instanceof SelectInputHandler) {
+            return this._currentHandler.parseValue(val, this.multiple);
         }
-
         return this._currentHandler.parseValue(val);
     }
 
-    // Create context object for handlers
     private _createContext(): InputContext {
         return {
             id: this.id,
             name: this.name,
-            value: this.value,
+            value: this.value, // The string property value
             placeholder: this.placeholder,
             disabled: this.disabled,
             readonly: this.readonly,
@@ -581,125 +197,182 @@ export class CInput extends LitElement {
             pattern: this.pattern,
             multiple: this.multiple,
             title: this.title,
-            internalValue: this._internalValue,
+            internalValue: this._internalValue, // The typed internal value
             shadowRoot: this.shadowRoot,
-            emitEvent: (name: string, data: unknown) => this.EmitEvent(name, data),
-            parseValueForInternal: (val) => this._parseValueForInternal(val)
+            emitEvent: (name, data) => this.EmitEvent(name, data),
+            handleInputChange: (evt) => this._handleInputChange(evt),
+            parseValueForInternal: (v) => this._parseValueForInternal(v),
+            type: this.type // Pass type to context for handler logic if needed
         };
     }
 
-    // CSS styles (same as before)
     static styles = css`
         :host {
-            display: block;
-            margin: 0.5rem;
-            padding: 0;
-            color-scheme: light dark;
-            --inp-border-color: rgba(99, 99, 99, 0.5);
-            --inp-disabled-bg: #f5f5f5;
-            --inp-disabled-color: #888;
+            display: block; /* Or inline-block depending on desired layout */
+            margin-block-start: 0.5rem;
+            margin-block-end: 0.5rem;
+            color-scheme: light dark; /* Basic dark mode support */
+            --inp-text-color: inherit;
+            --inp-bg-color: inherit;
+            --inp-border-color: #ccc; /* Softer default border */
+            --inp-focus-border-color: #2196F3;
+            --inp-focus-shadow-color: rgba(33, 150, 243, 0.3);
+            --inp-disabled-bg: #f0f0f0;
+            --inp-disabled-color: #999;
+            --inp-disabled-border-color: #ddd;
+            --inp-readonly-bg: #f8f8f8;
+            --inp-error-border-color: red;
+            --inp-error-shadow-color: rgba(255, 0, 0, 0.2);
             --inp-slider-bg: #ccc;
             --inp-slider-knob: white;
-            --padding: 0.5rem;
-            --border: 1px solid var(--inp-border-color);
+            --inp-slider-active-bg: #2196F3;
+            --inp-padding: 0.5em 0.75em; /* Consistent padding */
+            --inp-border-radius: 4px;
+            --inp-font-size: 1rem;
+            font-size: var(--inp-font-size);
         }
         
         :host([darkmode]) {
             --inp-border-color: #555;
-            --inp-disabled-bg: #222;
-            --inp-disabled-color: #666;
+            --inp-focus-border-color: #4dabf7; /* Lighter blue for dark mode */
+            --inp-focus-shadow-color: rgba(77, 171, 247, 0.3);
+            --inp-disabled-bg: #2a2a2a;
+            --inp-disabled-color: #777;
+            --inp-disabled-border-color: #444;
+            --inp-readonly-bg: #222;
             --inp-slider-bg: #555;
-            --inp-slider-knob: #888;
+            --inp-slider-knob: #ccc;
+            --inp-slider-active-bg: #4dabf7;
         }
 
         .inp-cont {
-            display: flex;
-            flex-direction: column;
-            padding: var(--padding);
+            display: flex; /* For potential future label/input alignment */
+            flex-direction: column; /* Default stacking */
         }
         
-        label {
-            display: inline-flex;
-            align-items: center;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
-        input, textarea, select {
-            padding: 0.5rem;
-            border: var(--border);
-            border-radius: 4px;
-            font-size: 14px;
-            background-color: inherit;
-            color: inherit;
+        /* General input styling */
+        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), 
+        textarea, 
+        select {
+            padding: var(--inp-padding);
+            border: 1px solid var(--inp-border-color);
+            border-radius: var(--inp-border-radius);
+            font-size: inherit; /* Inherit from host */
+            background-color: var(--inp-bg-color);
+            color: var(--inp-text-color);
             box-sizing: border-box;
+            width: 100%; /* Make them take full width of container by default */
             margin: 0;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         
-        option {
-            color: slategray;
-            background-color: #fff;
-            text-indent: 0;
+        option { /* For select dropdown */
+            color: initial; /* Reset for system appearance */
+            background-color: initial;
         }
         
         textarea { 
             resize: vertical; 
             min-height: 80px;
+            line-height: 1.5;
         }
 
-        input:disabled, textarea:disabled, select:disabled {
+        /* States: Disabled and Readonly */
+        input:disabled, textarea:disabled, select:disabled,
+        input[readonly], textarea[readonly], select[readonly] /* Readonly often styled like disabled */
+         {
             background-color: var(--inp-disabled-bg);
+            color: var(--inp-disabled-color);
+            border-color: var(--inp-disabled-border-color);
             cursor: not-allowed;
-            color: var(--inp-disabled-color);
-            border: 1px solid var(--inp-disabled-color);
         }
-        
-        input:read-only, textarea:read-only {
-            background-color: var(--inp-disabled-bg);
-            cursor: no-drop;
-            color: var(--inp-disabled-color);
+        input[readonly], textarea[readonly] {
+             background-color: var(--inp-readonly-bg);
+             cursor: default; /* Readonly is not "not-allowed" but "no-drop" can be too strong */
+        }
+        :host([readonly]) select { /* Custom styling for readonly select if needed */
+             pointer-events: none; /* Simulate readonly for select */
         }
 
-        .sw { position: relative; display: inline-block; width: 60px; height: 30px; }
+        /* Focus state */
+        input:not([type="checkbox"]):not([type="radio"]):not([disabled]):not([readonly]):focus,
+        textarea:not([disabled]):not([readonly]):focus,
+        select:not([disabled]):not([readonly]):focus {
+            outline: none;
+            border-color: var(--inp-focus-border-color);
+            box-shadow: 0 0 0 3px var(--inp-focus-shadow-color);
+        }
+
+        /* Invalid state */
+        :host([invalid]) .input-element:not([type="checkbox"]):not([type="radio"]) {
+            border-color: var(--inp-error-border-color) !important;
+            box-shadow: 0 0 0 3px var(--inp-error-shadow-color) !important;
+        }
+        :host([invalid]) .radio-group,
+        :host([invalid]) .sw,
+        :host([invalid]) .cb-label {
+            outline: 2px solid var(--inp-error-border-color); /* Visual cue for group/label types */
+            outline-offset: 2px;
+        }
+
+        /* Checkbox / Switch / Radio specific styling */
+        .cb-label, .radio-label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1em; /* Spacing between multiple radios/checkboxes */
+            cursor: pointer;
+            position: relative; /* For custom styling if needed */
+        }
+        .cb-label input[type="checkbox"], .radio-label input[type="radio"] {
+             margin-right: 0.5em;
+        }
+        .label-text {
+            user-select: none;
+        }
+
+        /* Switch Styles */
+        .sw { position: relative; display: inline-block; width: 50px; height: 26px; cursor:pointer; }
         .sw input { opacity: 0; width: 0; height: 0; }
-        .sldr { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--inp-slider-bg); transition: .4s; border-radius: 34px; }
-        .sldr:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: var(--inp-slider-knob); transition: .4s; border-radius: 50%; }
-        input:checked + .sldr { background-color: #2196F3; }
-        input:checked + .sldr:before { transform: translateX(28px); }
-        input:focus + .sldr {
-            border: 1px solid #2196F3;
+        .sldr { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--inp-slider-bg); transition: .3s; border-radius: 26px; }
+        .sldr:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: var(--inp-slider-knob); transition: .3s; border-radius: 50%; }
+        
+        input:checked + .sldr { background-color: var(--inp-slider-active-bg); }
+        input:checked + .sldr:before { transform: translateX(24px); }
+        
+        /* Focus visible for accessibility on switch/checkbox/radio */
+        input[type="checkbox"]:focus-visible, 
+        input[type="radio"]:focus-visible {
+             outline: 2px solid var(--inp-focus-border-color);
+             outline-offset: 2px;
+        }
+        input[type="checkbox"]:focus-visible + .sldr { /* For switch */
+            box-shadow: 0 0 0 3px var(--inp-focus-shadow-color);
         }
         
-        input:not(:read-only):focus,
-        textarea:not(:read-only):focus,
-        select:focus {
-            outline: none;
-            border-color: #2196F3;
-            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-            cursor: auto;
+        /* Select multiple styling */
+        select[multiple] {
+            min-height: 100px; /* Or adjust as needed */
         }
-        
-        input:focus,
-        textarea:focus,
-        select:focus {
-            outline: none;
+        select option:checked { /* More subtle highlighting for selected options */
+            /* background-color: var(--inp-focus-border-color); */
+            /* color: white; */
         }
-        
-        select option:checked {
-            background-color: rgb(0, 171, 255);
-            color: white;
-            font-weight: bold;
+        .radio-group {
+            display: flex;
+            flex-direction: column; /* or 'row' if preferred */
+            gap: 0.5em;
         }
-        
-        :host([invalid]) .input-element {
-            border-color: red !important;
-            box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2) !important;
+        :host([type="radio"]) .inp-cont, 
+        :host([type="checkbox"]) .inp-cont, 
+        :host([type="switch"]) .inp-cont {
+             padding: 0; /* Remove padding for wrapper of these types */
         }
     `;
 
-    // Render method
     render() {
         this.toggleAttribute('invalid', !this._isValid);
+        // Pass the type to the host for specific styling if needed
+        // this.setAttribute('type', this.type); // This is already handled by reflect: true
 
         return html`
             <form class="val-form" @submit="${this._handleSubmit}" novalidate>
@@ -719,107 +392,157 @@ export class CInput extends LitElement {
         }));
     }
 
-    // Event handlers
-    private _handleInputChange(evt: Event) {
+    public _handleInputChange(evt: Event) {
         if (!this._currentHandler) return;
 
-        const context = this._createContext();
-        const newValue = this._currentHandler.handleChange(evt, context);
+        const context = this._createContext(); // Create context once
+        const newValueTyped = this._currentHandler.handleChange(evt, context);
 
-        // Update internal value first
-        this._internalValue = this._parseValueForInternal(newValue);
-        // Update public 'value' property (as string for attribute)
-        this.value = (newValue === null || newValue === undefined) ? '' : String(newValue);
+        this._internalValue = newValueTyped; // Update internal state with typed value
 
-        this.EmitEvent('change', { 
-            id: this.id, 
-            name: this.name, 
-            value: this._internalValue, 
-            target: evt.target 
+        // Update the public 'value' property (string representation for attribute)
+        if (newValueTyped instanceof File) {
+            this.value = newValueTyped.name; // For single file, use name
+        } else if (newValueTyped instanceof FileList) {
+            this.value = Array.from(newValueTyped).map(f => f.name).join(', '); // For multiple files
+        } else if (Array.isArray(newValueTyped)) {
+            this.value = JSON.stringify(newValueTyped); // For select multiple
+        } else if (newValueTyped === null || newValueTyped === undefined) {
+            this.value = '';
+        } else {
+            this.value = String(newValueTyped);
+        }
+        
+        // The change to this.value will trigger willUpdate if its value actually changed.
+        // No explicit requestUpdate is typically needed here because properties _internalValue (state)
+        // and value (property) are changing, which Lit tracks.
+
+        this.EmitEvent('change', {
+            id: this.id,
+            name: this.name,
+            value: this._internalValue, // Emit the typed internal value
+            nativeEvent: evt // Pass native event if needed by consumers
         });
 
-        // Validate after updating the value
-        this.isValid();
+        this.isValid(); // Validate after updating the value, this will update _isValid state
     }
 
     private _handleSubmit(e: Event) {
         e.preventDefault();
-
         if (this.isValid()) {
             this.EmitEvent('form-submit', { id: this.id, name: this.name, value: this.getVal() });
         } else {
-            const input = this._getInternalInputElement();
-            input?.reportValidity();
+            // Optionally, focus the first invalid field or provide more specific feedback
+            const inputElement = this._getInternalInputElement();
+            if (inputElement && this._hasReportValidity(inputElement)) {
+                inputElement.reportValidity();
+            }
+            // For radio groups, focusing the group or first radio might be better
         }
     }
 
-    // Get internal input element
-    private _getInternalInputElement(): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null {
-        if (this.type === 'radio') return null;
-        return this.shadowRoot?.querySelector('.input-element') as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+    // Type guard to check if element has reportValidity method
+    private _hasReportValidity(element: HTMLElement): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+        return 'reportValidity' in element && typeof (element as any).reportValidity === 'function';
     }
 
-    // Public methods
+    private _getInternalInputElement(): HTMLElement | null {
+        // For radios, there isn't a single ".input-element" but a group
+        if (this.type === 'radio') {
+            return this.shadowRoot?.querySelector('.radio-group input:first-of-type') as HTMLInputElement | null;
+        }
+        return this.shadowRoot?.querySelector('.input-element') as HTMLElement | null;
+    }
+
     /** Returns the current value (potentially typed) */
-    getVal(): string | boolean | number | string[] | null | undefined {
-        return this._internalValue || this.value;
+    getVal(): InputReturnType {
+        return this._internalValue;
     }
 
-    /** Verifies input validity */
+    /** Verifies input validity and updates the `invalid` attribute. */
     isValid(): boolean {
         if (!this._currentHandler) {
             this._isValid = true;
             return true;
         }
-
         const context = this._createContext();
         const valid = this._currentHandler.isValid(context);
-        this._isValid = valid;
+        this._isValid = valid; // This is a @state property, so it will trigger a re-render
         return valid;
     }
 
-    /** Sets the input value */
-    setVal(val: string | boolean | number | string[] | null): void {
+    /** Sets the input value programmatically. */
+    setVal(val: InputReturnType): void {
         this._internalValue = this._parseValueForInternal(val);
-        this.value = (val === null || val === undefined) ? '' : String(val);
-        this.requestUpdate();
-        setTimeout(() => this.isValid(), 0);
-        this.EmitEvent('change', this.getVal());
+
+        // Update the public 'value' property string representation
+        if (this._internalValue instanceof File) {
+            this.value = this._internalValue.name;
+        } else if (this._internalValue instanceof FileList) {
+            this.value = Array.from(this._internalValue).map(f => f.name).join(', ');
+        } else if (Array.isArray(this._internalValue)) {
+            this.value = JSON.stringify(this._internalValue);
+        } else if (this._internalValue === null || this._internalValue === undefined) {
+            this.value = '';
+        } else {
+            this.value = String(this._internalValue);
+        }
+        // Request update because _internalValue (state) and value (property) have changed.
+        // Lit should handle this automatically. If not, uncomment:
+        // this.requestUpdate();
+
+        // Defer validation to allow DOM to update
+        // Wait for the update cycle to complete before validating
+        this.updateComplete.then(() => {
+            this.isValid();
+            this.EmitEvent('change', { // Emit change event after programmatic setVal
+                id: this.id,
+                name: this.name,
+                value: this._internalValue,
+                programmatic: true
+            });
+        });
     }
 
-    /** Resets the input to its default value (empty or false) */
+    /** Resets the input to its default value (empty, false, or handler-defined). */
     reset(): void {
         if (!this._currentHandler) return;
-
         const context = this._createContext();
-        const defaultVal = this._currentHandler.reset(context);
-        this.setVal(defaultVal || '');
+        const defaultValue = this._currentHandler.reset(context);
+        this.setVal(defaultValue); // setVal will handle updates and event emission
     }
 
-    /** Sets options for select/radio inputs */
+    /** Sets options for select/radio inputs. */
     setOpts(opts: Option[]): void {
-        if (['select', 'radio'].includes(this.type)) {
+        if (['select', 'radio'].includes(this.type.toLowerCase())) {
             this.options = Array.isArray(opts) ? opts : [];
+            // If options change, current value might become invalid or need reassessment
+            this.setVal(this._parseValueForInternal(this.value)); // Re-evaluate value with new options
+        } else {
+            console.warn(`setOpts is only applicable to 'select' or 'radio' types. Current type: ${this.type}`);
         }
     }
 
-    /** Gets the selected option in a select */
-    getSelOpt(): string | null {
-        if (!this._currentHandler || !('getSelectedOption' in this._currentHandler)) {
-            return null;
+    /** Gets the display label of the selected option in a single select. */
+    getSelOptLabel(): string | null {
+        if (this.type === 'select' && this._currentHandler?.getSelectedOption) {
+            return this._currentHandler.getSelectedOption(this._createContext());
         }
-
-        const context = this._createContext();
-        return this._currentHandler.getSelectedOption!(context);
+        return null;
+    }
+    
+    focus() {
+        const el = this._getInternalInputElement();
+        if (el && typeof el.focus === 'function') {
+            el.focus();
+        }
     }
 
-    // Static method to register custom handlers
     static registerInputHandler(type: string, handler: IInputHandler): void {
         InputHandlerFactory.registerHandler(type, handler);
     }
 }
 
-// Register the custom element
 if (!customElements.get('c-input')) {
     customElements.define('c-input', CInput);
 }
