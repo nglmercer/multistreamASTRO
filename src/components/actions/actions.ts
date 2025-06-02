@@ -6,6 +6,7 @@ import { HttpRequestConfig } from "src/litcomponents/fetchcomponent";
 import { HttpRequestExecutor } from "src/fetch/executor";
 import { DialogContainer } from "src/litcomponents/custom-modal.js";
 import { CInput } from "src/litcomponents/CInput.js";
+import { actionEmitter } from "@components/actionsjs/actionemitter.ts";
 // Elementos DOM globales con validación
 const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
@@ -76,6 +77,8 @@ function listenersForm(): void {
         if (result){
           closeModal();
           console.log("Form submitted successfully:", result);
+          actionEmitter.emit("actionFormSubmit", result);
+
         }
       } else {
         console.warn(`Unknown action: ${action}`);

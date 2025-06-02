@@ -2,6 +2,7 @@
 import { pagesConfigA, pagesConfigB } from '../config/pages';
 import Actiontest from '@components/menu/actiontest.astro';
 import UserLogin from '@components/user/userLogin.astro';
+import Dialog from '@components/Dialog.astro'
 interface Props {
   title?: string;
   activeConfig?: 'A' | 'B';
@@ -39,6 +40,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
         <Actiontest/>
       </div>
     </dialog-container>
+    <Dialog></Dialog>
     <div class="layout">
       {/* Mobile Navbar */}
       <nav class="mobile-nav">
@@ -113,6 +115,16 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
       }
       document.addEventListener('DOMContentLoaded', () => {
         listenerModalMenu();
+          setTimeout(() => {
+            window.showDialog('Connectar!', 'OK', 'Cancel')
+              .then(result => {
+                console.log('Dialog result:', result);
+              })
+              .catch(error => {
+                console.error('Dialog error:', error);
+              });
+          }, 2000); // Show dialog after 1 second
+        
       });
     </script>
   </body>

@@ -1,0 +1,298 @@
+---
+// Dialog.astro
+// Este componente se incluye una vez en tu layout principal
+---
+
+<div id="dialog-overlay" class="dialog-overlay">
+  <div class="dialog-box">
+    <h3 id="dialog-title" class="dialog-title"></h3>
+    <div class="dialog-actions">
+      <button id="dialog-accept" class="dialog-btn dialog-accept"></button>
+      <button id="dialog-reject" class="dialog-btn dialog-reject"></button>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    /* === Light Mode Variables === */
+    --dialog-overlay-bg: rgba(0, 0, 0, 0.5);
+    --dialog-box-bg: white;
+    --dialog-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    --dialog-title-color: #1f2937;
+    --dialog-btn-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    /* Button specific colors - can remain consistent or be themed too */
+    --dialog-accept-bg-start: #10b981;
+    --dialog-accept-bg-end: #059669;
+    --dialog-accept-hover-bg-start: #059669;
+    --dialog-accept-hover-bg-end: #047857;
+    --dialog-accept-text-color: white;
+
+    --dialog-reject-bg-start: #ef4444;
+    --dialog-reject-bg-end: #dc2626;
+    --dialog-reject-hover-bg-start: #dc2626;
+    --dialog-reject-hover-bg-end: #b91c1c;
+    --dialog-reject-text-color: white;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* === Dark Mode Variables === */
+      --dialog-overlay-bg: rgba(0, 0, 0, 0.7); /* Más oscuro para mejor contraste */
+      --dialog-box-bg: #2d3748; /* Un gris oscuro azulado */
+      --dialog-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); /* Sombra más sutil o más pronunciada */
+      --dialog-title-color: #e2e8f0; /* Un gris claro para el texto */
+      --dialog-btn-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+      /* Opcional: Podrías ajustar los colores de los botones si es necesario para el modo oscuro */
+      /* Por ejemplo, si los colores actuales no contrastan bien con el nuevo fondo oscuro */
+      /* --dialog-accept-bg-start: #2f855a; */
+      /* --dialog-accept-bg-end: #276749; */
+      /* --dialog-accept-text-color: white; */
+    }
+  }
+
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: var(--dialog-box-bg); /* Para probar el fondo del body también */
+    color: var(--dialog-title-color); /* Para probar el texto del body también */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--dialog-overlay-bg);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .dialog-overlay.show {
+    display: flex;
+    opacity: 1;
+  }
+  
+  .dialog-box {
+    background: var(--dialog-box-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--dialog-box-shadow);
+    max-width: 420px;
+    width: 90%;
+    transform: scale(0.9);
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .dialog-overlay.show .dialog-box {
+    transform: scale(1);
+  }
+  
+  .dialog-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dialog-title-color);
+    text-align: center;
+    line-height: 1.4;
+    transition: color 0.3s ease;
+  }
+  
+  .dialog-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+  
+  .dialog-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 110px;
+  }
+  
+  .dialog-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--dialog-btn-hover-shadow);
+  }
+  
+  .dialog-btn:active {
+    transform: translateY(0);
+  }
+  
+  .dialog-accept {
+    background: linear-gradient(135deg, var(--dialog-accept-bg-start), var(--dialog-accept-bg-end));
+    color: var(--dialog-accept-text-color);
+  }
+  
+  .dialog-accept:hover {
+    background: linear-gradient(135deg, var(--dialog-accept-hover-bg-start), var(--dialog-accept-hover-bg-end));
+  }
+  
+  .dialog-reject {
+    background: linear-gradient(135deg, var(--dialog-reject-bg-start), var(--dialog-reject-bg-end));
+    color: var(--dialog-reject-text-color);
+  }
+  
+  .dialog-reject:hover {
+    background: linear-gradient(135deg, var(--dialog-reject-hover-bg-start), var(--dialog-reject-hover-bg-end));
+  }
+
+  /* Botón de ejemplo para abrir el diálogo */
+  #openDialogBtn {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid var(--dialog-title-color);
+    background-color: transparent;
+    color: var(--dialog-title-color);
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+  #openDialogBtn:hover {
+    background-color: var(--dialog-title-color);
+    color: var(--dialog-box-bg);
+  }
+
+</style>
+
+<script>
+  // Tipos para TypeScript
+  type DialogResolve = (value: boolean) => void;
+  type DialogReject = (reason?: any) => void;
+
+  interface DialogOptions {
+    title: string;
+    acceptText?: string;
+    rejectText?: string;
+  }
+
+  // Extender Window para incluir showDialog
+  declare global {
+    interface Window {
+      showDialog: (title: string, acceptText?: string, rejectText?: string) => Promise<boolean>;
+    }
+  }
+
+  class DialogManager {
+    private dialogContainer: HTMLElement | null = null;
+    private currentResolve: DialogResolve | null = null;
+    private currentReject: DialogReject | null = null;
+
+    constructor() {
+      this.init();
+    }
+
+    private init(): void {
+      this.dialogContainer = document.getElementById('dialog-overlay');
+      this.addEventListeners();
+    }
+
+    private addEventListeners(): void {
+      const acceptBtn = document.getElementById('dialog-accept') as HTMLButtonElement;
+      const rejectBtn = document.getElementById('dialog-reject') as HTMLButtonElement;
+      const overlay = this.dialogContainer;
+      
+      acceptBtn?.addEventListener('click', () => this.handleAccept());
+      rejectBtn?.addEventListener('click', () => this.handleReject());
+      
+      // Cerrar al hacer click fuera del diálogo
+      overlay?.addEventListener('click', (e: MouseEvent) => {
+        if (e.target === overlay) {
+          this.handleReject();
+        }
+      });
+      
+      // Cerrar con Escape
+      document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && this.dialogContainer?.classList.contains('show')) {
+          this.handleReject();
+        }
+      });
+    }
+
+    public show(title: string, acceptText: string = 'Aceptar', rejectText: string = 'Cancelar'): Promise<boolean> {
+      return new Promise<boolean>((resolve, reject) => {
+        this.currentResolve = resolve;
+        this.currentReject = reject;
+        
+        // Configurar contenido
+        const titleEl = document.getElementById('dialog-title') as HTMLHeadingElement;
+        const acceptEl = document.getElementById('dialog-accept') as HTMLButtonElement;
+        const rejectEl = document.getElementById('dialog-reject') as HTMLButtonElement;
+        
+        if (titleEl) titleEl.textContent = title;
+        if (acceptEl) acceptEl.textContent = acceptText;
+        if (rejectEl) rejectEl.textContent = rejectText;
+        
+        // Mostrar diálogo con animación
+        if (this.dialogContainer) {
+          this.dialogContainer.style.display = 'flex';
+          requestAnimationFrame(() => {
+            this.dialogContainer?.classList.add('show');
+          });
+        }
+      });
+    }
+
+    private hide(): void {
+      if (this.dialogContainer) {
+        this.dialogContainer.classList.remove('show');
+        setTimeout(() => {
+          if (this.dialogContainer) {
+            this.dialogContainer.style.display = 'none';
+          }
+        }, 300);
+      }
+    }
+
+    private handleAccept(): void {
+      this.hide();
+      if (this.currentResolve) {
+        this.currentResolve(true);
+        this.cleanup();
+      }
+    }
+
+    private handleReject(): void {
+      this.hide();
+      if (this.currentReject) {
+        this.currentReject(false);
+        this.cleanup();
+      }
+    }
+
+    private cleanup(): void {
+      this.currentResolve = null;
+      this.currentReject = null;
+    }
+  }
+
+  // Crear instancia global cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', () => {
+    const dialog = new DialogManager();
+    
+    // Función global para usar en cualquier lugar
+    window.showDialog = (title: string, acceptText: string = 'Aceptar', rejectText: string = 'Cancelar'): Promise<boolean> => {
+      return dialog.show(title, acceptText, rejectText);
+    };
+  });
+  declare global {
+    interface Window {
+      showDialog: (title: string, acceptText?: string, rejectText?: string) => Promise<boolean>;
+    }
+  }
+</script>
