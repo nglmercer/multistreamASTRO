@@ -6,7 +6,7 @@ const pages = {
     1: { name: "Search", slot: "chat" },
     2: { name: "Action", slot: "Action" },
     3: { name: "History", slot: "page-3" },
-    4: { name: "Favorites", slot: "page-4" },
+    4: { name: "Favorites", slot: "Preconfigs" },
     5: { name: "Settings", slot: "Setconfig" },
 };
 class BaseMainContent extends LitElement {

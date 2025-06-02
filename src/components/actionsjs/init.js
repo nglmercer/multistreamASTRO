@@ -7,17 +7,19 @@ import {
     setupModalEventListeners,
     setupTableActionListeners
 } from '/src/components/actionsjs/crudUIHelpers.js'; // Ajusta ruta
-import { getGiftList, mapgifts, geticonfromarray } from '/src/components/actionsjs/giftutils.js'; // Ajusta ruta
+import { getGiftList, mapgifts, geticonfromarray } from '@utils/transform/gifts.ts'; // Ajusta ruta
+import { mapUsersToSelectOptions } from '@utils/transform/users.ts'; // Ajusta ruta
+import { displayAllUsers } from '@utils/userdata/UserProcessor.ts'; // Ajusta ruta
 async function fetchGiftOptions() {
     return getGiftList();
 }
  async function fetchUserRoles() {
     return [
         { value: 'any', label: 'Cualquiera' },
-        { value: 'sub', label: 'Suscriptor (Async)' },
-        { value: 'mod', label: 'Moderador (Async)' },
-        { value: 'gifter', label: 'Regalador (Async)' },
-        { value: 'uniqueid', label: 'Usuario (Async)' },
+        { value: 'sub', label: 'Suscriptor' },
+        { value: 'mod', label: 'Moderador' },
+        { value: 'gifter', label: 'Regalador' },
+        { value: 'usuario', label: 'Usuario exacto' },
     ];
  }
 async function getAllActions() {
@@ -43,10 +45,11 @@ getAllActions()
     ]
 }
 async function fetchUsers(){
+    const usersmap = mapUsersToSelectOptions(await displayAllUsers());
+    console.log("fetchUsers", usersmap);
     return [
-        { value: 'id1234', label: 'Usuario 1' },
-        { value: 'id5678', label: 'Usuario 2' },
-        { value: 'id91011', label: 'Usuario 3' }
+        ...usersmap,
+        { value: '7339395551567954950', label: 'cristobaltrs'}
     ]
 }
 const formConfigurations = {
@@ -60,9 +63,10 @@ const formConfigurations = {
             name: { label: 'Nombre', type: 'text', required: true },
             isActive: { label: 'Activo', type: 'switch' },
             role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
+            usuario: { label: 'Usuario', type: 'select', options: await fetchUsers(), showIf: { field: 'role', value: 'usuario' } },
             comparator: { label: 'Comparador', type: 'select', options: comparatorStringOptions() },
             value: { label: 'Valor Comentario', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
-            uniqueid: { label: 'Usuario', type: 'select', options: await fetchUsers() },
+            
             actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
             id: { hidden: true, readonly:"true" }, // Ocultar ID para nuevos
             type: { hidden: true }

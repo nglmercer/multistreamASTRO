@@ -60,7 +60,8 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
             "any": (data: any): boolean => true,
             "sub": (data: any): boolean => data.isSubscriber,
             "mod": (data: any): boolean => data.isModerator,
-            "gifter": (data: any): boolean => data.isNewGifter || data.gifterLevel
+            "gifter": (data: any): boolean => data.isNewGifter || data.gifterLevel,
+            "usuario": (data: any,item:any): boolean => Number(data.userId) === Number(item.usuario),
         },
         comparatorChecks: {
             "any": (item: any, data: any): boolean => true,
@@ -282,7 +283,7 @@ export async function evaluateRules(
         }
         
         const roleCheckFn = rulesDefinition.roleChecks[item.role];
-        if (!roleCheckFn || !roleCheckFn(data)) continue;
+        if (!roleCheckFn || !roleCheckFn(data,item)) continue;
         
         const comparatorCheckFn = rulesDefinition.comparatorChecks[item.comparator];
         if (!comparatorCheckFn || !comparatorCheckFn(item, data)) continue;
