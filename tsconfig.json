@@ -26,7 +26,7 @@
         "src/utils/*"
       ],
       "@litcomponents/*": [
-        "/litcomponents/*"
+        "src/litcomponents/*"
       ]
     },
     "jsx": "preserve",
