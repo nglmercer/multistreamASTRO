@@ -243,6 +243,8 @@ export class CInput extends LitElement {
             --inp-slider-bg: #555;
             --inp-slider-knob: #ccc;
             --inp-slider-active-bg: #4dabf7;
+            --inp-bg-color: #333; /* Darker background for inputs */
+            --inp-text-color: #fff; /* Lighter text for dark mode */
         }
 
         .inp-cont {

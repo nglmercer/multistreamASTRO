@@ -3,6 +3,7 @@ import { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeech
 import { AudioQueue } from './audio_queue.ts'; // Assuming file name
 import { TiktokEmitter } from '/src/utils/socketManager';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+import { LitFormBuilder } from 'src/litcomponents/forms/form.ts'
 const logger = new BrowserLogger("TTS")
     .setLevel(LogLevel.LOG); // Set to INFO or DEBUG as needed
 TiktokEmitter.on('play_arrow', async (data) => {
@@ -39,40 +40,39 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
 
     // --- 3. Inicializar el resto (Ahora puede usar ttsConfigManager) ---
     const providerNames = ['streamElements', 'responsiveVoice', 'webSpeech'];
-    const displayElements = {};
+    const newdisplayElements = {};
 
     // --- Initialize Config Forms ---
     providerNames.forEach(name => {
-        const displayEl = document.getElementById(`config-${name}`);
-        if (displayEl) {
-            displayElements[name] = displayEl;
+        const newdisplayEl = document.getElementById(`${name}-config`);
+        if (newdisplayEl) {
+            newdisplayElements[name] = newdisplayEl;
             try {
+                
                 const currentConfig = ttsConfigManager.loadConfig(name);
                 const fieldConfigs = ttsConfigManager.getFieldConfigs(name);
 
                 // *** Debugging Crucial ***
-                logger.log(`Setting config for ${name}. Field Configs:`, fieldConfigs);
+                logger.log(`Setting config for ${name}. Field Configs:`, fieldConfigs,currentConfig);
                 if (!fieldConfigs || Object.keys(fieldConfigs).length === 0) {
                      logger.error(`!!! FieldConfigs for ${name} are empty or invalid.`);
                 }
                  if (fieldConfigs.defaultVoice && (!fieldConfigs.defaultVoice.options || fieldConfigs.defaultVoice.options.length === 0)) {
                     logger.warn(`!!! Voice options for ${name} select are empty.`);
                  }
-
-                displayEl.setConfig(currentConfig, fieldConfigs); // Ahora fieldConfigs tiene las 'options'
-
-                displayEl.addEventListener('item-updated', (event) => {
+                newdisplayEl.setConfig(currentConfig, fieldConfigs); // Ahora fieldConfigs tiene las 'options'
+                newdisplayEl.addEventListener('action', (event) => {
                     logger.log(`Config updated for ${name}, saving...`, event.detail);
-                    const saved = ttsConfigManager.saveConfig(name, event.detail); // Usa la instancia
+                    const saved = ttsConfigManager.saveConfig(name, event.detail);
                     if (saved) {
                         instantiateProvider(name); // Reinstanciar con nueva config
                     } else {
                         alert(`Failed to save configuration for ${name}!`);
                     }
                 });
+
             } catch (e) {
                  logger.error(`Error setting up config display for ${name}:`, e);
-                 displayEl.innerHTML = `<p style="color: red;">Error loading config for ${name}</p>`;
             }
         } else {
             logger.warn(`Could not find display element for ${name}`);
