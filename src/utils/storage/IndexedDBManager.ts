@@ -132,7 +132,7 @@ export class IndexedDBManager {
             });
           } else {
             // Store exists, add missing indexes
-            console.log(`Store ${config.storeName} already exists. Checking for missing indexes.`);
+            //  console.log(`Store ${config.storeName} already exists. Checking for missing indexes.`);
             const existingStore = transaction.objectStore(config.storeName);
             const existingIndexNames = new Set<string>();
             for(let i = 0; i < existingStore.indexNames.length; i++) {

@@ -12,12 +12,12 @@ async function fetchGiftOptions() {
     return getGiftList();
 }
  async function fetchUserRoles() {
-    await new Promise(resolve => setTimeout(resolve, 10));
     return [
         { value: 'any', label: 'Cualquiera' },
         { value: 'sub', label: 'Suscriptor (Async)' },
         { value: 'mod', label: 'Moderador (Async)' },
         { value: 'gifter', label: 'Regalador (Async)' },
+        { value: 'uniqueid', label: 'Usuario (Async)' },
     ];
  }
 async function getAllActions() {
@@ -42,13 +42,19 @@ getAllActions()
         { value: 'contains', label: 'Contiene' }
     ]
 }
-
+async function fetchUsers(){
+    return [
+        { value: 'id1234', label: 'Usuario 1' },
+        { value: 'id5678', label: 'Usuario 2' },
+        { value: 'id91011', label: 'Usuario 3' }
+    ]
+}
 const formConfigurations = {
     comment: {
         title: "Configurar Evento de Comentario",
         getInitialData: () => ({
             id: '', name: 'Nuevo Evento Comentario', isActive: true,
-            role: 'any', comparator: 'startsWith', value: '', type: 'comment' // Añadir tipo
+            role: 'any', comparator: 'startsWith', value: '', type: 'comment', user: 'any'
         }),
         getFieldConfig: async () => ({
             name: { label: 'Nombre', type: 'text', required: true },
@@ -56,8 +62,9 @@ const formConfigurations = {
             role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
             comparator: { label: 'Comparador', type: 'select', options: comparatorStringOptions() },
             value: { label: 'Valor Comentario', type: 'text', showIf: { field: 'comparator', value: 'any', negate: true } },
+            uniqueid: { label: 'Usuario', type: 'select', options: await fetchUsers() },
             actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
-            id: { hidden: false, readonly:"true" }, // Ocultar ID para nuevos
+            id: { hidden: true, readonly:"true" }, // Ocultar ID para nuevos
             type: { hidden: true }
         })
     },

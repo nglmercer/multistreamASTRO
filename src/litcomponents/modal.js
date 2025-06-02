@@ -507,6 +507,9 @@ function safeParse(value) {
       .sldr:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: var(--inp-slider-knob); transition: .4s; border-radius: 50%; }
       input:checked + .sldr { background-color: #2196F3; }
       input:checked + .sldr:before { transform: translateX(28px); }
+      input:focus + .sldr {
+        border: 1px solid rgb(255, 255, 255); /* Añade un borde al knob cuando el input está enfocado */
+      }
       input:not(:read-only):focus,
       textarea:not(:read-only):focus,
       select:focus {

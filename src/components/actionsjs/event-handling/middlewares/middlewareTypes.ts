@@ -56,7 +56,14 @@ export interface PreventDuplicateFollowConfig extends BaseMiddlewareConfig {
     // Opcional: podrías añadir un timeWindowSeconds si quieres que el bloqueo expire
     // timeWindowSeconds?: number; // Por defecto, podríamos usar 24h como en el otro
 }
-
+export const CONTENT_FILTER_TYPE = 'contentFilter';
+export interface ContentFilterConfig extends BaseMiddlewareConfig {
+    type: typeof CONTENT_FILTER_TYPE;
+    dataPath: string; // Path para extraer el texto del evento (ej: 'comment', 'message.text')
+    localStorageKey: string; // Clave de localStorage donde se guarda el array/string de palabras clave
+    filterMode: 'blockIfContains' | 'blockIfNotContains'; // Modo de operación
+    blockReason?: string; // Razón personalizada para el bloqueo
+}
 
 
 // Un objeto para registrar los middlewares y sus funciones ejecutoras
@@ -74,20 +81,19 @@ export function registerMiddleware<TConfig extends BaseMiddlewareConfig, TData =
     middlewareRegistry.set(type, handler);
 }
 
-// Un tipo unión para todas las configuraciones de middleware posibles
-// Esto crecerá a medida que añadas más tipos de middleware
+// --- Tipo Unión de todas las configuraciones ---
 export type AnyMiddlewareConfig =
     | PreventIdenticalPreviousConfig
     | BlockUserConfig
     | RateLimitByUserConfig
-    | PreventDuplicateFollowConfig;
+    | PreventDuplicateFollowConfig
+    | ContentFilterConfig; // <-- Añadido el nuevo tipo
 
-// Actualiza tu definición de `eventRules` para usar este tipo
+// --- Tipos para EventRules ---
 export interface EventRuleEntry {
-    middlewares?: AnyMiddlewareConfig[]; // Array de configuraciones de middleware
+    middlewares?: AnyMiddlewareConfig[];
     roleChecks: Record<string, (data: any) => boolean>;
     comparatorChecks: Record<string, (item: any, data: any) => boolean>;
-    // otras propiedades específicas de la regla si las tienes
 }
 
 export type EventRules = Record<string, EventRuleEntry>;

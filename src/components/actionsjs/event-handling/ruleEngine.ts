@@ -8,11 +8,13 @@ import {
     type EventRuleEntry,
     middlewareRegistry,
     PREVENT_IDENTICAL_PREVIOUS_TYPE,
-    PREVENT_DUPLICATE_FOLLOW_TYPE 
+    PREVENT_DUPLICATE_FOLLOW_TYPE,
+    CONTENT_FILTER_TYPE
 } from './middlewares/middlewareTypes.js';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
 import './middlewares/preventIdenticalPrevious.js';
 import './middlewares/preventDuplicateFollow.js';
+import './middlewares/contentFilter.js'
 const logger = new BrowserLogger('ruleEngine')
     .setLevel(LogLevel.LOG); // Habilitar debug para más información
 // Configuración de reglas para diferentes tipos de eventos
@@ -36,6 +38,22 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
                 enabled: true,
                 userIdentifierPath: 'uniqueId',
                 contentPaths: ['comment'],
+            },
+                        {
+                type: CONTENT_FILTER_TYPE, // Usar la constante importada
+                enabled: true,
+                dataPath: 'comment', // El campo del objeto 'data' que contiene el texto a verificar
+                localStorageKey: 'blockedChatKeywords', // La clave en localStorage para la lista de palabras
+                filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
+                blockReason: 'Mensaje contiene una palabra prohibida.'
+            },
+            {
+                type: CONTENT_FILTER_TYPE,
+                enabled: false, // Ejemplo deshabilitado
+                dataPath: 'comment',
+                localStorageKey: 'requiredChatKeywords',
+                filterMode: 'blockIfNotContains', // Bloquear si el 'comment' NO CONTIENE ninguna palabra de 'requiredChatKeywords'
+                blockReason: 'Mensaje no contiene palabras clave requeridas.'
             }
         ],
         roleChecks: {
