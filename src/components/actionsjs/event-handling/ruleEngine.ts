@@ -4,13 +4,15 @@ import { ReplacesValues } from './dataUtils.js'
 import {
     type AnyMiddlewareConfig,
     type MiddlewareContext,
-    type EventRules, // Tipado para eventRules
+    type EventRules,
     type EventRuleEntry,
-    middlewareRegistry
+    middlewareRegistry,
+    PREVENT_IDENTICAL_PREVIOUS_TYPE,
+    PREVENT_DUPLICATE_FOLLOW_TYPE 
 } from './middlewares/middlewareTypes.js';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
 import './middlewares/preventIdenticalPrevious.js';
-
+import './middlewares/preventDuplicateFollow.js';
 const logger = new BrowserLogger('ruleEngine')
     .setLevel(LogLevel.LOG); // Habilitar debug para más información
 // Configuración de reglas para diferentes tipos de eventos
@@ -26,11 +28,11 @@ const platformEventTypeMap: Record<string, string> = {
 // Puedes usar `Record<string, any>` o `any` para la constante principal y luego
 // ser específico dentro.
 
-const eventRules: Record<string, any> = { // O const eventRules: any = {
+export const eventRules: Record<string, any> = { // O const eventRules: any = {
     chat: {
         middlewares: [
             {
-                type: 'preventIdenticalPrevious', // Idealmente: PREVENT_IDENTICAL_PREVIOUS_TYPE,
+                type: PREVENT_IDENTICAL_PREVIOUS_TYPE, // Idealmente: PREVENT_IDENTICAL_PREVIOUS_TYPE,
                 enabled: true,
                 userIdentifierPath: 'uniqueId',
                 contentPaths: ['comment'],
@@ -96,33 +98,99 @@ const eventRules: Record<string, any> = { // O const eventRules: any = {
     follow: {
         roleChecks: {
             "any": (data: any): boolean => true,
-            "sub": (data: any): boolean => data.isSubscriber,
-            "mod": (data: any): boolean => data.isModerator,
-            "gifter": (data: any): boolean => data.isNewGifter
         },
-        middlewares: [ // Corregido de 'middleware' a 'middlewares'
+        comparatorChecks: {
+            "any": (item: any, data: any): boolean => true,
+        },
+        middlewares: [
             {
-                type: 'preventIdenticalPrevious', // Idealmente: PREVENT_IDENTICAL_PREVIOUS_TYPE,
+                type: PREVENT_DUPLICATE_FOLLOW_TYPE, 
                 enabled: true,
-                userIdentifierPath: 'uniqueId',
-                contentPaths: ['uniqueId','nickname']
+                userIdentifierPath: 'uniqueId'
             }
         ]
     }
 };
+const LOCALSTORAGE_PREFIX = 'middleware_enabled_';
+
+// Function to get the localStorage key for a specific middleware
+function getMiddlewareLocalStorageKey(eventType: string, middlewareType: string): string {
+    return `${LOCALSTORAGE_PREFIX}${eventType}_${middlewareType}`;
+}
+
+// Function to load middleware states from localStorage
+function initializeMiddlewareStatesFromLocalStorage() {
+    if (typeof localStorage === 'undefined') {
+        logger.warn('localStorage is not available. Middleware states will not be persisted.');
+        return;
+    }
+
+    for (const eventType in eventRules) {
+        const ruleEntry = eventRules[eventType];
+        if (ruleEntry.middlewares && Array.isArray(ruleEntry.middlewares)) {
+            ruleEntry.middlewares.forEach((middleware:any) => {
+                const key = getMiddlewareLocalStorageKey(eventType, middleware.type);
+                const storedState = localStorage.getItem(key);
+                if (storedState !== null) {
+                    try {
+                        middleware.enabled = JSON.parse(storedState);
+                        logger.log(`[LocalStorage] Loaded state for ${key}: ${middleware.enabled}`);
+                    } catch (e) {
+                        logger.error(`[LocalStorage] Error parsing stored state for ${key}:`, e);
+                    }
+                }
+            });
+        }
+    }
+}
+
+// Call initialization when the module loads (client-side)
+if (typeof window !== 'undefined') { // Ensure this runs only in the browser
+    initializeMiddlewareStatesFromLocalStorage();
+}
+export function updateMiddlewareEnabledState(eventType: string, middlewareType: string, isEnabled: boolean): boolean {
+    const ruleEntry = eventRules[eventType];
+    if (!ruleEntry || !ruleEntry.middlewares) {
+        logger.warn(`[UpdateState] Event type "${eventType}" not found or has no middlewares.`);
+        return false;
+    }
+    //@ts-ignore
+    const middleware = ruleEntry.middlewares.find(m => m.type === middlewareType);
+    if (!middleware) {
+        logger.warn(`[UpdateState] Middleware type "${middlewareType}" not found for event "${eventType}".`);
+        return false;
+    }
+
+    middleware.enabled = isEnabled;
+    logger.log(`[UpdateState] Middleware ${eventType}.${middlewareType} set to ${isEnabled}`);
+
+    if (typeof localStorage !== 'undefined') {
+        const key = getMiddlewareLocalStorageKey(eventType, middleware.type);
+        try {
+            localStorage.setItem(key, JSON.stringify(isEnabled));
+            logger.log(`[LocalStorage] Saved state for ${key}: ${isEnabled}`);
+        } catch (e) {
+            logger.error(`[LocalStorage] Error saving state for ${key}:`, e);
+            // Potentially roll back the in-memory change or handle QuotaExceededError
+            return false; 
+        }
+    }
+    return true;
+}
+
 async function processMiddlewares(
-    middlewareConfigs: AnyMiddlewareConfig[], // Array de configuraciones de middleware para el evento actual
+    middlewareConfigs: AnyMiddlewareConfig[],
     context: MiddlewareContext
 ): Promise<boolean> {
     if (!middlewareConfigs || middlewareConfigs.length === 0) {
-        return true; // No hay middlewares, continuar
+        return true;
     }
 
-    // Podrías ordenar los middlewares aquí si tuvieran una propiedad `order`
-    // middlewareConfigs.sort((a, b) => (a.order || 0) - (b.order || 0));
-
     for (const config of middlewareConfigs) {
+        // The 'enabled' state is now read from the config object itself,
+        // which would have been updated from localStorage.
         if (!config.enabled) {
+            logger.log(`[ProcessMiddlewares] Middleware '${config.type}' for event '${context.eventType}' is disabled. Skipping.`);
             continue;
         }
 
@@ -135,72 +203,60 @@ async function processMiddlewares(
         try {
             const result = await handler(config, context);
             if (!result.shouldContinue) {
-                logger.log(`[ProcessMiddlewares] Middleware '${config.type}' bloqueó el evento. Razón: ${result.reason || 'No especificada'}`);
-                return false; // Un middleware bloqueó, detener el procesamiento
+                logger.log(`[ProcessMiddlewares] Middleware '${config.type}' blocked event '${context.eventType}'. Razón: ${result.reason || 'No especificada'}`);
+                return false;
             }
         } catch (error) {
-            logger.error(`[ProcessMiddlewares] Error ejecutando middleware '${config.type}':`, error);
-            // Decide si un error en un middleware debe bloquear el evento.
-            // Por seguridad, podría ser mejor continuar o tener una config para esto.
-            // return false; // Opcional: bloquear si un middleware falla
+            logger.error(`[ProcessMiddlewares] Error executing middleware '${config.type}':`, error);
+            // Optionally block if a middleware fails
+            // return false;
         }
     }
-    return true; // Todos los middlewares habilitados pasaron
+    return true;
 }
 
 
 export async function evaluateRules(
     array: any[],
     data: any,
-    rulesKey: string, // ej. 'chat', 'gift' (el tipo de regla a usar)
-    platform: 'tiktok' | 'kick' | string,
-    originalEventName: string // ej. 'ChatMessage', 'like' (el evento original de la plataforma)
+    rulesKey: string,
+    platform: string,
+    originalEventName: string
 ): Promise<Map<string, any>> {
     let result = new Map();
     if (!array || !Array.isArray(array) || !data) return result;
 
-    // Obtener la configuración de middlewares para el rulesKey actual
     const currentEventRuleEntry = eventRules[rulesKey];
-    const middlewareConfigsToRun = currentEventRuleEntry?.middlewares;
-    if (middlewareConfigsToRun && middlewareConfigsToRun.length > 0) {
+    // Middlewares are processed first
+    if (currentEventRuleEntry?.middlewares && currentEventRuleEntry.middlewares.length > 0) {
         const middlewareContext: MiddlewareContext = {
-            eventType: rulesKey, // El tipo de evento de regla que se está procesando
-            originalEventName,  // El nombre del evento original de la plataforma
+            eventType: rulesKey,
+            originalEventName,
             platform,
             data
         };
         
-        const middlewaresPassed = await processMiddlewares(middlewareConfigsToRun, middlewareContext);
-        logger.log(middlewareConfigsToRun, 'middlewareConfigsToRun',middlewaresPassed, middlewareContext);
+        // processMiddlewares will now use the 'enabled' flag from the middleware config
+        // which is synchronized with localStorage
+        const middlewaresPassed = await processMiddlewares(currentEventRuleEntry.middlewares, middlewareContext);
+        
         if (!middlewaresPassed) {
-            logger.log(`[evaluateRules] Middlewares bloquearon el evento ${originalEventName} (regla: ${rulesKey}) para ${platform}.`);
-            // Notificar a `switcheventDb` si el evento fue bloqueado para no guardarlo.
-            // Esto requiere que `evaluateRules` devuelva más que solo el `Map`.
-            // Por ejemplo: return { results: new Map(), wasBlocked: true };
-            return result; // O un objeto especial
+            logger.log(`[evaluateRules] Middlewares blocked event ${originalEventName} (rule: ${rulesKey}) for ${platform}.`);
+            return result; // Event blocked, return empty map
         }
     }
 
-
-    // El resto de tu lógica de evaluateRules...
-    const rulesDefinition = eventRules[rulesKey]; // `rulesKey` ya es el correcto aquí
+    const rulesDefinition = eventRules[rulesKey];
     if (!rulesDefinition || !rulesDefinition.roleChecks || !rulesDefinition.comparatorChecks) {
-        logger.warn(`[evaluateRules] No se encontraron roleChecks o comparatorChecks para el tipo de regla: ${rulesKey}`);
+        logger.warn(`[evaluateRules] No roleChecks or comparatorChecks for rule: ${rulesKey}`);
         return result;
     }
     
-    logger.log(`Evaluating rule ${rulesKey} (original event: ${originalEventName}) on ${platform}`, array, data);
+    logger.log(`Evaluating rule ${rulesKey} (original event: ${originalEventName}) on ${platform}`, data);
     
     for (let i = 0; i < array.length; i++) {
         const item = array[i];
-        
         if (item.isActive === false) continue;
-        // @ts-ignore
-        if (item.bypassChecks && currentEventRuleEntry?.middlewares?.every((m) => !m.enabled)) {
-            // Si bypassChecks está activo Y NINGÚN middleware está activo para esta regla,
-            // entonces podríamos saltar los chequeos. O, podrías tener una propiedad `bypassMiddlewares` en el item.
-            // Por ahora, el bypass se aplica después de los middlewares.
-        }
         if (item.bypassChecks) {
              const itemId = item.id || i;
              result.set(itemId, item);
@@ -237,6 +293,11 @@ export async function evalueBits(array: any[], data: any, platform: string, orig
 
 export async function evalueLikes(array: any[], data: any, platform: string, originalEventName: string) {
     return await evaluateRules(array, data, 'likes',platform, originalEventName);
+}
+export async function evalueFollow(array: any[], data: any, platform: string, originalEventName: string) {
+    // 'follow' es un evento especial que puede tener middlewares específicos.
+    console.log('evalueFollow', array, data, platform, originalEventName);
+    return await evaluateRules(array, data, 'follow', platform, originalEventName);
 }
 
 // Función para actualizar reglas en tiempo de ejecución

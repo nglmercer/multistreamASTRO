@@ -1,0 +1,111 @@
+---
+// Importamos las reglas y la función para actualizarlas
+
+---
+
+<main class="container mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-6">Gestor de Middlewares (Demo Client-Side)</h1>
+
+  <div id="middlewares-container" class="space-y-8">
+    <!-- El contenido se generará dinámicamente por JavaScript -->
+    <!-- Example for one, will be dynamic -->
+    <!--
+    <div class="flex items-center space-x-2 p-2 border rounded">
+      <label for="middleware-chat-preventIdenticalPrevious" class="font-medium">Middleware Chat (Prevent Identical)</label>
+      <c-input
+        id="middleware-chat-preventIdenticalPrevious"
+        type="checkbox"
+      ></c-input>
+      <span>Filtrar mensajes de chat idénticos</span>
+    </div>
+    -->
+  </div>
+</main>
+
+<script >
+import { eventRules, updateMiddlewareEnabledState } from '@components/actionsjs/event-handling/ruleEngine.js';
+import type { EventRules } from '@components/actionsjs/event-handling/middlewares/middlewareTypes.js'; // For typing client-side script
+const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules)); 
+
+  import { CInput } from 'src/litcomponents/CInput';
+
+  function renderMiddlewareToggles() {
+    const container = document.getElementById('middlewares-container');
+    if (!container) return;
+    container.innerHTML = ''; // Clear previous toggles
+
+    for (const [eventType, ruleEntry] of Object.entries(initialRulesForClient)) {
+      if (ruleEntry.middlewares && ruleEntry.middlewares.length > 0) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'p-4 border rounded-md shadow-sm';
+        
+        const groupTitle = document.createElement('h2');
+        groupTitle.className = 'text-xl font-semibold mb-3 capitalize';
+        groupTitle.textContent = `${eventType} Middlewares`;
+        groupDiv.appendChild(groupTitle);
+
+        ruleEntry.middlewares.forEach(middlewareConfig => {
+          const MlocalStorageKey = `middleware_enabled_${eventType}_${middlewareConfig.type}`;
+          const isCheckedInitially = middlewareConfig.enabled; // This comes from initialRulesForClient, which reflects localStorage
+
+          const wrapperDiv = document.createElement('div');
+          wrapperDiv.className = 'flex items-center space-x-3 mb-2 p-2 border-b last:border-b-0';
+
+          const checkboxId = `middleware-${eventType}-${middlewareConfig.type}`;
+          
+          // Using CInput
+          const checkbox = document.createElement('c-input') as CInput;
+          checkbox.setAttribute('type', 'checkbox');
+          checkbox.setAttribute('id', checkboxId);
+          
+          // Set initial checked state for c-input
+          // CInput might take 'checked' attribute or a .value property
+          // If CInput's value prop handles boolean for checkbox:
+          checkbox.value = JSON.stringify(isCheckedInitially); // "true" / "false"
+          // Or if it needs 'checked' attribute:
+          if (isCheckedInitially) {
+            checkbox.setAttribute('checked', '');
+          }
+
+
+          const label = document.createElement('label');
+          label.setAttribute('for', checkboxId);
+          label.className = 'flex-grow cursor-pointer';
+          label.textContent = `Activar ${middlewareConfig.type} (para ${eventType})`;
+          
+          const description = document.createElement('span');
+          description.className = 'text-sm text-gray-600 ml-auto';
+          description.textContent = `(Currently: ${isCheckedInitially ? 'Activado' : 'Desactivado'})`;
+          
+          checkbox.addEventListener('change', async (e) => {
+            // For CInput, the value might be in e.target.value or e.target.checked
+            // Let's assume CInput component correctly sets its `value` property
+            let isChecked = (typeof checkbox.value === 'string' ? JSON.parse(checkbox.value): checkbox.value) as boolean; 
+
+
+            console.log(`Toggle change for ${eventType}.${middlewareConfig.type}: ${isChecked}`);
+            
+            // Call the function from ruleEngine.js (needs to be accessible)
+            // Assuming updateMiddlewareEnabledState is globally available or correctly imported/passed
+            const success = await updateMiddlewareEnabledState(eventType, middlewareConfig.type, isChecked);
+            console.log(`Middleware ${middlewareConfig.type} for ${eventType} updated: ${success}`);
+          });
+
+          wrapperDiv.appendChild(checkbox);
+          wrapperDiv.appendChild(label);
+          wrapperDiv.appendChild(description);
+          groupDiv.appendChild(wrapperDiv);
+        });
+        container.appendChild(groupDiv);
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderMiddlewareToggles();
+  });
+</script>
+
+<style is:global>
+  /* Your global styles, Tailwind should handle most of this */
+</style>

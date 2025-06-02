@@ -2,7 +2,7 @@
 import { getAllDataFromDatabase, databases } from '@utils/idb.js';
 import { processMatchedItems } from './actionProcessor.js';
 import { polifyfillEvalueKick } from './dataUtils.js';
-import { evalueChat, evalueGift, evalueBits, evalueLikes } from './ruleEngine.ts';
+import { evalueChat, evalueGift, evalueBits, evalueLikes, evalueFollow } from './ruleEngine.ts';
 import logger from '@utils/logger.js';
 
 
@@ -20,6 +20,7 @@ const eventEvaluators = {
     'gift': evalueGift,
     'bits': evalueBits,
     'likes': evalueLikes,
+    'follow': evalueFollow,
 };
 
 export async function switcheventDb(event, eventData, platform) {

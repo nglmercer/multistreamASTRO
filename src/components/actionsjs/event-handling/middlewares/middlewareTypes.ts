@@ -49,6 +49,14 @@ export interface RateLimitByUserConfig extends BaseMiddlewareConfig {
     maxRequests: number;
     timeWindowSeconds: number;
 }
+export const PREVENT_DUPLICATE_FOLLOW_TYPE = 'preventDuplicateFollow';
+export interface PreventDuplicateFollowConfig extends BaseMiddlewareConfig {
+    type: typeof PREVENT_DUPLICATE_FOLLOW_TYPE;
+    userIdentifierPath: string; // Path para obtener el ID del usuario que realiza el follow
+    // Opcional: podrías añadir un timeWindowSeconds si quieres que el bloqueo expire
+    // timeWindowSeconds?: number; // Por defecto, podríamos usar 24h como en el otro
+}
+
 
 
 // Un objeto para registrar los middlewares y sus funciones ejecutoras
@@ -71,8 +79,8 @@ export function registerMiddleware<TConfig extends BaseMiddlewareConfig, TData =
 export type AnyMiddlewareConfig =
     | PreventIdenticalPreviousConfig
     | BlockUserConfig
-    | RateLimitByUserConfig;
-    // | OtroMiddlewareConfig;
+    | RateLimitByUserConfig
+    | PreventDuplicateFollowConfig;
 
 // Actualiza tu definición de `eventRules` para usar este tipo
 export interface EventRuleEntry {

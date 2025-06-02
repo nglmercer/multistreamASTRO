@@ -10,7 +10,7 @@ const {
   title = "Simulate TikTok Event", 
   showDescription = true 
 } = Astro.props;
-
+import  MiddlewareDemo from '@components/middlewares-demo.astro';
 ---
 <div class="tiktok-event-simulator">
 
@@ -30,7 +30,7 @@ const {
   </div>
   <div id="tiktok-event-status"></div>
   <div>
-
+    <MiddlewareDemo></MiddlewareDemo>
     <button type="button" id="skip-play-button" class="btn btn-secondary">
       <span class="material-symbols-outlined">play_arrow</span>skip
     </button>
