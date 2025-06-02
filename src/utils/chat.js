@@ -321,7 +321,7 @@ function webcomponentevent(data, additionaldata = {}) {
 }
 function webcomponenttemplate(template = {}, newdata = {}, additionaldata = {}) {
     if (template && template.user && template.content && template.content.length > 0) {
-        return { ...template, menu: { options: optionmenuchat } };
+        return { ...template };
     }
     return {
         user: newdata,

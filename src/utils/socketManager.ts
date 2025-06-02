@@ -1,9 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 import Emitter, { emitter } from './Emitter';
-import logger from './logger';
+import { BrowserLogger, LogLevel } from './Logger.ts'
 import LocalStorageManager from './LocalStorageManager'
 import {setupData,type EventType} from './userdata/UserProcessor.ts';
-
+const logger = new BrowserLogger('socket')
+  .setLevel(LogLevel.DISABLED);
 interface JoinPlatformparams {
   uniqueId: string;
   platform: string;
@@ -68,7 +69,7 @@ class SocketManager {
     this.KickEmitter = new Emitter();
     this.ws = new WebSocket(this.wsBaseUrl);
     
-    console.log("event", 'Socket Manager Loaded', this.baseUrl, this.socket);
+    logger.log("event", 'Socket Manager Loaded', this.baseUrl, this.socket);
     
     this.initializeSocketEvents();
     this.connectWebSocket(apiKey); // Conectar al WebSocket con la clave de API
@@ -80,7 +81,7 @@ class SocketManager {
 
   private initializeSocketEvents(): void {
     this.socket.on('connect', () => {
-      console.log("event", 'Connected to server');
+      logger.log("event", 'Connected to server');
     });
 
     this.tiktokLiveEvents.forEach(event => {
@@ -90,7 +91,7 @@ class SocketManager {
       });
     });
     this.kickLiveEvents.forEach(event => {
-      console.log("event", `Listening for Kick event: ${event} on KickEmitter`);
+      logger.log("event", `Listening for Kick event: ${event} on KickEmitter`);
       this.socket.on(event, (data: any) => {
         this.kickhandlerdata(event, data);
       });
@@ -106,7 +107,7 @@ class SocketManager {
     localStorage.setItem('tiktok_apiKey',String(key || apiKey)); // Guardar la clave en localStorage
     // Limpiar listeners del WebSocket anterior si existe para evitar fugas
     if (this.ws) {
-        console.log("event", 'Cleaning up previous WebSocket listeners.');
+        logger.log("event", 'Cleaning up previous WebSocket listeners.');
         this.ws.onopen = null;
         this.ws.onmessage = null;
         this.ws.onerror = null;
@@ -118,34 +119,34 @@ class SocketManager {
         // }
     }
 
-    console.log("event", `Attempting WebSocket connection to ${this.wsBaseUrl} (Attempt ${this.reconnectAttempts + 1})`);
+    logger.log("event", `Attempting WebSocket connection to ${this.wsBaseUrl} (Attempt ${this.reconnectAttempts + 1})`);
     this.ws = new WebSocket(key ? (this.wsBaseUrl + key): (this.wsBaseUrl + apiKey)); // Crear nueva instancia
 
     this.ws.onopen = () => {
-      console.log("event", 'WebSocket connected successfully.');
+      logger.log("event", 'WebSocket connected successfully.');
       this.reconnectAttempts = 0; // Reiniciar contador al conectar exitosamente
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("event", 'Received message from WebSocket:', data); // Descomenta si necesitas mucho detalle
+        logger.log("event", 'Received message from WebSocket:', data); // Descomenta si necesitas mucho detalle
         this.tiktokhandlerdata(data.event, data.data);
       } catch (error) {
-        console.error("event", 'Failed to parse WebSocket message:', event.data, error);
+        logger.error("event", 'Failed to parse WebSocket message:', event.data, error);
       }
     };
 
     this.ws.onerror = (error: Event) => {
       // Los errores a menudo preceden o causan un 'onclose',
       // pero es bueno loggearlos.
-      console.error("event", 'WebSocket error:', error);
+      logger.error("event", 'WebSocket error:', error);
       // Podrías intentar cerrar aquí si el estado es raro, pero 'onclose' es más fiable para la reconexión.
       // if (this.ws) this.ws.close();
     };
 
     this.ws.onclose = (event: CloseEvent) => {
-      console.log("event", `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
+      logger.log("event", `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
       this.ws = null; // Limpiar la referencia al socket cerrado
 
       // Intentar reconectar
@@ -156,7 +157,7 @@ class SocketManager {
   // Método para programar la reconexión
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.warn("event", `WebSocket max reconnect attempts (${this.maxReconnectAttempts}) reached. Stopping reconnection attempts.`);
+        logger.warn("event", `WebSocket max reconnect attempts (${this.maxReconnectAttempts}) reached. Stopping reconnection attempts.`);
         return;
     }
 
@@ -165,7 +166,7 @@ class SocketManager {
     // const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Ej: 5s, 10s, 20s, max 30s
     const delay = this.reconnectDelay; // Usando delay fijo por ahora
 
-    console.log("event", `Scheduling WebSocket reconnect attempt #${this.reconnectAttempts} in ${delay / 1000} seconds...`);
+    logger.log("event", `Scheduling WebSocket reconnect attempt #${this.reconnectAttempts} in ${delay / 1000} seconds...`);
 
     this.reconnectTimeoutId = setTimeout(() => {
       this.connectWebSocket(localStorage.getItem('tiktok_apiKey')); // Intentar conectar de nuevo
@@ -184,7 +185,6 @@ class SocketManager {
   }
   private kickhandlerdata(event: any, data: any): void {
     logger.log("event", event, data, 'KickLive');
-    console.log("event", 'KickLive', event, data);
     this.KickEmitter.emit(event, data);
     localStorageManager.set(event, data);
   }

@@ -4,7 +4,8 @@ enum LogLevel {
     WARN = 1,
     INFO = 2,
     LOG = 3,
-    DEBUG = 4
+    DEBUG = 4,
+    DISABLED = 5
 }
 
 interface LogEntry {
@@ -158,7 +159,7 @@ class BrowserLogger {
     private writeLog(level: LogLevel, message: string, ...data: any[]): void {
         // Verificar si el nivel está habilitado
         if (level > this.config.level) return;
-
+        if (this.config.level === LogLevel.DISABLED) return;
         const caller = this.getCaller();
         const formattedMessage = this.formatMessage(level, message, caller);
 

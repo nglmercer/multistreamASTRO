@@ -60,6 +60,10 @@ class TikTokEventSimulator {
 
     try {
       const storedEvents = localStorageManager.getAll() as any;
+      if (!storedEvents || typeof storedEvents !== 'object') {
+        this.updateStatus(`No valid data found in localStorage for key "${this.STORAGE_KEY}".`, 'info');
+        return;
+      }
       const eventNames = Object.keys(storedEvents);
 
       if (eventNames.length === 0) {

@@ -2,8 +2,11 @@ import { buildTTSConfigData,TTSConfigManager  } from './tts_config.js';
 import { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeechProvider } from './tts_provider.js';
 import { AudioQueue } from './audio_queue.ts'; // Assuming file name
 import { TiktokEmitter } from '/src/utils/socketManager';
+import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+const logger = new BrowserLogger("TTS")
+    .setLevel(LogLevel.LOG); // Set to INFO or DEBUG as needed
 TiktokEmitter.on('play_arrow', async (data) => {
-  console.log("TiktokEmitter",data);
+  logger.log("TiktokEmitter",data);
   playTextwithproviderInfo(data.user.data.comment);
 });
 let activeProviderName = null;
@@ -14,7 +17,7 @@ let selectedProviderName;
 const audioQueue = new AudioQueue(currentProviders, { mode: 'loop'});
 
 function updateStatus(message) {
-    console.log(`Status: ${message}`);
+    logger.log(`Status: ${message}`);
 }
 document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
     updateStatus("Initializing...");
@@ -26,8 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
         ttsConfigData = await buildTTSConfigData();
         updateStatus("Configuration built.");
     } catch (error) {
-        console.error("FATAL: Could not build TTS configuration:", error);
-        updateStatus("Error building configuration! Check console.");
+        logger.error("FATAL: Could not build TTS configuration:", error);
+        updateStatus("Error building configuration! Check logger.");
         return; // Detener si la configuración falla
     }
 
@@ -48,18 +51,18 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
                 const fieldConfigs = ttsConfigManager.getFieldConfigs(name);
 
                 // *** Debugging Crucial ***
-                console.log(`Setting config for ${name}. Field Configs:`, fieldConfigs);
+                logger.log(`Setting config for ${name}. Field Configs:`, fieldConfigs);
                 if (!fieldConfigs || Object.keys(fieldConfigs).length === 0) {
-                     console.error(`!!! FieldConfigs for ${name} are empty or invalid.`);
+                     logger.error(`!!! FieldConfigs for ${name} are empty or invalid.`);
                 }
                  if (fieldConfigs.defaultVoice && (!fieldConfigs.defaultVoice.options || fieldConfigs.defaultVoice.options.length === 0)) {
-                    console.warn(`!!! Voice options for ${name} select are empty.`);
+                    logger.warn(`!!! Voice options for ${name} select are empty.`);
                  }
 
                 displayEl.setConfig(currentConfig, fieldConfigs); // Ahora fieldConfigs tiene las 'options'
 
                 displayEl.addEventListener('item-updated', (event) => {
-                    console.log(`Config updated for ${name}, saving...`, event.detail);
+                    logger.log(`Config updated for ${name}, saving...`, event.detail);
                     const saved = ttsConfigManager.saveConfig(name, event.detail); // Usa la instancia
                     if (saved) {
                         instantiateProvider(name); // Reinstanciar con nueva config
@@ -68,11 +71,11 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
                     }
                 });
             } catch (e) {
-                 console.error(`Error setting up config display for ${name}:`, e);
+                 logger.error(`Error setting up config display for ${name}:`, e);
                  displayEl.innerHTML = `<p style="color: red;">Error loading config for ${name}</p>`;
             }
         } else {
-            console.warn(`Could not find display element for ${name}`);
+            logger.warn(`Could not find display element for ${name}`);
         }
     });
     // --- Instantiate Providers ---
@@ -90,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
                     // pero crear una nueva instancia podría requerir init() de nuevo
                     // si su estado no es globalmente persistente.
                     providerInstance = new ResponsiveVoiceProvider(config);
-                 } else { console.warn("ResponsiveVoice library not loaded for instantiation."); }
+                 } else { logger.warn("ResponsiveVoice library not loaded for instantiation."); }
             } else if (name === 'webSpeech') {
                 providerInstance = new WebSpeechProvider(config);
             }
@@ -98,17 +101,17 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
             if (providerInstance) initPromise = providerInstance.init();
 
         } catch (err) {
-            console.error(`Error creating provider ${name}:`, err);
+            logger.error(`Error creating provider ${name}:`, err);
         }
 
         if (providerInstance) {
             currentProviders[name] = { instance: providerInstance, initialized: false };
-            console.log(`Instantiated ${name} with config:`, config);
+            logger.log(`Instantiated ${name} with config:`, config);
 
             initPromise.then(success => {
                 if (success) {
                     currentProviders[name].initialized = true;
-                    console.log(`${name} provider initialized successfully.`);
+                    logger.log(`${name} provider initialized successfully.`);
                     updateStatus(`${name} ready.`);
                      // Actualizar dinámicamente las opciones del select si es necesario (más complejo)
                      // if (name === 'webSpeech' || name === 'responsiveVoice') {
@@ -118,11 +121,11 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
                      //    displayElements[name]?.setConfig(ttsConfigManager.loadConfig(name), fieldCfgs);
                      // }
                 } else {
-                    console.warn(`${name} provider failed to initialize or is not available.`);
+                    logger.warn(`${name} provider failed to initialize or is not available.`);
                     updateStatus(`${name} unavailable.`);
                 }
             }).catch(err => {
-                console.error(`Error initializing ${name} provider:`, err);
+                logger.error(`Error initializing ${name} provider:`, err);
                 updateStatus(`${name} init error.`);
             });
         } else {
@@ -147,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
             localStorage.setItem('selectedProviderName', selectedProviderName);
         });
     }
-    console.log("providerSelect.value",providerSelect.value);
+    logger.log("providerSelect.value",providerSelect.value);
     if (speakButton) {
         speakButton.addEventListener('click', async () => {
             selectedProviderName = providerSelect.value; // Keep track locally if needed
@@ -161,11 +164,11 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- HACER ASYNC
                   await audioQueue.playNow(textToSpeak, providerToUse);
                   updateStatus(`Finished immediate playback with ${providerToUse}.`);
                } catch (error) {
-                   console.error(`Error playing immediately with ${providerToUse}:`, error);
+                   logger.error(`Error playing immediately with ${providerToUse}:`, error);
                    updateStatus(`Error with ${providerToUse}: ${error.message}`);
                }
             } else {
-               console.warn("No text or provider selected for immediate playback.");
+               logger.warn("No text or provider selected for immediate playback.");
             }
           });
     }
@@ -203,7 +206,7 @@ function getselectedProviderName(value) {
 async  function playTextwithproviderInfo(textToSpeak, Providername = selectedProviderName, playNow= false) {
     if (!providerInfo.initialized) { updateStatus(`${Providername} provider not yet initialized.`); return; }
     if (providerInfo && providerInfo.instance) {
-        console.log("rawdata",{
+        logger.log("rawdata",{
             textToSpeak, Providername, playNow
         });
         activeProviderName = Providername;
@@ -219,7 +222,7 @@ async  function playTextwithproviderInfo(textToSpeak, Providername = selectedPro
                 //    await providerInfo.instance.speak(textToSpeak);
             }
         } catch (error) {
-            console.error(`Error speaking with ${Providername}:`, error);
+            logger.error(`Error speaking with ${Providername}:`, error);
             updateStatus(`Error with ${Providername}: ${error.message}`);
         }
     }
@@ -229,7 +232,7 @@ async function stopSpeaking() {
         await audioQueue._processQueue();
         updateStatus("Stopped all speech playback.");
     }else {
-        console.warn("AudioQueue not initialized, stopping all providers.");
+        logger.warn("AudioQueue not initialized, stopping all providers.");
         Object.values(currentProviders).forEach(pInfo => pInfo.instance?.stop());
     }
 }
@@ -237,7 +240,7 @@ async function nextSpeech() {
     if (audioQueue){
         audioQueue.next();
     } else {
-        console.warn("AudioQueue is empty or not initialized.");
+        logger.warn("AudioQueue is empty or not initialized.");
     }
 }
 export {
