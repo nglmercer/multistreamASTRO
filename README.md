@@ -6,12 +6,9 @@ multistreamASTRO es una plataforma de automatización para streamers que permite
 
 ### 1. Conexión a Plataformas
 
-La aplicación se conecta automáticamente a las APIs de streaming a través del `SocketManager` [1](#0-0) . 
-
-Para TikTok, necesitas configurar tu `apiKey` en localStorage:
-```javascript
-localStorage.setItem('tiktok_apiKey', 'tu-api-key');
-```
+La aplicación se conecta automáticamente a las APIs de streaming a través del login:
+- tiktok
+- kick
 
 ### 2. Interfaz Principal
 
