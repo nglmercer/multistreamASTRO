@@ -1,17 +1,25 @@
 type Listener = {
+  id: symbol; // ID único para cada listener
   callback: (data: any) => void;
+  once: boolean;
+};
+
+type AnyListener = {
+  id: symbol; // ID único para cada listener
+  callback: (eventAndData: { event: string; data: any }) => void;
+  originalCallback: (event: string, data: any) => void;
   once: boolean;
 };
 
 export class Emitter {
   private listeners: Map<string, Listener[]>;
-  private anyListeners: Listener[];
+  private anyListeners: AnyListener[];
   private maxListeners: number;
 
   constructor() {
     this.listeners = new Map();
     this.anyListeners = [];
-    this.maxListeners = 10;
+    this.maxListeners = 100;
   }
 
   // Registra un listener que se ejecutará cada vez que se emita el evento
@@ -20,23 +28,26 @@ export class Emitter {
       this.listeners.set(event, []);
     }
 
-    const listeners = this.listeners.get(event);
+    const listeners = this.listeners.get(event)!;
     
     // Verificar límite de listeners
-    if (listeners && listeners.length >= this.maxListeners) {
+    if (listeners.length >= this.maxListeners) {
       console.warn(`MaxListenersExceededWarning: Possible EventEmitter memory leak detected. ${listeners.length + 1} listeners added for event "${event}". Use setMaxListeners() to increase limit.`);
     }
 
-    listeners?.push({ callback, once: false });
+    const id = Symbol('listener');
+    listeners.push({ id, callback, once: false });
 
-    // Devuelve una función para remover el listener
+    // Devuelve una función para remover el listener usando el ID único
     return () => {
       const currentListeners = this.listeners.get(event);
       if (currentListeners) {
-        this.listeners.set(
-          event,
-          currentListeners.filter((listener) => listener.callback !== callback)
-        );
+        const filtered = currentListeners.filter((listener) => listener.id !== id);
+        if (filtered.length === 0) {
+          this.listeners.delete(event);
+        } else {
+          this.listeners.set(event, filtered);
+        }
       }
     };
   }
@@ -47,53 +58,65 @@ export class Emitter {
       this.listeners.set(event, []);
     }
 
-    const listeners = this.listeners.get(event);
-    listeners?.push({ callback, once: true });
+    const listeners = this.listeners.get(event)!;
+    const id = Symbol('once-listener');
+    listeners.push({ id, callback, once: true });
 
-    // Devuelve una función para remover el listener
+    // Devuelve una función para remover el listener usando el ID único
     return () => {
       const currentListeners = this.listeners.get(event);
       if (currentListeners) {
-        this.listeners.set(
-          event,
-          currentListeners.filter((listener) => listener.callback !== callback)
-        );
+        const filtered = currentListeners.filter((listener) => listener.id !== id);
+        if (filtered.length === 0) {
+          this.listeners.delete(event);
+        } else {
+          this.listeners.set(event, filtered);
+        }
       }
     };
   }
 
   // Registra un listener que se ejecutará para cualquier evento
   public onAny(callback: (event: string, data: any) => void): () => void {
-    // Guardamos el callback original para poder referenciarlo después
-    const originalCallback = callback;
     const wrappedCallback = (eventAndData: { event: string; data: any }) => {
-      originalCallback(eventAndData.event, eventAndData.data);
+      callback(eventAndData.event, eventAndData.data);
     };
     
-    this.anyListeners.push({ callback: wrappedCallback, once: false });
+    const id = Symbol('any-listener');
+    const anyListener: AnyListener = {
+      id,
+      callback: wrappedCallback,
+      originalCallback: callback,
+      once: false
+    };
+    
+    this.anyListeners.push(anyListener);
 
-    // Devuelve una función para remover el listener
+    // Devuelve una función para remover el listener usando el ID único
     return () => {
-      this.anyListeners = this.anyListeners.filter(
-        (listener) => listener.callback !== wrappedCallback
-      );
+      this.anyListeners = this.anyListeners.filter((listener) => listener.id !== id);
     };
   }
 
   // Registra un listener que se ejecutará una sola vez para cualquier evento
   public onceAny(callback: (event: string, data: any) => void): () => void {
-    const originalCallback = callback;
     const wrappedCallback = (eventAndData: { event: string; data: any }) => {
-      originalCallback(eventAndData.event, eventAndData.data);
+      callback(eventAndData.event, eventAndData.data);
     };
     
-    this.anyListeners.push({ callback: wrappedCallback, once: true });
+    const id = Symbol('once-any-listener');
+    const anyListener: AnyListener = {
+      id,
+      callback: wrappedCallback,
+      originalCallback: callback,
+      once: true
+    };
+    
+    this.anyListeners.push(anyListener);
 
-    // Devuelve una función para remover el listener
+    // Devuelve una función para remover el listener usando el ID único
     return () => {
-      this.anyListeners = this.anyListeners.filter(
-        (listener) => listener.callback !== wrappedCallback
-      );
+      this.anyListeners = this.anyListeners.filter((listener) => listener.id !== id);
     };
   }
 
@@ -102,29 +125,41 @@ export class Emitter {
     let hasListeners = false;
 
     // Ejecutar listeners específicos del evento
-    if (this.listeners.has(event)) {
-      const listeners = this.listeners.get(event);
-      if (listeners && listeners.length > 0) {
-        hasListeners = true;
-        
-        // Ejecutar todos los listeners
-        listeners.forEach((listener) => {
-          try {
-            listener.callback(data);
-          } catch (error) {
-            console.error(`Error in listener for event "${event}":`, error);
+    const listeners = this.listeners.get(event);
+    if (listeners && listeners.length > 0) {
+      hasListeners = true;
+      
+      // Crear una copia para evitar problemas si se modifica durante la ejecución
+      const listenersToExecute = [...listeners];
+      const listenersToRemove: symbol[] = [];
+      
+      // Ejecutar todos los listeners
+      listenersToExecute.forEach((listener) => {
+        try {
+          listener.callback(data);
+          // Marcar para remoción si es "once"
+          if (listener.once) {
+            listenersToRemove.push(listener.id);
           }
-        });
+        } catch (error) {
+          console.error(`Error in listener for event "${event}":`, error);
+          // Si hay error y es "once", también lo marcamos para remoción
+          if (listener.once) {
+            listenersToRemove.push(listener.id);
+          }
+        }
+      });
 
-        // Filtrar los listeners de tipo "once" después de ejecutarlos
-        this.listeners.set(
-          event,
-          listeners.filter((listener) => !listener.once)
+      // Remover los listeners "once" después de la ejecución
+      if (listenersToRemove.length > 0) {
+        const remainingListeners = listeners.filter(
+          (listener) => !listenersToRemove.includes(listener.id)
         );
-
-        // Si no quedan listeners, eliminar el evento del Map
-        if (this.listeners.get(event)?.length === 0) {
+        
+        if (remainingListeners.length === 0) {
           this.listeners.delete(event);
+        } else {
+          this.listeners.set(event, remainingListeners);
         }
       }
     }
@@ -133,17 +168,32 @@ export class Emitter {
     if (this.anyListeners.length > 0) {
       hasListeners = true;
       
-      this.anyListeners.forEach((listener) => {
+      // Crear una copia para evitar problemas si se modifica durante la ejecución
+      const anyListenersToExecute = [...this.anyListeners];
+      const anyListenersToRemove: symbol[] = [];
+      
+      anyListenersToExecute.forEach((listener) => {
         try {
-          // Pasar el evento y data como un objeto al callback wrapped
           listener.callback({ event, data });
+          // Marcar para remoción si es "once"
+          if (listener.once) {
+            anyListenersToRemove.push(listener.id);
+          }
         } catch (error) {
           console.error(`Error in "any" listener for event "${event}":`, error);
+          // Si hay error y es "once", también lo marcamos para remoción
+          if (listener.once) {
+            anyListenersToRemove.push(listener.id);
+          }
         }
       });
 
-      // Filtrar los listeners "once" de anyListeners
-      this.anyListeners = this.anyListeners.filter((listener) => !listener.once);
+      // Remover los listeners "once" de anyListeners
+      if (anyListenersToRemove.length > 0) {
+        this.anyListeners = this.anyListeners.filter(
+          (listener) => !anyListenersToRemove.includes(listener.id)
+        );
+      }
     }
 
     return hasListeners;
@@ -153,13 +203,11 @@ export class Emitter {
   public off(event: string, callback: (data: any) => void): void {
     const listeners = this.listeners.get(event);
     if (listeners) {
-      this.listeners.set(
-        event,
-        listeners.filter((listener) => listener.callback !== callback)
-      );
-      
-      if (this.listeners.get(event)?.length === 0) {
+      const filtered = listeners.filter((listener) => listener.callback !== callback);
+      if (filtered.length === 0) {
         this.listeners.delete(event);
+      } else {
+        this.listeners.set(event, filtered);
       }
     }
   }
@@ -203,9 +251,7 @@ export class Emitter {
 
   // Obtiene los listeners "any"
   public getAnyListeners(): ((event: string, data: any) => void)[] {
-    // Esto es más complejo debido al wrapping, por ahora retornamos array vacío
-    // En una implementación real, necesitarías guardar referencias a los callbacks originales
-    return [];
+    return this.anyListeners.map(l => l.originalCallback);
   }
 
   // Prepend listener (añade al principio de la lista)
@@ -214,16 +260,19 @@ export class Emitter {
       this.listeners.set(event, []);
     }
 
-    const listeners = this.listeners.get(event);
-    listeners?.unshift({ callback, once: false });
+    const listeners = this.listeners.get(event)!;
+    const id = Symbol('prepend-listener');
+    listeners.unshift({ id, callback, once: false });
 
     return () => {
       const currentListeners = this.listeners.get(event);
       if (currentListeners) {
-        this.listeners.set(
-          event,
-          currentListeners.filter((listener) => listener.callback !== callback)
-        );
+        const filtered = currentListeners.filter((listener) => listener.id !== id);
+        if (filtered.length === 0) {
+          this.listeners.delete(event);
+        } else {
+          this.listeners.set(event, filtered);
+        }
       }
     };
   }
@@ -234,16 +283,19 @@ export class Emitter {
       this.listeners.set(event, []);
     }
 
-    const listeners = this.listeners.get(event);
-    listeners?.unshift({ callback, once: true });
+    const listeners = this.listeners.get(event)!;
+    const id = Symbol('prepend-once-listener');
+    listeners.unshift({ id, callback, once: true });
 
     return () => {
       const currentListeners = this.listeners.get(event);
       if (currentListeners) {
-        this.listeners.set(
-          event,
-          currentListeners.filter((listener) => listener.callback !== callback)
-        );
+        const filtered = currentListeners.filter((listener) => listener.id !== id);
+        if (filtered.length === 0) {
+          this.listeners.delete(event);
+        } else {
+          this.listeners.set(event, filtered);
+        }
       }
     };
   }
@@ -259,7 +311,16 @@ export class Emitter {
   }
 
   // Método para obtener información de depuración
-  public debug(): { totalEvents: number; totalListeners: number; anyListeners: number; events: Record<string, number> } {
+  public debug(): { 
+    totalEvents: number; 
+    totalListeners: number; 
+    anyListeners: number; 
+    events: Record<string, number>;
+    memoryInfo: {
+      listenersMap: number;
+      anyListenersArray: number;
+    }
+  } {
     const events: Record<string, number> = {};
     let totalListeners = 0;
 
@@ -272,8 +333,24 @@ export class Emitter {
       totalEvents: this.listeners.size,
       totalListeners,
       anyListeners: this.anyListeners.length,
-      events
+      events,
+      memoryInfo: {
+        listenersMap: this.listeners.size,
+        anyListenersArray: this.anyListeners.length
+      }
     };
+  }
+
+  // Método para limpiar completamente el emitter
+  public destroy(): void {
+    this.listeners.clear();
+    this.anyListeners = [];
+  }
+
+  // Método para verificar si hay listeners para un evento
+  public hasListeners(event: string): boolean {
+    const listeners = this.listeners.get(event);
+    return (listeners && listeners.length > 0) || this.anyListeners.length > 0;
   }
 }
 

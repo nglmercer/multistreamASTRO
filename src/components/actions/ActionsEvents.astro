@@ -24,7 +24,10 @@ import SwitchE from "@components/switchE.astro";
   </dlg-cont>
 
   <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
-  <grid-manager-lit id="ActionConfigManager" darkmode></grid-manager-lit>
+  <div class="grid gap-5 m-5">
+    <h2>Acciones </h2>
+    <obj-table id="ActionConfigManager" darkmode></obj-table>
+  </div>
     <dialog-container class="ActionModal" id="ActionModal">    
       <ActionsFormCsomponent id="actionForm">
         <div slot="fields">
@@ -47,7 +50,7 @@ import SwitchE from "@components/switchE.astro";
   </dialog-container>
 </div>
 <script src="/src/components/actions/actions.js"></script>
-<script src="/src/components/actionsjs/actionstable.js"></script>
+<script src="/src/components/actionsjs/actionstable.ts"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>
   #modal-container dyn-obj-disp {

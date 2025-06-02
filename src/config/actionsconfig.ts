@@ -100,7 +100,6 @@ const defaultFormConfig: FormConfig = {
     label: 'ID', 
     type: 'text', 
     readonly: true,
-    hidden: true
   },
   type: { 
     hidden: true 

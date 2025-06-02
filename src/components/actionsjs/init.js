@@ -1,5 +1,6 @@
 // /src/pages/events/events.js (o tu ruta)
-import { databases, IndexedDBManager, Emitter, getAllDataFromDatabase } from '@utils/idb.ts';
+import { databases, IndexedDBManager, getAllDataFromDatabase } from '@utils/idb.ts';
+import Emitter, { emitter } from '@utils/Emitter.ts';
 import {
     openDynamicModal,
     initializeTables,

@@ -1,4 +1,5 @@
-// Types definitions
+import Emitter, { emitter } from "./Emitter";
+
 interface DatabaseConfig {
   name: string;
   version: number;
@@ -19,18 +20,22 @@ interface DatabaseItem {
 interface EmitEventData {
   config: DatabaseConfig;
   data: DatabaseItem | number | null;
+  metadata?: {
+    timestamp: number;
+    operation: string;
+    recordCount?: number;
+  };
 }
 
-type EventCallback<T = any> = (data: T) => void;
-type AllEventsCallback = (event: string, data: any) => void;
-type RemoveListenerFunction = () => void;
+type emitevents = "update" | "save" | "delete" | "clear";
 
-interface ListenerInfo {
-  callback: EventCallback | AllEventsCallback;
-  once: boolean;
-}
+const EmitEvents: emitevents[] = [
+  "update",
+  "save", 
+  "delete",
+  "clear",
+];
 
-// Database configurations
 const databases: Record<string, DatabaseConfig> = {
   commentEventsDB: {
     name: "commentEvents",
@@ -47,55 +52,142 @@ const databases: Record<string, DatabaseConfig> = {
 
 class IndexedDBManager {
   private dbConfig: DatabaseConfig;
-  private emitter: Emitter | null;
+  public emitterInstance: Emitter;
   private db: IDBDatabase | null;
   private defaultIndexes: DatabaseIndex[];
 
-  constructor(dbConfig: DatabaseConfig, emitter?: Emitter) {
+
+  constructor(dbConfig: DatabaseConfig, customEmitter?: Emitter) {
     this.dbConfig = dbConfig;
-    this.emitter = emitter || null;
+    this.emitterInstance = customEmitter || emitter;
     this.db = null;
     this.defaultIndexes = [];
+  }
+
+  // Método mejorado para normalizar IDs - maneja correctamente el 0
+  private normalizeId(id: string | number): string | number {
+    if (typeof id === "string") {
+      // Verificar si es un string que representa un número
+      const trimmedId = id.trim();
+      if (trimmedId === "") return id; // String vacío permanece como string
+      
+      const numValue = Number(trimmedId);
+      if (!isNaN(numValue)) {
+        // Es un número válido, verificar si es seguro como number
+        return numValue > Number.MAX_SAFE_INTEGER ? trimmedId : numValue;
+      }
+      return trimmedId; // No es un número, mantener como string
+    }
+
+    if (typeof id === "number") {
+      return id > Number.MAX_SAFE_INTEGER ? String(id) : id;
+    }
+
+    return id;
+  }
+
+  // Método mejorado para verificar si un ID existe
+  private async idExists(id: string | number): Promise<boolean> {
+    const normalizedId = this.normalizeId(id);
+    
+    return this.executeTransaction(
+      this.dbConfig.store,
+      "readonly",
+      (store: IDBObjectStore) => {
+        return new Promise<boolean>((resolve, reject) => {
+          const request = store.get(normalizedId);
+          
+          request.onsuccess = () => {
+            resolve(request.result !== undefined);
+          };
+          
+          request.onerror = () => reject(request.error);
+        });
+      }
+    );
+  }
+
+  // Método auxiliar para generar el siguiente ID disponible
+  private async generateNextId(): Promise<number> {
+    const allData = await this.getAllData();
+    const numericIds = allData
+      .map((item) => Number(item.id))
+      .filter((id) => !isNaN(id) && Number.isFinite(id))
+      .sort((a, b) => a - b);
+
+    if (numericIds.length === 0) return 0;
+
+    // Buscar el primer hueco disponible o usar max + 1
+    for (let i = 0; i < numericIds.length; i++) {
+      if (numericIds[i] !== i) {
+        return i;
+      }
+    }
+    
+    return Math.max(...numericIds) + 1;
+  }
+
+  // Método mejorado para verificar si un valor es un ID válido
+  private isValidId(id: any): id is string | number {
+    if (id === null || id === undefined) return false;
+    
+    if (typeof id === "string") {
+      return id.trim() !== "";
+    }
+    
+    if (typeof id === "number") {
+      return Number.isFinite(id);
+    }
+    
+    return false;
   }
 
   async updateDataById(
     id: string | number,
     updatedData: Partial<DatabaseItem>
   ): Promise<DatabaseItem | null> {
-    // Modificado: Devuelve Promise<DatabaseItem | null>
+    if (!this.isValidId(id)) {
+      throw new Error("Invalid ID provided for update");
+    }
+
+    const normalizedId = this.normalizeId(id);
+    const exists = await this.idExists(normalizedId);
+    
+    if (!exists) {
+      return null; // El elemento no existe, no se puede actualizar
+    }
+
     return this.executeTransaction(
       this.dbConfig.store,
       "readwrite",
       (store: IDBObjectStore) => {
         return new Promise<DatabaseItem | null>((resolve, reject) => {
-          // Modificado: Promise<DatabaseItem | null>
-          const keyId = this.normalizeId(id);
-          const getRequest = store.get(keyId);
+          const getRequest = store.get(normalizedId);
 
           getRequest.onsuccess = () => {
             if (getRequest.result) {
               const newData: DatabaseItem = {
                 ...getRequest.result,
                 ...updatedData,
-                id: keyId, // Mantener el id original normalizado
+                id: normalizedId, // Mantener el ID original normalizado
               };
+              
               const putRequest = store.put(newData);
 
               putRequest.onsuccess = () => {
-                this.emitter?.emit("update", {
+                this.emitterInstance?.emit("update", {
                   config: this.dbConfig,
                   data: newData,
                 });
                 resolve(newData);
               };
+              
               putRequest.onerror = () => reject(putRequest.error);
             } else {
-              // MODIFICACIÓN: Si no se encuentra para actualizar, resolvemos con null
-              // Alternativamente, podrías querer insertar aquí, o rechazar como antes.
-              // Devolver null es consistente con el cambio en getDataById.
               resolve(null);
             }
           };
+          
           getRequest.onerror = () => reject(getRequest.error);
         });
       }
@@ -103,51 +195,99 @@ class IndexedDBManager {
   }
 
   async getDataById(id: string | number): Promise<DatabaseItem | null> {
-    // Modificado: Devuelve Promise<DatabaseItem | null>
+    if (!this.isValidId(id)) {
+      return null;
+    }
+
+    const normalizedId = this.normalizeId(id);
+    
     return this.executeTransaction(
       this.dbConfig.store,
       "readonly",
       (store: IDBObjectStore) => {
         return new Promise<DatabaseItem | null>((resolve, reject) => {
-          // Modificado: Promise<DatabaseItem | null>
-          const keyId = this.normalizeId(id);
-          const request = store.get(keyId);
+          const request = store.get(normalizedId);
 
           request.onsuccess = () => {
-            if (request.result) {
-              resolve(request.result);
-            } else {
-              // MODIFICACIÓN: En lugar de reject, resolvemos con null
-              resolve(null);
-            }
+            resolve(request.result || null);
           };
 
-          // Los errores de transacción sí deben seguir siendo rechazados
           request.onerror = () => reject(request.error);
         });
       }
     );
   }
 
-  // Método auxiliar para normalizar IDs
-  private normalizeId(id: string | number): string | number {
-    if (typeof id === "string") {
-      // Si es string, verificar si representa un número muy grande
-      const numValue = Number(id);
-      if (!isNaN(numValue) && numValue > Number.MAX_SAFE_INTEGER) {
-        return id; // Mantener como string para números grandes
-      }
-      return numValue; // Convertir a número si es seguro
+  async saveData(data: Partial<DatabaseItem>): Promise<DatabaseItem> {
+    if (typeof data !== "object" || data === null) {
+      return Promise.reject(new Error("Invalid data: must be an object."));
     }
 
-    if (typeof id === "number") {
-      if (id > Number.MAX_SAFE_INTEGER) {
-        return String(id); // Convertir a string para números grandes
-      }
-      return id; // Mantener como número si es seguro
+    let targetId: string | number;
+    let isUpdate = false;
+
+    // Verificar si se proporcionó un ID explícito
+    const hasExplicitId = this.isValidId(data.id);
+
+    if (hasExplicitId) {
+      targetId = this.normalizeId(data.id as string | number);
+      isUpdate = await this.idExists(targetId);
+    } else {
+      // Generar nuevo ID
+      targetId = await this.generateNextId();
+      isUpdate = false;
     }
 
-    return id;
+    const newData: DatabaseItem = { ...data, id: targetId } as DatabaseItem;
+    const actionType = isUpdate ? "update" : "save";
+
+    return this.executeTransaction(
+      this.dbConfig.store,
+      "readwrite",
+      (store: IDBObjectStore) => {
+        return new Promise<DatabaseItem>((resolve, reject) => {
+          const request = store.put(newData);
+
+          request.onsuccess = () => {
+            resolve(newData);
+          };
+
+          request.onerror = () => {
+            console.error("Error in store.put:", request.error);
+            reject(request.error);
+          };
+        });
+      }
+    ).then((savedData) => {
+      this.emitterInstance?.emit(actionType, {
+        config: this.dbConfig,
+        data: savedData,
+      });
+      return savedData;
+    });
+  }
+
+  async deleteData(id: string | number): Promise<string | number> {
+    if (!this.isValidId(id)) {
+      throw new Error("Invalid ID provided for deletion");
+    }
+
+    const keyId = this.normalizeId(id);
+
+    return this.executeTransaction(
+      this.dbConfig.store,
+      "readwrite",
+      (store: IDBObjectStore) => {
+        return new Promise<string | number>((resolve, reject) => {
+          const request = store.delete(keyId);
+          request.onsuccess = () => resolve(keyId);
+          request.onerror = () => reject(request.error);
+        });
+      }
+    ).then((deletedId) => {
+      this.emitterInstance?.emit("delete", { config: this.dbConfig, data: deletedId });
+      return deletedId;
+    });
   }
 
   async openDatabase(): Promise<IDBDatabase> {
@@ -172,6 +312,7 @@ class IndexedDBManager {
               });
             }
           });
+          
           console.log(
             `Object store ${this.dbConfig.store} created with indexes.`
           );
@@ -231,10 +372,12 @@ class IndexedDBManager {
 
         transaction.oncomplete = () =>
           resolve(result !== null ? result : (true as T));
+          
         transaction.onerror = () => {
           console.error("IDB Transaction Error:", transaction.error);
           reject(transaction.error);
         };
+        
         transaction.onabort = () => {
           console.warn("IDB Transaction Aborted:", transaction.error);
           reject(transaction.error || new Error("Transaction aborted"));
@@ -309,75 +452,6 @@ class IndexedDBManager {
     return missingIds;
   }
 
-  async saveData(data: Partial<DatabaseItem>): Promise<DatabaseItem> {
-    if (typeof data !== "object" || data === null) {
-      return Promise.reject(new Error("Invalid data: must be an object."));
-    }
-
-    const allData = await this.getAllData();
-    let targetId: string | number;
-    let isUpdate = false;
-
-    const hasExplicitId = data.id !== undefined && data.id !== null;
-
-    if (hasExplicitId) {
-      targetId = this.normalizeId(data.id as string | number);
-      isUpdate = allData.some((item) => String(item.id) === String(targetId));
-    } else {
-      // Para nuevos registros sin ID, usar números incrementales
-      const numericIds = allData
-        .map((item) => Number(item.id))
-        .filter((id) => !isNaN(id) && id <= Number.MAX_SAFE_INTEGER)
-        .sort((a, b) => a - b);
-
-      const maxId = numericIds.length > 0 ? Math.max(...numericIds) : -1;
-      targetId = maxId + 1;
-      isUpdate = false;
-    }
-
-    const newData: DatabaseItem = { ...data, id: targetId } as DatabaseItem;
-    const actionType = isUpdate ? "update" : "save";
-
-    return this.executeTransaction(
-      this.dbConfig.store,
-      "readwrite",
-      (store: IDBObjectStore) => {
-        const request = store.put(newData);
-
-        request.onerror = () => {
-          console.error("Error in store.put:", request.error);
-        };
-
-        return newData;
-      }
-    ).then((savedData) => {
-      this.emitter?.emit(actionType, {
-        config: this.dbConfig,
-        data: savedData,
-      });
-      return savedData;
-    });
-  }
-
-  async deleteData(id: string | number): Promise<string | number> {
-    const keyId = this.normalizeId(id);
-
-    return this.executeTransaction(
-      this.dbConfig.store,
-      "readwrite",
-      (store: IDBObjectStore) => {
-        return new Promise<string | number>((resolve, reject) => {
-          const request = store.delete(keyId);
-          request.onsuccess = () => resolve(keyId);
-          request.onerror = () => reject(request.error);
-        });
-      }
-    ).then((deletedId) => {
-      this.emitter?.emit("delete", { config: this.dbConfig, data: deletedId });
-      return deletedId;
-    });
-  }
-
   async clearDatabase(): Promise<void> {
     return this.executeTransaction(
       this.dbConfig.store,
@@ -386,7 +460,7 @@ class IndexedDBManager {
         return new Promise<void>((resolve, reject) => {
           const request = store.clear();
           request.onsuccess = () => {
-            this.emitter?.emit("clear", { config: this.dbConfig, data: null });
+            this.emitterInstance?.emit("clear", { config: this.dbConfig, data: null });
             resolve();
           };
           request.onerror = () => reject(request.error);
@@ -488,137 +562,20 @@ async function getAllDataFromDatabase(
   });
 }
 
-class Emitter {
-  private listeners: Map<string | symbol, ListenerInfo[]>;
-  private readonly ALL_EVENTS: symbol;
-
-  constructor() {
-    this.listeners = new Map();
-    this.ALL_EVENTS = Symbol("ALL_EVENTS");
-  }
-
-  on(event: string, callback: EventCallback): RemoveListenerFunction {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, []);
-    }
-    this.listeners.get(event)!.push({ callback, once: false });
-
-    return () => {
-      const listeners = this.listeners.get(event);
-      if (listeners) {
-        this.listeners.set(
-          event,
-          listeners.filter((listener) => listener.callback !== callback)
-        );
-      }
-    };
-  }
-
-  once(event: string, callback: EventCallback): RemoveListenerFunction {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, []);
-    }
-    this.listeners.get(event)!.push({ callback, once: true });
-
-    return () => {
-      const listeners = this.listeners.get(event);
-      if (listeners) {
-        this.listeners.set(
-          event,
-          listeners.filter((listener) => listener.callback !== callback)
-        );
-      }
-    };
-  }
-
-  onAny(callback: AllEventsCallback): RemoveListenerFunction {
-    if (!this.listeners.has(this.ALL_EVENTS)) {
-      this.listeners.set(this.ALL_EVENTS, []);
-    }
-    this.listeners.get(this.ALL_EVENTS)!.push({ callback, once: false });
-
-    return () => {
-      const listeners = this.listeners.get(this.ALL_EVENTS);
-      if (listeners) {
-        this.listeners.set(
-          this.ALL_EVENTS,
-          listeners.filter((listener) => listener.callback !== callback)
-        );
-      }
-    };
-  }
-
-  onceAny(callback: AllEventsCallback): RemoveListenerFunction {
-    if (!this.listeners.has(this.ALL_EVENTS)) {
-      this.listeners.set(this.ALL_EVENTS, []);
-    }
-    this.listeners.get(this.ALL_EVENTS)!.push({ callback, once: true });
-
-    return () => {
-      const listeners = this.listeners.get(this.ALL_EVENTS);
-      if (listeners) {
-        this.listeners.set(
-          this.ALL_EVENTS,
-          listeners.filter((listener) => listener.callback !== callback)
-        );
-      }
-    };
-  }
-
-  emit(event: string, data: any): void {
-    // Ejecutar listeners específicos del evento
-    if (this.listeners.has(event)) {
-      const listeners = this.listeners.get(event)!;
-
-      listeners.forEach((listener) => {
-        (listener.callback as EventCallback)(data);
-      });
-
-      this.listeners.set(
-        event,
-        listeners.filter((listener) => !listener.once)
-      );
-
-      if (this.listeners.get(event)!.length === 0) {
-        this.listeners.delete(event);
-      }
-    }
-
-    // Ejecutar listeners que escuchan todos los eventos
-    if (this.listeners.has(this.ALL_EVENTS)) {
-      const allListeners = this.listeners.get(this.ALL_EVENTS)!;
-
-      allListeners.forEach((listener) => {
-        (listener.callback as AllEventsCallback)(event, data);
-      });
-
-      this.listeners.set(
-        this.ALL_EVENTS,
-        allListeners.filter((listener) => !listener.once)
-      );
-
-      if (this.listeners.get(this.ALL_EVENTS)!.length === 0) {
-        this.listeners.delete(this.ALL_EVENTS);
-      }
-    }
-  }
-}
-
-const emitter = new Emitter();
 
 export {
   databases,
   IndexedDBManager,
-  Emitter,
-  emitter,
   getAllDataFromDatabase,
   type DatabaseConfig,
   type DatabaseIndex,
   type DatabaseItem,
   type EmitEventData,
+  type emitevents,
+  EmitEvents
 };
 
 // Usage example
 // const dbManager = new IndexedDBManager(databases.eventsDB, emitter);
 // await dbManager.saveData({ name: 'User 1', points: 100 });
-// await dbManager.updateDataById(1, { points: 150 });
+// await dbManager.updateDataById(0, { points: 150 }); // Ahora funciona correctamente con ID 0

@@ -1,8 +1,6 @@
 import {
   databases,
   IndexedDBManager,
-  Emitter,
-  getAllDataFromDatabase,
 } from "../../utils/idb.ts";
 import { HttpRequestConfig } from "src/litcomponents/fetchcomponent";
 import { HttpRequestExecutor } from "src/fetch/executor";
@@ -38,7 +36,13 @@ function openModal(): void {
   }
   ActionModal.show();
 }
-
+function closeModal(): void {
+  if (!ActionModal) {
+    console.warn("Action modal not found");
+    return;
+  }
+  ActionModal.hide();
+}
 function listenersForm(): void {
   const actionsContainer = document.querySelector<HTMLElement>(".form-actions");
   if (!actionsContainer) {
@@ -64,10 +68,15 @@ function listenersForm(): void {
           console.error("No form data found");
           return;
         }
-        
+        if (typeof formData.id === "string"){
+          formData.id = parseInt(formData.id, 10);
+        }
         // Operación async con manejo de errores
-        await actionDatabase.saveData(formData);
-        console.log("Form submitted successfully:", formData);
+        const result = await actionDatabase.saveData(formData);
+        if (result){
+          closeModal();
+          console.log("Form submitted successfully:", result);
+        }
       } else {
         console.warn(`Unknown action: ${action}`);
       }
@@ -197,7 +206,8 @@ function resetForm(): void {
 export {
   setFormData,
   openModal,
-  resetForm
+  resetForm,
+  closeModal
 };
 /*  if (localStorage.getItem("httpRequestConfig")) {
     const config = JSON.parse(
