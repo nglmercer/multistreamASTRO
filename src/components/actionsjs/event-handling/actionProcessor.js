@@ -77,7 +77,8 @@ const actionExecutionConfig = {
         callback: (actionData, fullAction, eventData, eventType) => {
             console.log("Minecraft", actionData, fullAction, eventData, eventType);
             socket.emit("actions", { type: "minecraft", data: { ...actionData }, event: eventType });
-            taskApi.saveTasks("minecraft", {actionData});
+            const proccessdata = ReplacesValues(actionData, eventData);
+            taskApi.saveTasks("minecraft", {actionData: proccessdata});
         }
     },
     "tts": {
@@ -98,7 +99,8 @@ const actionExecutionConfig = {
         callback: (actionData, fullAction, eventData, eventType) => {
             console.log("overlay", actionData, fullAction, eventData, eventType);
             socket.emit("actions", { type: "overlay", data: { ...actionData }, event: eventType });
-            taskApi.saveTasks("overlay", {actionData});
+            const proccessdata = ReplacesValues(actionData, eventData);
+            taskApi.saveTasks("overlay", {actionData: proccessdata});
         }
     },
     "keypress": {
@@ -106,7 +108,8 @@ const actionExecutionConfig = {
         callback: (actionData, fullAction, eventData, eventType) => {
             console.log("keypress", actionData, fullAction, eventData, eventType);
             socket.emit("actions", { type: "keypress", data: { ...actionData }, event: eventType });
-            taskApi.saveTasks("keypress", {actionData});
+            const proccessdata = ReplacesValues(actionData, eventData);
+            taskApi.saveTasks("keypress", {actionData: proccessdata});
         }
     },
     "fetchForm": {
