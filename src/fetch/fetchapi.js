@@ -139,7 +139,9 @@ class BaseApi {
         this.token = info.token || localStorage.getItem("token");
         this.user = safeParse(info.user || safeParse(localStorage.getItem("user"))) || {};
     }
-
+    changeHost(host) {
+        this.host = host;
+    }
     _authHeaders(contentType = 'application/json') {
         const headers = {
             'Authorization': `${this.token}`

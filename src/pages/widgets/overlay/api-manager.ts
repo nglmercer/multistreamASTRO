@@ -3,6 +3,16 @@ import { taskApi } from 'src/fetch/fetchapi';
 import type { ApiTask } from './types';
 import { OverlayDisplay } from './overlay-display';
 
+function verifyandchangeHOST(){
+    const searchParams1 = new URLSearchParams(window.location.search);
+    console.log("searchParams1", searchParams1);
+    const host = searchParams1.get('host');
+    console.log("host", host);
+    if (host) {
+        taskApi.changeHost(host);
+    }
+}
+
 export class ApiManager {
   private static intervalId: number | null = null;
   private static readonly CHECK_INTERVAL = 5000; // 5 segundos
@@ -14,7 +24,7 @@ export class ApiManager {
       console.log("Ya se está verificando tareas, esperando...");
       return;
     }
-
+    verifyandchangeHOST()
     this.isChecking = true;
     console.log("Buscando tareas de overlay...");
 
