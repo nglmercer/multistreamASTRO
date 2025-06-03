@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@astrojs/lit": "^4.3.0",
+    "@astrojs/mdx": "^4.3.0",
     "@astrojs/solid-js": "^5.1.0",
     "@webcomponents/template-shadowroot": "^0.2.1",
     "astro": "^5.6.1",
+    "github-markdown-css": "^5.8.1",
     "lit": "^3.2.1",
     "socket.io-client": "^4.8.1",
     "solid-js": "^1.9.7",

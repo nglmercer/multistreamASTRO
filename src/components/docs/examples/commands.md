@@ -1,4 +1,3 @@
-
 # Integración de Comandos de Minecraft
 
 Esta documentación describe cómo interactuar con un servidor de Minecraft utilizando una API REST basada en el repositorio [Minecraft-server](https://github.com/nglmercer/server-minecraft-dashboard).
@@ -72,4 +71,3 @@ Para más detalles sobre el reemplazo de valores, consulta [Reemplazar Variables
 ```typescript
 type actions = 'start' | 'stop' | 'restart' | 'send' | 'sendMultiple' | 'log' | 'info' | 'players' | 'metrics' | 'kill';
 ```
-
