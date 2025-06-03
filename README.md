@@ -110,5 +110,5 @@ El estado de conexión se muestra en la interfaz:
 ### Logs de Depuración
 
 Abre las herramientas de desarrollador (F12) para ver logs detallados del sistema de eventos y conexiones.
-#### Test de deploy en [/](/)
+#### Test de deploy en [/](https://github.com/nglmercer/multistreamASTRO)
 
