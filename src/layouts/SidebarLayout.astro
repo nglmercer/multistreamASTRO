@@ -8,7 +8,8 @@ interface Props {
   title?: string;
   activeConfig?: 'A' | 'B';
 }
-const base = import.meta.env.BASE_URL + "/" || '/';
+const urlbase = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const base = urlbase;
 const { title = "Default Title", activeConfig = 'A' } = Astro.props;
 const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
 ---
