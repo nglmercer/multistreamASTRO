@@ -172,7 +172,7 @@ class TaskApi extends BaseApi {
     }
     // router.get('/get/:type/:taskId'
     saveTasks(type, data) {
-        if (!type || data) {
+        if (!type || !data) {
             console.error('No se proporcionó un tipo de tarea para guardar');
             return;
         }
@@ -187,6 +187,15 @@ class TaskApi extends BaseApi {
             return;
         }
         return this.request(http.delete(`${this.host}/tasks/remove/${type}/${taskId}`, {
+            headers: this._authHeaders()
+        }));
+    }
+    completeTask(type, taskId, completed) {
+        if (!type || !taskId || typeof completed !== 'boolean') {
+            console.error('No se proporcionó un tipo de tarea para completar');
+            return;
+        }
+        return this.request(http.put(`${this.host}/tasks/complete/${type}/${taskId}`, { completed }, {
             headers: this._authHeaders()
         }));
     }

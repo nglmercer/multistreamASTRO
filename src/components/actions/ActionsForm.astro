@@ -175,7 +175,6 @@ const visibleFields = Object.entries(formConfig).filter(([_, config]) => !config
     }
 
     handleFieldChange(event) {
-      console.log('Field change detected:', event);
       const input = event.target.closest('c-input');
       if (!input) return;
       

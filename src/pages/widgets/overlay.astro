@@ -1,9 +1,9 @@
 ---
+// src/components/widgets/OverlayWidget.astro
 import SidebarLayout from '@layouts/WidgetLayout.astro';
-//Astro documentation at https://docs.astro.build
 ---
 <SidebarLayout>
-<div id="overlay-container">
+  <div id="overlay-container">
     <div id="media-wrapper">
       <!-- El contenido de imagen o video irá aquí -->
     </div>
@@ -12,228 +12,20 @@ import SidebarLayout from '@layouts/WidgetLayout.astro';
     </div>
   </div>
 </SidebarLayout>
+
 <script>
-import { taskApi } from 'src/fetch/fetchapi';
-
-interface OverlayItem {
-  src: string;
-  context: string;
-  duration: number;
-  check: boolean;
-  volumen?: number;
-}
-
-interface OverlayConfig {
-  overlay: OverlayItem;
-}
-
-function getOverlayConfigFromUrl(): OverlayConfig | null {
-  const urlParams = new URLSearchParams(window.location.search);
-  const configParam = urlParams.get('config'); // Esperamos un parámetro llamado 'config'
-
-  if (configParam) {
-    try {
-      // Decodificar el parámetro (puede estar codificado como URI component)
-      const decodedConfig = decodeURIComponent(configParam);
-      const parsedConfig: OverlayConfig = JSON.parse(decodedConfig);
-
-      // Validación básica
-      if (parsedConfig && parsedConfig.overlay &&
-          typeof parsedConfig.overlay.src === 'string' &&
-          typeof parsedConfig.overlay.context === 'string' &&
-          typeof parsedConfig.overlay.duration === 'number' &&
-          typeof parsedConfig.overlay.check === 'boolean') {
-        return parsedConfig;
-      } else {
-        console.error("Estructura del objeto 'overlay' inválida:", parsedConfig);
-        return null;
-      }
-    } catch (error) {
-      console.error("Error al parsear el objeto de configuración desde la URL:", error);
-      return null;
-    }
-  }
-  console.warn("No se encontró el parámetro 'config' en la URL.");
-  return null;
-}
-
-function displayOverlay(config: OverlayConfig) {
-  const overlayData = config.overlay;
-
-  if (!overlayData.check) {
-    console.log("Overlay 'check' es false. No se mostrará.");
-    return; // No mostrar si check es false
-  }
-
-  const overlayContainer = document.getElementById('overlay-container') as HTMLDivElement;
-  const mediaWrapper = document.getElementById('media-wrapper') as HTMLDivElement;
-  const contextTextElement = document.getElementById('context-text') as HTMLDivElement;
-
-  if (!overlayContainer || !mediaWrapper || !contextTextElement) {
-    console.error("No se encontraron los elementos del DOM necesarios.");
-    return;
-  }
-
-  // Limpiar contenido previo
-  mediaWrapper.innerHTML = '';
-  contextTextElement.textContent = '';
-
-  // Mostrar el texto
-  contextTextElement.textContent = overlayData.context;
-
-  // Determinar si src es imagen o video por la extensión
-  const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(overlayData.src);
-  const isImage = /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(overlayData.src);
-
-  if (isVideo) {
-    const video = document.createElement('video');
-    video.src = overlayData.src;
-    video.autoplay = true;
-    video.loop = false; // O true si quieres que se repita durante la duración
-    video.muted = false; // Por defecto con sonido, ajustaremos volumen
-    video.volume = (overlayData.volumen ?? 50) / 100; // Default 50, convertir a 0-1
-    mediaWrapper.appendChild(video);
-  } else if (isImage) {
-    const img = document.createElement('img');
-    img.src = overlayData.src;
-    img.alt = overlayData.context; // Texto alternativo
-    mediaWrapper.appendChild(img);
-  } else if (overlayData.src) { // Si hay src pero no es video ni imagen reconocida
-    console.warn(`Fuente desconocida o no soportada: ${overlayData.src}. Mostrando solo texto.`);
-  }
-
-
-  // Mostrar el contenedor y aplicar animación de entrada
-  overlayContainer.style.display = 'flex'; // O 'block', 'grid', etc. según tu CSS
-  overlayContainer.classList.add('fade-in');
-  overlayContainer.classList.remove('fade-out');
-
-
-  // Configurar la duración
-  if (overlayData.duration > 0) {
-    setTimeout(() => {
-      overlayContainer.classList.remove('fade-in');
-      overlayContainer.classList.add('fade-out');
-      // Esperar a que termine la animación de salida antes de ocultar realmente
-      setTimeout(() => {
-        overlayContainer.style.display = 'none';
-      }, 500); // 500ms es la duración de fadeOutAnimation
-    }, overlayData.duration * 1000); // Convertir segundos a milisegundos
-  }
-}
-async function getoverlayTasks() {
-    const result = await taskApi.getTasks("overlay");
-    console.log("getoverlayTasks",result);
-/*     if (result && result.length > 0) {
-        const deletethis = deleteoverlayTasks(result[0].id)
-    } */
-    return result;
-}
-async function saveoverlayTasks() {
-    const overlaydata = {
-        "overlay": {
-            "src": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            "context": "Esto es un ejemplo de overlay",
-            "duration": 5,
-            "check": true,
-            "volumen": 50
-        }
-    }
-    const result = await taskApi.saveTasks("overlay", overlaydata);
-    console.log("saveoverlayTasks",result);
-    return result;
-}
-async function deleteoverlayTasks(id:string) {
-    const result = await taskApi.removeTasks("overlay", id);
-    console.log("deleteoverlayTasks",result);
-    return result;
-    
-}
-// --- Ejecución Principal ---
-document.addEventListener('DOMContentLoaded', () => {
-  const config = getOverlayConfigFromUrl();
-
-  if (config) {
-    displayOverlay(config);
+  import { initOverlaySystem } from './overlay/overlay-manager.ts';
+  // Asegúrate que el DOM esté listo si initOverlaySystem no maneja DOMContentLoaded internamente.
+  // En este caso, nuestro initOverlaySystem YA ESPERA a ser llamado DESPUÉS de DOMContentLoaded o lo maneja dentro.
+  // Por seguridad, o si initOverlaySystem accediera al DOM inmediatamente:
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initOverlaySystem);
   } else {
-    // Opcional: Mostrar un mensaje de error o estado por defecto en el overlay si no hay config
-    const overlayContainer = document.getElementById('overlay-container') as HTMLDivElement;
-    const contextTextElement = document.getElementById('context-text') as HTMLDivElement;
-    if (overlayContainer && contextTextElement) {
-        overlayContainer.style.display = 'flex';
-        contextTextElement.textContent = "Error: Configuración de overlay no válida o no encontrada.";
-        // Puedes ocultarlo después de un tiempo también
-        setTimeout(() => overlayContainer.style.display = 'none', 5000);
-    }
+    initOverlaySystem();
   }
-  getoverlayTasks();
-//  saveoverlayTasks();
-});
 </script>
+
 <style>
-    /* src/style.css */
-body {
-  background-color: transparent; /* MUY IMPORTANTE para OBS */
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  overflow: hidden; /* Evitar barras de scroll inesperadas */
-  color: white; /* Color de texto por defecto, puedes cambiarlo */
-}
-
-#overlay-container {
-  position: relative; /* O fixed/absolute según necesites */
-  width: 100vw;
-  height: 100vh;
-  display: none; /* Oculto por defecto, se mostrará con JS si check es true */
-  flex-direction: column; /* Ejemplo: media arriba, texto abajo */
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-#media-wrapper {
-  margin-bottom: 15px;
-  max-width: 80%;
-  max-height: 60%;
-}
-
-#media-wrapper img,
-#media-wrapper video {
-  max-width: 100%;
-  max-height: 400px; /* Ajusta según necesites */
-  display: block;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-#context-text {
-  font-size: 32px;
-  font-weight: bold;
-  text-align: center;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.7); /* Sombra para legibilidad */
-  padding: 10px;
-  background-color: rgba(0,0,0,0.3); /* Fondo semi-transparente opcional */
-  border-radius: 5px;
-}
-
-/* Clase para animaciones (opcional) */
-.fade-in {
-  animation: fadeInAnimation 0.5s ease-in forwards;
-}
-
-.fade-out {
-  animation: fadeOutAnimation 0.5s ease-out forwards;
-}
-
-@keyframes fadeInAnimation {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeOutAnimation {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
-}
+  /* Asumiendo que styles.css está en el mismo directorio 'overlay' que el manager.ts */
+  @import './overlay/styles.css'; 
 </style>
