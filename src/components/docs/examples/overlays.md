@@ -20,6 +20,12 @@ overlay:
     - Duración (segundos) 
     - Volumen (%) 
 ```
+- Fuente(s) (IDs/URLs) : puede ser una imagen o un video:
+la url externa solo copia y pega una,O si es local siempre coloca `/media/URL DEL ARCHIVO`
+- ejemplos:
+   - local : `/media/d:/imagen.jpg` || `/media/home/melser/imagen.jpg`
+   - url : `https://example.com/imagen.jpg`
+
 #### Salida o URL del Overlay
 puede utilizar tanto la url local como la url remota
 - url local : `localhost:9001/widgets/overlay`
