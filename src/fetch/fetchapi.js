@@ -1,7 +1,7 @@
 const windowurl = typeof window !== "undefined" ? window.location.origin : "";
 const baseurlApi = windowurl + "/api";
-const baseurlTestApi = "http://localhost:3000/api"; // API de desarrollo
-const mockApi = "http://localhost:3000/api"; // Otra opción de mock
+const baseurlTestApi = "http://localhost:9001"; // API de desarrollo
+const mockApi = "http://localhost:9001"; // Otra opción de mock
 
 const actualBaseApi =
   import.meta.env.MODE === "development" ? baseurlTestApi : baseurlApi;
@@ -159,10 +159,46 @@ class BaseApi {
         }
     }
 }
-
-
+class TaskApi extends BaseApi {
+    // GET /tasks/get/:type
+    getTasks(type) {
+        if (!type) {
+            console.error('No se proporcionó un tipo de tarea para obtener');
+            return;
+        }
+        return this.request(http.get(`${this.host}/tasks/get/${type}`),{
+            headers: this._authHeaders()
+        });
+    }
+    // router.get('/get/:type/:taskId'
+    saveTasks(type, data) {
+        if (!type || data) {
+            console.error('No se proporcionó un tipo de tarea para guardar');
+            return;
+        }
+        return this.request(http.post(`${this.host}/tasks/save/${type}`, data, {
+            headers: this._authHeaders()
+        }));
+    }
+    //router.delete('/remove/:type/:taskId
+    removeTasks(type, taskId) {
+        if (!type || !taskId) {
+            console.error('No se proporcionó un tipo de tarea para eliminar');
+            return;
+        }
+        return this.request(http.delete(`${this.host}/tasks/remove/${type}/${taskId}`, {
+            headers: this._authHeaders()
+        }));
+    }
+    /*    return this.request(http.get(`${this.host}/java/all`, {
+        headers: this._authHeaders()
+    }));
+    }*/
+}
+const taskApi = new TaskApi(actualBaseApi);
 export {
     BaseApi,
     actualBaseApi,
     getParams,
+    taskApi
 }
