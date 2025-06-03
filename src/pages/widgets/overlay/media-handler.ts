@@ -1,7 +1,7 @@
 // src/components/widgets/overlay/media-handler.ts
 import type { OverlayItem } from './types';
 import { AnimationController } from './animation-controller';
-
+import { verifyandchangeHOST } from './api-manager';
 export class MediaHandler {
   private static currentVideoElement: HTMLVideoElement | null = null;
 
@@ -24,7 +24,7 @@ export class MediaHandler {
 
   private static createVideoElement(item: OverlayItem, animationType: string): HTMLVideoElement {
     const video = document.createElement('video');
-    video.src = item.src;
+    video.src = verifyandchangeHOST() + item.src;
     video.autoplay = true;
     video.loop = false;
     video.muted = typeof item.volumen === 'number' && item.volumen === 0;
@@ -47,7 +47,7 @@ export class MediaHandler {
 
   private static createImageElement(item: OverlayItem, animationType: string): HTMLImageElement {
     const img = document.createElement('img');
-    img.src = item.src;
+    img.src = verifyandchangeHOST() + item.src;
     img.alt = item.context;
     
     // Aplicar estilos iniciales para animación

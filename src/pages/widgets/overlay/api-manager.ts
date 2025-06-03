@@ -3,14 +3,11 @@ import { taskApi } from 'src/fetch/fetchapi';
 import type { ApiTask } from './types';
 import { OverlayDisplay } from './overlay-display';
 
-function verifyandchangeHOST(){
+export function verifyandchangeHOST(){
     const searchParams1 = new URLSearchParams(window.location.search);
     console.log("searchParams1", searchParams1);
     const host = searchParams1.get('host');
-    console.log("host", host);
-    if (host) {
-        taskApi.changeHost(host);
-    }
+    return host;
 }
 
 export class ApiManager {
@@ -24,7 +21,11 @@ export class ApiManager {
       console.log("Ya se está verificando tareas, esperando...");
       return;
     }
-    verifyandchangeHOST()
+    const host = verifyandchangeHOST();
+    if (host) {
+      taskApi.changeHost(host);
+      console.log("host cambiado", host);
+    }
     this.isChecking = true;
     console.log("Buscando tareas de overlay...");
 
