@@ -8,7 +8,7 @@ interface Props {
   title?: string;
   activeConfig?: 'A' | 'B';
 }
-
+const base = import.meta.env.BASE_URL + "/" || '/';
 const { title = "Default Title", activeConfig = 'A' } = Astro.props;
 const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
 ---
@@ -17,15 +17,14 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 
     <!-- REMOVE Font Awesome -->
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" /> -->
 
     <!-- ADD Material Symbols (usando tu CSS local o el CDN de Google) -->
     <!-- Opción 1: Usando tu CSS local (asegúrate que esté bien configurado) -->
-    <link rel="stylesheet" href="/materialSymbols.css" />
-    <!-- Opción 2: Usando el CDN de Google (más común y auto-contenido) -->
+    <link rel="stylesheet" href={`${base}materialSymbols.css`}>
     <!-- Descomenta esta línea si prefieres el CDN y comenta la anterior -->
     <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" /> -->
 
@@ -56,8 +55,12 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
           <div class="nav-buttons">
             {
               Object.entries(currentConfig).map(([key, page]) => (
-                <a href={`/${page.slot}`} class="nav-link">
-                  {/* CHANGE: Usar span con la clase y el nombre del icono como contenido */}
+                // CAMBIO IMPORTANTE AQUÍ:
+                // page.slot NO debe empezar con '/' si vas a concatenar con 'base'
+                // base ya tiene el '/' al final (ej: '/multistreamASTRO/')
+                // si page.slot es "chat", el resultado es "/multistreamASTRO/chat"
+                // si page.slot es "", el resultado es "/multistreamASTRO/" (para la home de la base)
+                <a href={`${base}${page.slot}`} class="nav-link">
                   <span class="material-symbols-outlined">{page.icon}</span>
                   <span class="nav-text">{page.name}</span>
                 </a>
@@ -82,10 +85,10 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
             ></UserLogin>
           </div>
           <div class="nav-buttons">
-            {
+           {
               Object.entries(currentConfig).map(([key, page]) => (
-                <a href={`/${page.slot}`} class="nav-link">
-                  {/* CHANGE: Usar span con la clase y el nombre del icono como contenido */}
+                // CAMBIO IMPORTANTE AQUÍ (igual que arriba):
+                <a href={`${base}${page.slot}`} class="nav-link">
                   <span class="material-symbols-outlined">{page.icon}</span>
                   <span class="nav-text">{page.name}</span>
                 </a>
