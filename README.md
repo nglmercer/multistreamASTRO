@@ -110,9 +110,5 @@ El estado de conexión se muestra en la interfaz:
 ### Logs de Depuración
 
 Abre las herramientas de desarrollador (F12) para ver logs detallados del sistema de eventos y conexiones.
-```
-
-## Notes
-
-Esta documentación se basa en la arquitectura del sistema mostrada en el wiki Overview, donde `ActionsEvents.astro` sirve como interfaz principal de configuración, `SocketManager` maneja las conexiones en tiempo real, y el sistema de middlewares procesa y filtra eventos antes de ejecutar acciones automáticas. El sistema utiliza IndexedDB para persistencia de configuraciones y localStorage para filtros y eventos temporales.
+#### Test de deploy en [/](/)
 
