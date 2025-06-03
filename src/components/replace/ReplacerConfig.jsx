@@ -53,7 +53,7 @@ export default function ReplacerConfig() {
       <div class="config-card">
         <div class="config-card-header">
           <h1 class="main-title">Configurador de Reemplazos</h1>
-          <p class="subtitle">Gestiona patrones de reemplazo dinámicamente con SolidJS</p>
+          <p class="subtitle">Gestiona patrones de reemplazo dinámicamente</p>
         </div>
         
         <div class="config-card-body">
