@@ -3,6 +3,7 @@ import { getAllDataFromDatabase, databases } from '@utils/idb.js';
 import { unflattenObject } from '@utils/transform/objuf.ts';
 import { playTextwithproviderInfo } from '@components/voicecomponents/initconfig.js';
 import { executeHttpRequest } from "src/fetch/executor";
+import { taskApi } from 'src/fetch/fetchapi.js';
 import { socket } from '@utils/socketManager.ts'; // Asumiendo que socketManager exporta 'socket'
 import { ReplacesValues } from './dataUtils.js';
 
@@ -76,6 +77,7 @@ const actionExecutionConfig = {
         callback: (actionData, fullAction, eventData, eventType) => {
             console.log("Minecraft", actionData, fullAction, eventData, eventType);
             socket.emit("actions", { type: "minecraft", data: { ...actionData }, event: eventType });
+            taskApi.saveTasks("minecraft", {actionData});
         }
     },
     "tts": {
@@ -96,6 +98,7 @@ const actionExecutionConfig = {
         callback: (actionData, fullAction, eventData, eventType) => {
             console.log("overlay", actionData, fullAction, eventData, eventType);
             socket.emit("actions", { type: "overlay", data: { ...actionData }, event: eventType });
+            taskApi.saveTasks("overlay", {actionData});
         }
     },
     "keypress": {
@@ -103,6 +106,7 @@ const actionExecutionConfig = {
         callback: (actionData, fullAction, eventData, eventType) => {
             console.log("keypress", actionData, fullAction, eventData, eventType);
             socket.emit("actions", { type: "keypress", data: { ...actionData }, event: eventType });
+            taskApi.saveTasks("keypress", {actionData});
         }
     },
     "fetchForm": {
