@@ -6,7 +6,7 @@ import { platformIcons, platformThemes } from './userconstants';
 import { createInitialState, getCSSVariables } from './utils';
 import { createGroupStore, getGroupStore, deleteGroupStore } from './groupStore';
 import styles from './UserProfile.module.css';
-import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+import { BrowserLogger, LogLevel } from '@utils/Logger';
 import { socket } from '@utils/socketManager.ts';
 const logger = new BrowserLogger('userConnect.tsx')
    .setLevel(LogLevel.LOG);

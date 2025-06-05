@@ -3,7 +3,9 @@ import { TiktokEmitter, tiktokLiveEvents, KickEmitter, kickLiveEvents } from '@u
 import { saveEventData } from './eventSaver.js'; // Asumiendo que eventSaver.js está en el mismo dir
 import { switcheventDb } from './eventDispatcher.js';
 import { polifyfillEvalueKick } from './dataUtils.js';
-import logger from '@utils/logger.js';
+import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+const logger = new BrowserLogger('eventlisteners')
+    .setLevel(LogLevel.LOG);
 
 const platformNames = {
     kick: 'kick',

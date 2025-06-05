@@ -11,7 +11,7 @@ import {
     PREVENT_DUPLICATE_FOLLOW_TYPE,
     CONTENT_FILTER_TYPE
 } from './middlewares/middlewareTypes.js';
-import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+import { BrowserLogger, LogLevel } from '@utils/Logger.js';
 import './middlewares/preventIdenticalPrevious.js';
 import './middlewares/preventDuplicateFollow.js';
 import './middlewares/contentFilter.js'

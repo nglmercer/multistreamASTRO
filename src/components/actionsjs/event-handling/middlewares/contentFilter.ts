@@ -1,5 +1,5 @@
 // src/event-handling/middlewares/contentFilter.ts
-import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+import { BrowserLogger, LogLevel } from '@utils/Logger.js';
 import { ReplacesValues } from '../dataUtils.js'; // Asumiendo que existe y funciona
 import {
     CONTENT_FILTER_TYPE,

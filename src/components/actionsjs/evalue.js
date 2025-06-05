@@ -1,9 +1,10 @@
 // src/main.js (o como llames a tu archivo principal)
-import logger from '@utils/logger.js';
 import { initializeEventSaver } from './event-handling/eventSaver.ts'; // Ajusta la ruta
 import { setupPlatformEventListeners } from './event-handling/eventListeners.js';
 import { kickLiveEvents, tiktokLiveEvents } from '@utils/socketManager.ts';
-
+import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+const logger = new BrowserLogger('evalue')
+    .setLevel(LogLevel.LOG);
 // Exportaciones principales de tu sistema de eventos si necesitas accederlas desde fuera
 export { updateRules } from './event-handling/ruleEngine.ts';
 

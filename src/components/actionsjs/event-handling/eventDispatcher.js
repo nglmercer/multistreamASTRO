@@ -3,7 +3,9 @@ import { getAllDataFromDatabase, databases } from '@utils/idb.js';
 import { processMatchedItems } from './actionProcessor.js';
 import { polifyfillEvalueKick } from './dataUtils.js';
 import { evalueChat, evalueGift, evalueBits, evalueLikes, evalueFollow } from './ruleEngine.ts';
-import logger from '@utils/logger.js';
+import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+const logger = new BrowserLogger('eventdispatcher')
+    .setLevel(LogLevel.LOG);
 
 
 const dbEventMapping = {

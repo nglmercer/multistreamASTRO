@@ -1,6 +1,6 @@
 // src/event-handling/middlewares/preventDuplicateFollow.ts
 import { dbManager } from '../eventSaver.js'; // Ajusta la ruta si es necesario
-import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+import { BrowserLogger, LogLevel } from '@utils/Logger.js';
 import { ReplacesValues } from '../dataUtils.js'; // Ajusta la ruta
 import {
     PREVENT_DUPLICATE_FOLLOW_TYPE,

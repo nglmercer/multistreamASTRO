@@ -11,27 +11,20 @@ function onConnectionStatusChanged(e: any) {
   console.log("Connection Status Changed:", e);
 }
 ---
-
+<script src="src/components/user/litsrc.js">
+</script>
 <ButtonDropdownSolid client:only="solid-js" buttonText="Login">
-  <UserProfile
-    minimal
-    groupId="tiktok_login"
-    platform="tiktok"
-    client:only="solid-js"
-    data-component="tiktok-profile"
-    onUserConnected={onConnect}
-    onConnectionStatusChanged={onConnectionStatusChanged}
-    onUserDisconnected={onDisconnect}
-  />
+  <user-profile 
+  platform="tiktok" 
+  class="tiktoklogin"
+  group-id="tiktok-group"
+  minimal
+></user-profile>
+<user-profile 
+platform="kick" 
+class="kicklogin"
+group-id="kick-group"
+minimal
+></user-profile>
 
-  <UserProfile
-    minimal
-    groupId="kick_login"
-    platform="kick"
-    client:only="solid-js"
-    data-component="kick-profile"
-    onUserConnected={onConnect}
-    onConnectionStatusChanged={onConnectionStatusChanged}
-    onUserDisconnected={onDisconnect}
-  />
 </ButtonDropdownSolid>
