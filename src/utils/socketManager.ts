@@ -62,7 +62,7 @@ class SocketManager {
     'subscribe', 'follow', 'share', 'streamEnd',
     'availableGifts', 'roomInfo'
   ];
-  public kickLiveEvents: string[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'login','close'];
+  public kickLiveEvents: string[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'connected', 'login','close'];
   constructor() {
     this.socket = io(this.baseUrl);
     this.TiktokEmitter = new Emitter();

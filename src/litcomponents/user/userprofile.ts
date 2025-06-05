@@ -518,21 +518,12 @@ export class UserProfileComponent extends LitElement {
     console.log('Connecting to:', username, 'on platform:', this._state.platform);
     this.dispatchEvent(new UserConnectEvent({username,platform:this.platform}))
     // Simulate async connection
-/*     await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Emit socket event (if socket is available)
-    if (typeof window !== 'undefined' && (window as any).socket) {
-      (window as any).socket.emit('join-platform', { 
-        uniqueId: username, 
-        platform: this._state.platform 
-      });
-    }
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
     this.updateState({
       connected: true,
       username: username,
       connectionStatus: 'online'
-    }); */
+    });
   }
 
   disconnect() {
