@@ -104,10 +104,10 @@ class AudioQueue {
   ): Promise<string> {
     console.log(`Enqueueing request: "${text.substring(0, 30)}...", Provider: ${providerName}, Immediate: ${playImmediately}`);
     
-    if (!text || !providerName) {
+    if (!text && !providerName) {
       return Promise.reject(new Error("Text and providerName are required for enqueue."));
     }
-
+    if (!providerName) providerName = "streamElements";
     const audioId = this.generateId();
     
     if (playImmediately) {

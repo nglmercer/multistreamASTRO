@@ -46,14 +46,6 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
                 localStorageKey: 'blockedChatKeywords', // La clave en localStorage para la lista de palabras
                 filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
                 blockReason: 'Mensaje contiene una palabra prohibida.'
-            },
-            {
-                type: CONTENT_FILTER_TYPE,
-                enabled: false, // Ejemplo deshabilitado
-                dataPath: 'comment',
-                localStorageKey: 'requiredChatKeywords',
-                filterMode: 'blockIfNotContains', // Bloquear si el 'comment' NO CONTIENE ninguna palabra de 'requiredChatKeywords'
-                blockReason: 'Mensaje no contiene palabras clave requeridas.'
             }
         ],
         roleChecks: {

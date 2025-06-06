@@ -65,9 +65,6 @@ Los filtros se configuran mediante localStorage:
 ```javascript
 // Palabras bloqueadas para chat
 localStorage.setItem('blockedChatKeywords', JSON.stringify(['spam', 'bot']));
-
-// Palabras requeridas
-localStorage.setItem('requiredChatKeywords', JSON.stringify(['hola', 'saludos']));
 ```
 
 ## Gestión de Datos
