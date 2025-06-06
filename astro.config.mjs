@@ -10,5 +10,5 @@ import mdx from '@astrojs/mdx';
 export default defineConfig({
   integrations: [lit(), solidJs(), mdx()],
   site: 'https://nglmercer.github.io',
-  base: '/multistreamASTRO',
+  base: '/',
 });

@@ -1,0 +1,42 @@
+---
+// SystemHealth.astro
+---
+
+<div class="health-card">
+    <system-health class="mainsystem"></system-health>
+  </div>
+  <script>
+    import {SystemHealthComponent, type HealthItem} from '@litcomponents/system-health.ts'
+    import { networkapi } from 'src/fetch/fetchapi';
+    const systemelement = document.querySelector(".mainsystem") as SystemHealthComponent;
+    const healthItems: HealthItem[] = [
+      {
+        name: 'servidor_local',
+        host: 'localhost',
+        port: 0,
+        fqdn: 'servidor_local',
+        status: 'offline' // opcional
+      }
+    ];
+    async function initcomponent(){
+      if (!systemelement) return;
+      const serversystemdata: { peers: HealthItem } = await getPeersData();
+      console.log(serversystemdata,typeof serversystemdata)
+      systemelement.healthItems = Array.isArray(serversystemdata.peers) ? serversystemdata.peers : healthItems;
+    }
+    async function getPeersData() {
+        const result = await networkapi.getPeers();
+        if (!result) return;
+        console.log(result)
+        return result
+    }
+    document.addEventListener("DOMContentLoaded",initcomponent)
+  </script>
+  <style>
+    .health-card {
+      background-color: var(--color-dark-900);
+      border: 1px solid var(--color-gray-800);
+      border-radius: var(--border-radius-xl);
+      padding: var(--space-6);
+    }
+  </style>

@@ -145,10 +145,10 @@ async function preventIdenticalPreviousHandler(
                     return { shouldContinue: true, reason: "Timestamp actual inválido" };
                 }
                 
-                const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
+                const ONE_MINUTE_IN_MS = 1 * 60 * 1000;
                 const timeDifferenceMs = currentEventTimestampMs - previousEventTimestamp;
 
-                if (timeDifferenceMs <= ONE_DAY_IN_MS) {
+                if (timeDifferenceMs <= ONE_MINUTE_IN_MS) {
                     logger.log(`[Middleware:${PREVENT_IDENTICAL_PREVIOUS_TYPE}] Evento idéntico al anterior para ${storeName} por ${currentUserId} y dentro de las 24 horas (diferencia: ${timeDifferenceMs}ms). Bloqueando.`);
                     return { shouldContinue: false, reason: "Evento idéntico al anterior (dentro de 24h)" };
                 } else {

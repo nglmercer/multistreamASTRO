@@ -206,10 +206,21 @@ class TaskApi extends BaseApi {
     }));
     }*/
 }
+class NetworkApi extends BaseApi {
+    //  GET /api/network/peers
+    async getPeers(){
+        return this.request(this.http.get(`${this.host}/api/network/peers`),{
+            headers: this._authHeaders()
+        })
+    }
+}
 const taskApi = new TaskApi(actualBaseApi);
+const networkapi = new NetworkApi(actualBaseApi);
+
 export {
     BaseApi,
     actualBaseApi,
     getParams,
-    taskApi
+    taskApi,
+    networkapi
 }
