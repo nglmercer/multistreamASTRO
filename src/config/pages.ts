@@ -14,6 +14,7 @@ export const pagesConfigA = {
   3: { name: "Volume", slot: "voice", icon: "volume_down" }, // Nombre cambiado a "Volume" para claridad
   4: { name: "Favorites", slot: "Preconfigs", icon: "favorite" },
   5: { name: "Settings", slot: "Setconfig", icon: "settings" },
+  6: { name: "Filters", slot: "filter", icon: "block"}
 };
 
 export const pagesConfigB = {
