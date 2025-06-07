@@ -87,7 +87,7 @@ export type AnyMiddlewareConfig =
     | BlockUserConfig
     | RateLimitByUserConfig
     | PreventDuplicateFollowConfig
-    | ContentFilterConfig; // <-- Añadido el nuevo tipo
+    | ContentFilterConfig;
 
 // --- Tipos para EventRules ---
 export interface EventRuleEntry {

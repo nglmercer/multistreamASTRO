@@ -39,13 +39,21 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
                 userIdentifierPath: 'uniqueId',
                 contentPaths: ['comment'],
             },
-                        {
+            {
                 type: CONTENT_FILTER_TYPE, // Usar la constante importada
                 enabled: true,
                 dataPath: 'comment', // El campo del objeto 'data' que contiene el texto a verificar
                 localStorageKey: 'blockedChatKeywords', // La clave en localStorage para la lista de palabras
                 filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
                 blockReason: 'Mensaje contiene una palabra prohibida.'
+            },
+            {
+                type: CONTENT_FILTER_TYPE, // Usar la constante importada
+                enabled: true,
+                dataPath: 'uniqueId', // El campo del objeto 'data' que contiene el texto a verificar
+                localStorageKey: 'blockedUsersKeywords', // La clave en localStorage para la lista de palabras
+                filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
+                blockReason: 'Mensaje contiene una usuario prohibido.'
             }
         ],
         roleChecks: {

@@ -1,0 +1,12 @@
+---
+---
+<script>
+    import { UserFilter, WordFilter } from "@litcomponents/filters/filter.js"
+    const userFilter = document.getElementById("userFilter")as UserFilter;
+    const wordFilter = document.getElementById("wordFilter")as WordFilter;
+    console.log("userFilter wordFilter",{userFilter,wordFilter })
+</script>
+<div class="filters-grid">
+    <user-filter id="userFilter"></user-filter>
+    <word-filter id="wordFilter"></word-filter>
+</div>

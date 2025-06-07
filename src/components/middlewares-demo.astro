@@ -24,7 +24,7 @@
 
 <script >
 import { eventRules, updateMiddlewareEnabledState } from '@components/actionsjs/event-handling/ruleEngine.js';
-import type { EventRules } from '@components/actionsjs/event-handling/middlewares/middlewareTypes.js'; // For typing client-side script
+import type { EventRules,AnyMiddlewareConfig } from '@components/actionsjs/event-handling/middlewares/middlewareTypes.js'; // For typing client-side script
 const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules)); 
 
   import { CInput } from 'src/litcomponents/CInput';
@@ -35,7 +35,8 @@ const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules))
     container.innerHTML = ''; // Clear previous toggles
 
     for (const [eventType, ruleEntry] of Object.entries(initialRulesForClient)) {
-      if (ruleEntry.middlewares && ruleEntry.middlewares.length > 0) {
+      const middlewares = ruleEntry.middlewares as AnyMiddlewareConfig[];
+      if (middlewares && middlewares.length > 0) {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'p-4 border rounded-md shadow-sm';
         
@@ -44,10 +45,9 @@ const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules))
         groupTitle.textContent = `${eventType} Middlewares`;
         groupDiv.appendChild(groupTitle);
 
-        ruleEntry.middlewares.forEach(middlewareConfig => {
-          const MlocalStorageKey = `middleware_enabled_${eventType}_${middlewareConfig.type}`;
+        middlewares.forEach((middlewareConfig) => {
           const isCheckedInitially = middlewareConfig.enabled; // This comes from initialRulesForClient, which reflects localStorage
-
+          console.log("middlewareConfig",middlewareConfig)
           const wrapperDiv = document.createElement('div');
           wrapperDiv.className = 'flex items-center space-x-3 mb-2 p-2 border-b last:border-b-0';
 
@@ -71,11 +71,12 @@ const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules))
           const label = document.createElement('label');
           label.setAttribute('for', checkboxId);
           label.className = 'flex-grow cursor-pointer';
-          label.textContent = `${middlewareConfig.type} (${eventType})`;
+          label.textContent = `${middlewareConfig.type} - `;
           
           const description = document.createElement('span');
           description.className = 'text-sm text-gray-600 ml-auto';
-          description.textContent = `(${isCheckedInitially ? 'Activado' : 'Desactivado'})`;
+          //@ts-ignore
+          description.textContent = `${middlewareConfig.userIdentifierPath || middlewareConfig.localStorageKey || middlewareConfig.userIdentifierPath}`;
           checkbox.addEventListener('change', async (e) => {
             // For CInput, the value might be in e.target.value or e.target.checked
             // Let's assume CInput component correctly sets its `value` property

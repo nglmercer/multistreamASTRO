@@ -50,8 +50,8 @@ function getKeywordsFromLocalStorage(key: string): string[] {
         }
         if (Array.isArray(parsedKeywords)) {
             return parsedKeywords
-                .filter(kw => typeof kw === 'string' && kw.trim() !== '') // Filtrar no strings o vacíos
-                .map(kw => kw.toLowerCase()); // Convertir a minúsculas
+                .filter(kw => typeof kw.value === 'string' && kw.value.trim() !== '') // Filtrar no strings o vacíos
+                .map(kw => kw.value.toLowerCase()); // Convertir a minúsculas
         }
         logger.warn(`[${CONTENT_FILTER_TYPE}] Invalid data type in localStorage for key ${key}. Expected array or string. Found:`, typeof parsedKeywords);
         return [];
@@ -103,7 +103,7 @@ async function contentFilterHandler(
         if (filterMode === 'blockIfNotContains') {
             // Si no hay palabras clave que DEBA contener, es ambiguo. Por seguridad, continuamos.
             // Opcionalmente, podrías decidir bloquear aquí si la lógica es "debe contener una palabra de la lista Y la lista NO está vacía"
-            // return { shouldContinue: false, reason: blockReason || `Lista de palabras clave vacía para ${localStorageKey} en modo 'blockIfNotContains'` };
+            return { shouldContinue: false, reason: blockReason || `Lista de palabras clave vacía para ${localStorageKey} en modo 'blockIfNotContains'` };
         }
         return { shouldContinue: true, reason: "No hay palabras clave para filtrar" };
     }
