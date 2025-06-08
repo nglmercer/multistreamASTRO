@@ -328,7 +328,11 @@ export class CustomPopup extends LitElement {
         border-radius: 4px;
       }
     }
-  
+    .material-symbols-rounded {
+      font-size: 48px;
+      font-family: 'Material Symbols Outlined';
+      opacity: 0.5;
+    }
     .popup-option {
       cursor: pointer;
       transition: background-color 0.2s;
@@ -486,11 +490,13 @@ export class CustomPopup extends LitElement {
 
   // Show popup at a specific element
   showAtElement(element: HTMLElement): void {
+    if (!element)return;
     const rect = element.getBoundingClientRect();
     const positions = {
       x: rect.left, 
       y: rect.bottom
     };
+    console.log("showAtElement",element,positions)
     this.show(positions);
     this.lastFocusedElement = element;
   }

@@ -80,14 +80,22 @@ export function registerMiddleware<TConfig extends BaseMiddlewareConfig, TData =
     }
     middlewareRegistry.set(type, handler);
 }
-
+export const WHITELIST_TYPE = 'whitelist';
+export interface WhitelistConfig extends BaseMiddlewareConfig {
+    type: typeof WHITELIST_TYPE;
+    dataPath: string; // Path para extraer el texto del evento (ej: 'comment', 'message.text', 'uniqueId')
+    localStorageKey: string; // Clave de localStorage donde se guarda el array/string de palabras clave
+    whitelistMode: 'allowIfContains' | 'allowIfNotContains'; // Modo de operación
+    skipAllMiddlewares?: boolean; // Si true, salta todos los middlewares restantes cuando esté en whitelist
+}
 // --- Tipo Unión de todas las configuraciones ---
 export type AnyMiddlewareConfig =
     | PreventIdenticalPreviousConfig
     | BlockUserConfig
     | RateLimitByUserConfig
     | PreventDuplicateFollowConfig
-    | ContentFilterConfig;
+    | ContentFilterConfig
+    | WhitelistConfig;
 
 // --- Tipos para EventRules ---
 export interface EventRuleEntry {

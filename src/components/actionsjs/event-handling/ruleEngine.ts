@@ -9,12 +9,14 @@ import {
     middlewareRegistry,
     PREVENT_IDENTICAL_PREVIOUS_TYPE,
     PREVENT_DUPLICATE_FOLLOW_TYPE,
-    CONTENT_FILTER_TYPE
+    CONTENT_FILTER_TYPE,
+    WHITELIST_TYPE,
 } from './middlewares/middlewareTypes.js';
 import { BrowserLogger, LogLevel } from '@utils/Logger.js';
 import './middlewares/preventIdenticalPrevious.js';
 import './middlewares/preventDuplicateFollow.js';
-import './middlewares/contentFilter.js'
+import './middlewares/contentFilter.js';
+import './middlewares/whitelist.js';
 const logger = new BrowserLogger('ruleEngine')
     .setLevel(LogLevel.LOG); // Habilitar debug para más información
 // Configuración de reglas para diferentes tipos de eventos
@@ -54,6 +56,14 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
                 localStorageKey: 'blockedUsersKeywords', // La clave en localStorage para la lista de palabras
                 filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
                 blockReason: 'Mensaje contiene una usuario prohibido.'
+            },
+            {
+                type: WHITELIST_TYPE,
+                enabled: true,
+                dataPath: 'uniqueId',
+                localStorageKey: 'WhitelistKeywords',
+                whitelistMode: 'allowIfContains', // o 'allowIfNotContains'
+                skipAllMiddlewares: true // opcional, si quieres saltar los demás middlewares
             }
         ],
         roleChecks: {
@@ -206,8 +216,12 @@ async function processMiddlewares(
     }
 
     for (const config of middlewareConfigs) {
-        // The 'enabled' state is now read from the config object itself,
-        // which would have been updated from localStorage.
+        // Verificar si debe saltar middlewares restantes
+        if ((context as any).skipRemainingMiddlewares) {
+            logger.log(`[ProcessMiddlewares] Saltando middleware '${config.type}' debido a whitelist activa.`);
+            continue;
+        }
+
         if (!config.enabled) {
             logger.log(`[ProcessMiddlewares] Middleware '${config.type}' for event '${context.eventType}' is disabled. Skipping.`);
             continue;

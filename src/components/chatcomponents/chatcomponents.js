@@ -624,7 +624,8 @@ chatcontainer.addEventListener('message-menu',(event)=>{
         }),
     ];
     setPopupOptions(returnOptions(menuOptions));
-    openPopup(messageData.element?.originalTarget);
+    console.log("messageData.element",messageData.element)
+    openPopup(messageData.element?.originalTarget ||messageData.element?.target);
 });
 const giftcontainer = document.getElementById('giftcontainer');
 giftcontainer.addEventListener('message-menu',(event)=>{

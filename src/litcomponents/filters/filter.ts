@@ -597,3 +597,18 @@ export interface FilterItem {
       };
     }
   }
+    // components/WordFilter.ts
+    @customElement('whitelist-filter')
+    export class WhiteList extends BaseFilter {
+      constructor() {
+        super();
+        this.config = {
+          id: 'whitelist-filter',
+          title: 'whitelist',
+          storageKey: 'WhitelistKeywords',
+          type: 'string',
+          placeholder: 'Add user to Whitelist...',
+          allowDuplicates: false
+        };
+      }
+    }
