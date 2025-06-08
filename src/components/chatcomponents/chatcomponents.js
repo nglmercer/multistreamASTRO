@@ -579,6 +579,11 @@ import { openPopup, returnexploreroptions, setPopupOptions,returnOptions } from 
 import {
     playTextwithproviderInfo
 } from 'src/components/voicecomponents/initconfig.js';	
+const CHATOPTIONS = {
+  userFilter: "userFilter",
+  wordFilter: "wordFilter",
+  whitelist: "whitelist",
+}
 TiktokEmitter.on('chat', async (data) => {
 //  console.log("TiktokEmitter",data);
   handlechat(data);
@@ -610,18 +615,19 @@ chatcontainer.addEventListener('message-menu',(event)=>{
       "play_arrow": returnexploreroptions('play_arrow','play_arrow','play_arrow',()=>{
         TiktokEmitter.emit('play_arrow',messageData);
     }),
-      "explorer-2":"Explorer 2",
-      "explorer-3":"Explorer 3",
     }
     const menuOptions = [
       // emit array and foreach
       optionsName['play_arrow'],
-        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
-            console.log("optionschat", messageData);
+        returnexploreroptions('block-comment','block comment','block',()=>{
+          addnewFilterItem(CHATOPTIONS.wordFilter,messageData.user)
         }),
-        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
-            console.log("optionschat", messageData);
+        returnexploreroptions('block-user','block User','block',()=>{
+          addnewFilterItem(CHATOPTIONS.userFilter,messageData.user)
         }),
+        returnexploreroptions('whitelist','add whitelist','favorite',()=>{
+          addnewFilterItem(CHATOPTIONS.whitelist,messageData.user)
+        })
     ];
     setPopupOptions(returnOptions(menuOptions));
     console.log("messageData.element",messageData.element)
@@ -634,21 +640,14 @@ giftcontainer.addEventListener('message-menu',(event)=>{
     const optionsName = {
       "play_arrow": returnexploreroptions('play_arrow','play_arrow','play_arrow',()=>{
     }),
-      "explorer-2":"Explorer 2",
-      "explorer-3":"Explorer 3",
+
     }
     const menuOptions = [
       // emit array and foreach
       optionsName['play_arrow'],
-        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
-            console.log("optionschat", messageData);
-        }),
-        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
-            console.log("optionschat", messageData);
-        }),
     ];
     setPopupOptions(returnOptions(menuOptions));
-    openPopup(messageData.element?.originalTarget);
+    openPopup(messageData.element?.originalTarget ||messageData.element?.target);
 });
 const eventscontainer = document.getElementById('eventscontainer');
 eventscontainer.addEventListener('message-menu',(event)=>{
@@ -657,22 +656,37 @@ eventscontainer.addEventListener('message-menu',(event)=>{
     const optionsName = {
       "play_arrow": returnexploreroptions('play_arrow','play_arrow','play_arrow',()=>{
     }),
-      "explorer-2":"Explorer 2",
-      "explorer-3":"Explorer 3",
     }
     const menuOptions = [
       // emit array and foreach
       optionsName['play_arrow'],
-        returnexploreroptions('explorer-2','Explorer 2','search',()=>{
-            console.log("optionschat", messageData);
-        }),
-        returnexploreroptions('explorer-3','Explorer 3','menu',()=>{
-            console.log("optionschat", messageData);
-        }),
     ];
     setPopupOptions(returnOptions(menuOptions));
-    openPopup(messageData.element?.originalTarget);
+    openPopup(messageData.element?.originalTarget ||messageData.element?.target);
 });
+async function addnewFilterItem(elementname, data) {
+  const allowedItems = {
+     userFilter : document.querySelector("user-filter"),
+     wordFilter : document.querySelector("word-filter"),
+     whitelist : document.querySelector("whitelist-filter"),
+  }
+  if (!elementname || !data)return;
+  const filterItem = allowedItems[elementname]
+  if (!filterItem || !('addItemProgrammatically'in filterItem))return;
+  console.log("filterItem",filterItem)
+    switch (elementname){
+      case CHATOPTIONS.userFilter:
+      case CHATOPTIONS.whitelist:
+      console.log(elementname,data)
+      filterItem.addItemProgrammatically(data.name)
+      break
+      case CHATOPTIONS.wordFilter:
+        console.log(elementname,data)
+        filterItem.addItemProgrammatically(data.data.comment)
+      break
+      }
+  
+}
 document.addEventListener('DOMContentLoaded', () => {
     lastElement();
 });

@@ -2,7 +2,7 @@
 import SidebarLayout from '../layouts/SidebarLayout.astro';
 import ChatComponent from '../components/chatcomponents/ChatComponent.astro';
 import TopViewersList from '../components/chatcomponents/topViewer.astro';
-import UserProfile from '../components/user/userConnect.astro';
+import Filters from '@components/filters.astro';
 
 ---
 
@@ -19,6 +19,9 @@ import UserProfile from '../components/user/userConnect.astro';
 		<h1>Contenido Principal</h1>
         <TopViewersList />
         <ChatComponent />
+		<div class="m-4 p-4">
+			<Filters/>
+		</div>
 	</div>
 </SidebarLayout>
 

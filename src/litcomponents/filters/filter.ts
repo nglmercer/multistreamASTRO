@@ -78,7 +78,7 @@ export interface FilterItem {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
-      padding: var(--spacing-lg);
+      padding: var(--spacing-md);
       box-shadow: var(--shadow);
       transition: all 0.2s ease;
       min-height: 150px;
