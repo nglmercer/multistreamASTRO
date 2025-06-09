@@ -1,10 +1,10 @@
 // TestReplacer.jsx
-import { createSignal, createMemo } from 'solid-js';
+import { createSignal, createMemo, onMount } from 'solid-js';
 import HighlightedResult from './HighlightedResult';
 import { ConfigurableReplacer } from './ConfigurableReplacer';
 
 export default function TestReplacer(props) {
-  const [testInput, setTestInput] = createSignal('{"usuario": "uniqueId", "mensaje": "comment", "likes": "{likes}"}');
+  const [testInput, setTestInput] = createSignal('[{"usuario": "uniqueId", "mensaje": "comment", "likes": "{likes}"},"tanto json como string - uniqueId dio {likes}likes"]');
   const [testData, setTestData] = createSignal('{"uniqueId": "usuario123", "comment": "¡Hola mundo!", "likeCount": "999"}');
   const [testResult, setTestResult] = createSignal("");
   const [replacementMap, setReplacementMap] = createSignal(new Map());
@@ -70,13 +70,15 @@ export default function TestReplacer(props) {
       setReplacementMap(new Map());
     }
   };
-
+  onMount(()=>{
+    testReplace();
+  })
   return (
     <section class="config-section test-area-section">
       <h2 class="section-title">Probar Reemplazos</h2>
-      <div class="grid-container responsive-columns">
+      <div class="grid responsive-columns">
         <div class="test-input-group">
-          <div class="form-group">
+          <div class="form-group flex-col">
             <label for="testInput" class="form-label">Entrada de Prueba</label>
             <textarea 
               id="testInput"
@@ -87,7 +89,7 @@ export default function TestReplacer(props) {
               placeholder='Ejemplo: {"usuario": "uniqueId", "mensaje": "comment", "likes": "{likes}"}'
             />
           </div>
-          <div class="form-group">
+          <div class="form-group flex-col">
             <label for="testData" class="form-label">Datos de Prueba (JSON)</label>
             <textarea
               id="testData" 

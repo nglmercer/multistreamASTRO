@@ -136,6 +136,8 @@ export default function ReplacerConfigForm(props) {
       <section class="config-section">
         <div class="section-header">
           <h2 class="section-title">Configuración de Reemplazos</h2>
+                {/* Botones de Acción */}
+      <div class="action-buttons">
           <button 
             type="button" 
             onClick={addReplacement}
@@ -143,6 +145,28 @@ export default function ReplacerConfigForm(props) {
           >
             ➕ Agregar Reemplazo
           </button>
+        <button 
+          type="button" 
+          onClick={saveConfiguration}
+          class="button button-success"
+        >
+          💾 Guardar Configuración
+        </button>
+        <button 
+          type="button" 
+          onClick={importConfig}
+          class="button button-warning"
+        >
+          📥 Importar Configuración
+        </button>
+        <button 
+          type="button" 
+          onClick={exportConfig}
+          class="button button-info"
+        >
+          📤 Exportar Configuración
+        </button>
+      </div>
         </div>
         
         <div class="replacements-list">
@@ -160,30 +184,7 @@ export default function ReplacerConfigForm(props) {
         </div>
       </section>
 
-      {/* Botones de Acción */}
-      <div class="action-buttons">
-        <button 
-          type="button" 
-          onClick={importConfig}
-          class="button button-warning"
-        >
-          📥 Importar Configuración
-        </button>
-        <button 
-          type="button" 
-          onClick={exportConfig}
-          class="button button-info"
-        >
-          📤 Exportar Configuración
-        </button>
-        <button 
-          type="button" 
-          onClick={saveConfiguration}
-          class="button button-success"
-        >
-          💾 Guardar Configuración
-        </button>
-      </div>
+
     </>
   );
 }

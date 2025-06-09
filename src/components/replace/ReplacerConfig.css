@@ -225,7 +225,7 @@
 /* Lista de reemplazos */
 .replacements-list {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: var(--space-4);
 }
 

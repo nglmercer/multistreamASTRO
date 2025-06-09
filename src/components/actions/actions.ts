@@ -7,6 +7,8 @@ import { HttpRequestExecutor } from "src/fetch/executor";
 import { DialogContainer } from "src/litcomponents/custom-modal.js";
 import { CInput } from "src/litcomponents/CInput.js";
 import { actionEmitter } from "@components/actionsjs/actionemitter.ts";
+import { seleccionarYParsearJSON } from "@utils/jsonbackups/import.ts";
+import { exportarJSON } from "@utils/jsonbackups/export.ts";
 // Elementos DOM globales con validación
 const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
@@ -59,28 +61,11 @@ function listenersForm(): void {
       if (!clickedButton) return;
 
       const action = clickedButton.getAttribute("data-action");
-      
-      if (action === "reset") {
-        resetForm();
-        console.log("Form reset");
-      } else if (action === "submit") {
-        const formData = getFormData();
-        if (!formData) {
-          console.error("No form data found");
-          return;
-        }
-        if (typeof formData.id === "string"){
-          formData.id = parseInt(formData.id, 10);
-        }
-        // Operación async con manejo de errores
-        const result = await actionDatabase.saveData(formData);
-        if (result){
-          closeModal();
-          console.log("Form submitted successfully:", result);
-          actionEmitter.emit("actionFormSubmit", result);
-
-        }
-      } else {
+      if (!action) return;
+      if (action in actionsEvents){
+          actionsEvents[action as keyof typeof actionsEvents]();
+      }
+      else {
         console.warn(`Unknown action: ${action}`);
       }
 
@@ -91,6 +76,49 @@ function listenersForm(): void {
     }
   });
 }
+const actionsEvents = {
+  reset: ()=>{
+    resetForm();
+    console.log("Form reset");
+  },
+  submit:async ()=>{
+    const formData = getFormData();
+    if (!formData) {
+      console.error("No form data found");
+      return;
+    }
+    if (typeof formData.id === "string"){
+      formData.id = parseInt(formData.id, 10);
+    }
+    // Operación async con manejo de errores
+    const result = await actionDatabase.saveData(formData);
+    if (result){
+      closeModal();
+      console.log("Form submitted successfully:", result);
+      actionEmitter.emit("actionFormSubmit", result);
+
+    }
+  },
+  export:async ()=>{
+    const formData = getFormData();
+    if (!formData) {
+      console.error("No form data found");
+      return;
+    }
+    if (typeof formData.id === "string"){
+      formData.id = parseInt(formData.id, 10);
+    }
+    const result = await exportarJSON(formData,{mode:'download',filename:formData.name})
+    console.log("exportcallback result",formData)
+  },
+  import: async()=>{
+    const result =await seleccionarYParsearJSON()
+    console.log("importcallback",result);
+    if (!result)return;
+    setFormData(result)
+  },
+}
+
 
 function getFormData(): Record<string, any> | null {
   try {

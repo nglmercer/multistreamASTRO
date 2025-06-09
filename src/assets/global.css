@@ -351,3 +351,9 @@ button.primary {
 button:hover {
   filter: brightness(1.2);
 }
+.flex-col {
+  flex-direction: column;
+}
+.flex-row {
+  flex-direction: row;
+}

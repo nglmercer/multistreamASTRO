@@ -22,6 +22,7 @@ const eventEvaluators = {
     'gift': evalueGift,
     'bits': evalueBits,
     'likes': evalueLikes,
+    'like': evalueLikes,
     'follow': evalueFollow,
 };
 

@@ -146,7 +146,6 @@ function HighlightedResult(props) {
             <For each={replacementEntries()}>
               {([replacedValue, info], index) => (
                 <div class="legend-item">
-                  <span class="legend-color highlighted-value"></span>
                   <span class="legend-text">
                     <code>"{info.original}"</code> → <strong>"{replacedValue}"</strong>
                     <small> ({info.dataKey})</small>
