@@ -26,14 +26,24 @@ interface EmitEventData {
     recordCount?: number;
   };
 }
+export type OperationType = 'import' | 'export' | 'add' | 'delete' | 'update';
 
-type emitevents = "update" | "save" | "delete" | "clear";
+export interface OperationStatusDetail {
+  message: string;
+  type: 'success' | 'error';
+  operation: OperationType;
+  recordCount?: number;
+}
+
+type emitevents = "update" | "save" | "delete" | "clear"|"export" | "import";
 
 const EmitEvents: emitevents[] = [
   "update",
   "save", 
   "delete",
   "clear",
+  "export",
+  "import"
 ];
 
 const databases: Record<string, DatabaseConfig> = {
@@ -562,11 +572,78 @@ async function getAllDataFromDatabase(
   });
 }
 
+async function importDataToDatabase(
+  databaseConfig: DatabaseConfig,
+  data: DatabaseItem[]
+): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const request = indexedDB.open(databaseConfig.name, databaseConfig.version);
+
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(databaseConfig.store)) {
+        db.createObjectStore(databaseConfig.store, { keyPath: "id" });
+      }
+    };
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction([databaseConfig.store], "readwrite");
+      const store = transaction.objectStore(databaseConfig.store);
+
+      // Limpiar la base de datos antes de importar
+      const clearRequest = store.clear();
+      
+      clearRequest.onsuccess = () => {
+        // Agregar todos los datos
+        let completed = 0;
+        const total = data.length;
+
+        if (total === 0) {
+          db.close();
+          resolve(true);
+          return;
+        }
+
+        data.forEach((item) => {
+          const addRequest = store.add(item);
+          
+          addRequest.onsuccess = () => {
+            completed++;
+            if (completed === total) {
+              db.close();
+              resolve(true);
+            }
+          };
+
+          addRequest.onerror = () => {
+            completed++;
+            if (completed === total) {
+              db.close();
+              resolve(false);
+            }
+          };
+        });
+      };
+
+      clearRequest.onerror = () => {
+        db.close();
+        resolve(false);
+      };
+    };
+
+    request.onerror = () => {
+      resolve(false);
+    };
+  });
+}
+
 
 export {
   databases,
   IndexedDBManager,
   getAllDataFromDatabase,
+  importDataToDatabase,
   type DatabaseConfig,
   type DatabaseIndex,
   type DatabaseItem,

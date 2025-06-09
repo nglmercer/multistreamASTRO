@@ -12,7 +12,94 @@ interface PopupOption {
   html: string;
   callback?: (event: Event) => void;
 }
+@customElement('dialog-container')
+export class DialogContainer extends LitElement {
+  static get properties() {
+    return {
+      visible: { type: Boolean, reflect: true },
+      required: { type: Boolean, reflect: true }
+    };
+  }
 
+  visible: boolean;
+  required: boolean;
+
+  constructor() {
+    super();
+    this.visible = false;
+    this.required = false;
+  }
+
+  static get styles() {
+    return css`
+      :host {
+        --overlay-bg: rgba(0, 0, 0, 0.5);
+        --dlg-z-index: 1000;
+        --transition-duration: 0.3s;
+        --content-max-height: 90dvh;
+        --content-border-radius: 16px;
+        --content-padding: 8px;
+        --content-bg: inherit;
+        --content-color: inherit;
+
+        display: block;
+        background: inherit;
+        color: inherit;
+      }
+
+      .dialog {
+        position: fixed;
+        inset: 0;
+        background-color: var(--overlay-bg);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        z-index: var(--dlg-z-index);
+
+        opacity: 0;
+        visibility: hidden;
+
+        transition: opacity var(--transition-duration) ease,
+                    visibility var(--transition-duration) ease;
+      }
+
+      .dialog.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+    `;
+  }
+
+  render() {
+    return html`
+      <div class="dialog ${this.visible ? 'visible' : ''}" @click="${this._handleOverlayClick}">
+          <slot></slot>
+      </div>
+    `;
+  }
+
+  private _handleOverlayClick(e: Event): void {
+    if (e.target === e.currentTarget && !this.required) {
+      this.hide();
+      this.emitClose();
+    }
+  }
+
+  emitClose(): void {
+    this.dispatchEvent(new CustomEvent('close'));
+  }
+
+  show(): void {
+    this.visible = true;
+  }
+
+  hide(): void {
+    this.visible = false;
+  }
+}
+@customElement('dialog-content')
 export class DialogContent extends LitElement {
   static get properties() {
     return {
@@ -214,92 +301,6 @@ export class DialogContent extends LitElement {
   }
 }
 
-export class DialogContainer extends LitElement {
-  static get properties() {
-    return {
-      visible: { type: Boolean, reflect: true },
-      required: { type: Boolean, reflect: true }
-    };
-  }
-
-  visible: boolean;
-  required: boolean;
-
-  constructor() {
-    super();
-    this.visible = false;
-    this.required = false;
-  }
-
-  static get styles() {
-    return css`
-      :host {
-        --overlay-bg: rgba(0, 0, 0, 0.5);
-        --dlg-z-index: 1000;
-        --transition-duration: 0.3s;
-        --content-max-height: 90dvh;
-        --content-border-radius: 16px;
-        --content-padding: 8px;
-        --content-bg: inherit;
-        --content-color: inherit;
-
-        display: block;
-        background: inherit;
-        color: inherit;
-      }
-
-      .dialog {
-        position: fixed;
-        inset: 0;
-        background-color: var(--overlay-bg);
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        z-index: var(--dlg-z-index);
-
-        opacity: 0;
-        visibility: hidden;
-
-        transition: opacity var(--transition-duration) ease,
-                    visibility var(--transition-duration) ease;
-      }
-
-      .dialog.visible {
-        opacity: 1;
-        visibility: visible;
-      }
-    `;
-  }
-
-  render() {
-    return html`
-      <div class="dialog ${this.visible ? 'visible' : ''}" @click="${this._handleOverlayClick}">
-          <slot></slot>
-      </div>
-    `;
-  }
-
-  private _handleOverlayClick(e: Event): void {
-    if (e.target === e.currentTarget && !this.required) {
-      this.hide();
-      this.emitClose();
-    }
-  }
-
-  emitClose(): void {
-    this.dispatchEvent(new CustomEvent('close'));
-  }
-
-  show(): void {
-    this.visible = true;
-  }
-
-  hide(): void {
-    this.visible = false;
-  }
-}
 
 @customElement('custom-popup')
 export class CustomPopup extends LitElement {
@@ -545,6 +546,3 @@ export class CustomPopup extends LitElement {
       `;
     }
 }
-
-customElements.define('dialog-content', DialogContent);
-customElements.define('dialog-container', DialogContainer);
