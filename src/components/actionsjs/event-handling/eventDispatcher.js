@@ -13,6 +13,7 @@ const dbEventMapping = {
     "gift": databases.giftEventsDB,
     "bits": databases.bitsEventsDB,
     "likes": databases.likesEventsDB,
+    "follow": databases.followEventsDB,
     "ChatMessage": databases.commentEventsDB, // Kick's chat message
 };
 
