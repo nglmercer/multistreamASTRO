@@ -12,6 +12,7 @@ const dbEventMapping = {
     "chat": databases.commentEventsDB,
     "gift": databases.giftEventsDB,
     "bits": databases.bitsEventsDB,
+    "like": databases.likesEventsDB,
     "likes": databases.likesEventsDB,
     "follow": databases.followEventsDB,
     "ChatMessage": databases.commentEventsDB, // Kick's chat message

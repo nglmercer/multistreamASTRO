@@ -165,7 +165,8 @@ const dbConfigMap = {
   comment: databases.commentEventsDB,
   gift: databases.giftEventsDB,
   bits: databases.bitsEventsDB,
-  likes: databases.likesEventsDB
+  likes: databases.likesEventsDB,
+  like: databases.likesEventsDB
 };
 
 const dbManagerMap = {};
