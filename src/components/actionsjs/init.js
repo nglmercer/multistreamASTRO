@@ -42,7 +42,8 @@ getAllActions()
     return [
         { value: 'any', label: 'Cualquiera' }, { value: 'equal', label: 'Igual a' },
         { value: 'startsWith', label: 'Comienza con' }, { value: 'endsWith', label: 'Termina con' },
-        { value: 'contains', label: 'Contiene' }
+        { value: 'contains', label: 'Contiene' }, { value: 'notStartsWith',label:'no empieza con'},
+        { value: 'notIncludes',label:'no contiene'}
     ]
 }
 async function fetchUsers(){
@@ -112,6 +113,7 @@ const formConfigurations = {
             value: { label: 'Likes Exactos', type: 'number', showIf: { field: 'comparator', value: 'equal' } },
             lessThan: { label: 'Mínimo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
             greaterThan: { label: 'Máximo Likes (Incl.)', type: 'number', showIf: { field: 'comparator', value: 'InRange' } },
+            usuario: { label: 'Usuario', type: 'select', options: await fetchUsers(), showIf: { field: 'role', value: 'usuario' } },
             actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
             id: { hidden: false, readonly:"true" },
             type: { hidden: true }
@@ -140,6 +142,25 @@ const formConfigurations = {
             id: { hidden: false, readonly:"true" },
             type: { hidden: true }
          })
+    },
+    follow: {
+        title: "Configurar Evento de Seguidor",
+        getInitialData: () => ({
+            id: '', name: 'Nuevo Evento Seguidor', isActive: true, role: 'any',
+            comparator: 'any',
+            value: 'any',
+            type: 'follow'
+         }),
+         getFieldConfig: async () => ({
+            name: { label: 'Nombre', type: 'text', required: true },
+            isActive: { label: 'Activo', type: 'switch' },
+            role: { label: 'Rol', type: 'select', options: await fetchUserRoles() },
+            usuario: { label: 'Usuario', type: 'select', options: await fetchUsers(), showIf: { field: 'role', value: 'usuario' } },
+            comparator: { hidden: true},
+            actions: { label: 'Acciones', type: 'select', options: await getAllActions(), multiple: true },
+            id: { hidden: false, readonly:"true" },
+            type: { hidden: true }
+         })
     }
 };
 
@@ -147,7 +168,7 @@ const pageConfig = {
     modalId: 'modal-container', // Asegúrate que sea el ID correcto
     editorId: 'dynamic-editor',   // Asegúrate que sea el ID correcto
     managerId: 'eventConfigManager',
-    eventTypes: ['comment', 'gift', 'bits', 'likes'] // Tipos gestionados en esta página
+    eventTypes: ['comment', 'gift', 'bits', 'likes','follow'] // Tipos gestionados en esta página
 };
 
 const modalEl = document.getElementById(pageConfig.modalId);
@@ -166,7 +187,8 @@ const dbConfigMap = {
   gift: databases.giftEventsDB,
   bits: databases.bitsEventsDB,
   likes: databases.likesEventsDB,
-  like: databases.likesEventsDB
+  like: databases.likesEventsDB,
+  follow: databases.followEventsDB
 };
 
 const dbManagerMap = {};

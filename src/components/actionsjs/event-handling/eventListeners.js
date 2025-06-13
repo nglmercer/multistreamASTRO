@@ -72,7 +72,7 @@ class EventBuffer {
 }
 
 // Crear instancia del buffer global
-const eventBuffer = new EventBuffer(3000); // 3 segundos de delay
+const eventBuffer = new EventBuffer(1000); // 3 segundos de delay
 
 export function setupPlatformEventListeners() {
     tiktokLiveEvents.forEach(event => {

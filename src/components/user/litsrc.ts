@@ -1,10 +1,14 @@
 import { UserProfileComponent, UserConnectEvent } from "@litcomponents/user/userprofile.ts"
 import { BrowserLogger, LogLevel } from '@utils/Logger';
 import { socket } from '@utils/socketManager.ts';
+import { onUserInteraction, hasUserInteracted } from "@utils/user/userInt"
+// Uso básico
+
 const logger = new BrowserLogger('userConnect.tsx')
    .setLevel(LogLevel.LOG);
 const kiklogin = document.querySelector(".kicklogin") as UserProfileComponent;
 const tiktoklogin = document.querySelector(".tiktoklogin") as UserProfileComponent;
+let CompleteConnect = false as any;
 async function initialize() {
     if (!kiklogin || !tiktoklogin) return;
     [kiklogin,tiktoklogin ].forEach(e =>{
@@ -16,7 +20,7 @@ async function initialize() {
         console.log("loginsState",e.getState())
         const loginData = e.getState()
         if (loginData && loginData.connected){
-            window.showQueuedDialog({
+/*             window.showQueuedDialog({
                 title: `Connect to ${loginData.platform}`,
                 message: `Are you sure you want to connect as ${loginData.username}?`,
                 rejectText: 'Cancel',
@@ -37,8 +41,32 @@ async function initialize() {
             })
             .catch(error => {
               console.error('Dialog error:', error);
-            });
-        }
+            }); */
+            
+            const Joincallback = () => {
+              console.log("callback EXECUTED")
+              socket.emit('join-platform', { uniqueId: loginData.username, platform: loginData.platform });
+              CompleteConnect = setInterval(()=>{
+                if (CompleteConnect !== true){
+                  socket.emit('join-platform', { uniqueId: loginData.username, platform: loginData.platform });
+                  console.log("callback INTERVAL",CompleteConnect, typeof CompleteConnect)
+                }
+              },3000)
+              
+            }
+            if (hasUserInteracted()){
+              Joincallback()
+            } else {
+              onUserInteraction(Joincallback);
+            }
+          }
+          socket.on('connected',(data)=>{
+            console.log('CALLBACK connected')
+            if (typeof CompleteConnect === 'function'){
+              CompleteConnect();
+            }
+            CompleteConnect = true
+          })
     })
 }
 document.addEventListener("DOMContentLoaded",async ()=>{

@@ -208,8 +208,20 @@ class SocketManager {
     return this.KickEmitter;
   }
 }
+const initializeSocketManager = (): SocketManager => {
+  if (typeof window !== 'undefined') {
+    if (!(window as any)._socketManager) {
+      console.log("Creating a new SocketManager instance.");
+      (window as any)._socketManager = new SocketManager();
+    }
+    return (window as any)._socketManager;
+  }
+  // En el servidor (SSR de Astro), no creamos la instancia.
+  // Podríamos devolver un objeto "mock" si fuera necesario.
+  return null as any; 
+};
+const socketManager = initializeSocketManager();
 
-const socketManager = new SocketManager();
 
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();

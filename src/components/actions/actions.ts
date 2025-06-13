@@ -233,19 +233,28 @@ function resetForm(): void {
     console.error("Error resetting form:", error);
   }
 }
+async function test() {
+  const config = {
+    name: "test",
+    url: "http://192.168.100.24:3000/timers/1/add",
+    method: "PATCH",
+    headers: [],
+    params: [],
+    body: '{"seconds":60}',
+    bodyType: "json",
+    auth: null
+  }
+  const executor = new HttpRequestExecutor();
+  console.log("fetch test")
+  const result = await executor.execute(config as any);
+  console.log("Loading config:", config, result);
 
+}
+//test();
 export {
   setFormData,
   openModal,
   resetForm,
   closeModal
 };
-/*  if (localStorage.getItem("httpRequestConfig")) {
-    const config = JSON.parse(
-      localStorage.getItem("httpRequestConfig") || "{}"
-    );
-    configForm.setConfig(config);
-    const executor = new HttpRequestExecutor();
-    const result = await executor.execute(config);
-    console.log("Loading config:", config, result);
-  }*/
+

@@ -6,13 +6,17 @@ interface EventDefinition {
   platform: 'tiktok' | 'kick';
   eventName: string;
 }
+import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
+
+const logger = new BrowserLogger('EventSaver').setLevel(LogLevel.LOG);
+
 async function initializeEventSaver(eventsToLog: EventDefinition[]): Promise<void> {
   if (isInitialized) {
     console.log('EventSaver ya está inicializado.');
     return;
   }
 
-  console.log('Inicializando EventSaver...');
+  logger.log('Inicializando EventSaver...');
 
   const storeConfigs: StoreConfig[] = eventsToLog.map(eventDef => {
     const storeName = `${eventDef.platform}_${eventDef.eventName}`;
@@ -43,7 +47,7 @@ async function initializeEventSaver(eventsToLog: EventDefinition[]): Promise<voi
     // Inicializar la conexión a la BD.
     // Esto creará la BD y los stores si es la primera vez o si la versión aumenta.
     await dbManager.initialize();
-    console.log('IndexedDBManager inicializado y stores configurados.');
+    logger.log('IndexedDBManager inicializado y stores configurados.');
     isInitialized = true;
 
     // Opcional: Ejecutar limpieza de stores antiguos al inicio
@@ -77,7 +81,7 @@ export async function saveEventData<TEventData extends Record<string, any>>(
     // O podrías encolar el evento y procesarlo después de la inicialización.
     // O incluso llamar a initializeEventSaver aquí si aún no se ha llamado,
     // pero eso requeriría pasarle `eventsToLog` o tenerlo predefinido.
-    console.warn('EventSaver no está inicializado. Llamando a saveEventData antes de tiempo. El evento no será guardado.');
+    logger.warn('EventSaver no está inicializado. Llamando a saveEventData antes de tiempo. El evento no será guardado.');
     // throw new Error('EventSaver no está inicializado. Llama a initializeEventSaver primero.');
     return;
   }
@@ -112,10 +116,10 @@ export async function saveEventData<TEventData extends Record<string, any>>(
     // con lo que pasas. Como `repository` es `ObjectStoreRepository<BaseMessage>`, y
     // `itemToSave` es `Partial<BaseMessage>` (porque `enrichItem` lo completará), está bien.
     const savedItem = await repository.add(itemToSave);
-    console.log(`Evento '${eventName}' de ${platform} guardado en '${storeName}' con ID: ${savedItem.id}`);
+    logger.log(`Evento '${eventName}' de ${platform} guardado en '${storeName}' con ID: ${savedItem.id}`);
 
   } catch (error) {
-    console.error(`Error guardando evento '${eventName}' de ${platform} en '${storeName}':`, error);
+    logger.error(`Error guardando evento '${eventName}' de ${platform} en '${storeName}':`, error);
   }
 }
 

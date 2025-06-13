@@ -79,7 +79,13 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
             "startsWith": (item: any, data: any): boolean => data.comment?.startsWith(item.value),
             "endsWith": (item: any, data: any): boolean => data.comment?.endsWith(item.value),
             "contains": (item: any, data: any): boolean => data.comment?.includes(item.value),
-            "includes": (item: any, data: any): boolean => data.comment?.includes(item.value)
+            "includes": (item: any, data: any): boolean => data.comment?.includes(item.value),
+            
+            // Versiones negativas
+            "notStartsWith": (item: any, data: any): boolean => !data.comment?.startsWith(item.value),
+            "notIncludes": (item: any, data: any): boolean => !data.comment?.includes(item.value),
+            "notContains": (item: any, data: any): boolean => !data.comment?.includes(item.value),
+            "notEndsWith": (item: any, data: any): boolean => !data.comment?.endsWith(item.value),
         }
     },
     gift: {
@@ -127,6 +133,9 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
     follow: {
         roleChecks: {
             "any": (data: any): boolean => true,
+            "sub": (data: any): boolean => data.isSubscriber,
+            "mod": (data: any): boolean => data.isModerator,
+            "gifter": (data: any): boolean => data.isNewGifter
         },
         comparatorChecks: {
             "any": (item: any, data: any): boolean => true,
@@ -285,7 +294,7 @@ export async function evaluateRules(
         return result;
     }
     
-    logger.log(`Evaluating rule ${rulesKey} (original event: ${originalEventName}) on ${platform}`, data);
+    logger.log(`Evaluating rule ${rulesKey} (original event: ${originalEventName}) on ${platform}`, data,array);
     
     for (let i = 0; i < array.length; i++) {
         const item = array[i];
