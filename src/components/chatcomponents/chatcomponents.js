@@ -685,7 +685,6 @@ async function addnewFilterItem(elementname, data) {
         filterItem.addItemProgrammatically(data.data.comment)
       break
       }
-  
 }
 document.addEventListener('DOMContentLoaded', () => {
     lastElement();

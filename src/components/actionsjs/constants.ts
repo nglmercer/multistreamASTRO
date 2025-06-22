@@ -17,8 +17,21 @@ const ROLECHECKS = {
     MOD: 'mod',
     GIFTER: 'gifter',
     USER: 'usuario'
+};
+const CHATOPTIONS = {
+    userFilter: "userFilter",
+    wordFilter: "wordFilter",
+    whitelist: "whitelist",
+};
+const COActions = {
+    ban: "ban",
+    unban: "unban",
+    addItemProgrammatically: "addItemProgrammatically",
+    removeItemProgrammatically: "removeItemProgrammatically"
 }
 export {
     COMPARATORS,
-    ROLECHECKS
+    ROLECHECKS,
+    CHATOPTIONS,
+    COActions
 }

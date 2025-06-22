@@ -1,0 +1,227 @@
+---
+import { documentationConfig } from '../config/documentation.js';
+import Pagination from '@components/docs/Pagination.astro';
+import Breadcrumbs from '@components/docs/Breadcrumbs.astro';
+
+interface Props {
+  title?: string;
+  currentPage?: string;
+  breadcrumbs?: Array<{
+    label: string;
+    href?: string;
+  }>;
+  showPagination?: boolean;
+}
+
+const urlbase = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const base = urlbase;
+
+const { 
+  title = "Documentación", 
+  currentPage,
+  breadcrumbs = [],
+  showPagination = true 
+} = Astro.props;
+
+// Obtener página anterior y siguiente para paginación
+function getAdjacentPages(currentSlot:string | undefined) {
+  if (!currentSlot)return {}
+  const orderedPages = Object.entries(documentationConfig)
+    .sort(([,a], [,b]) => a.order - b.order);
+  
+  const currentIndex = orderedPages.findIndex(([, page]) => page.slot === `docs/${currentSlot}`);
+  
+  const prevPage = currentIndex > 0 ? orderedPages[currentIndex - 1][1] : null;
+  const nextPage = currentIndex < orderedPages.length - 1 ? orderedPages[currentIndex + 1][1] : null;
+  console.log("currentSlot",currentSlot)
+  return { prevPage, nextPage };
+}
+
+const { prevPage, nextPage } = currentPage ? getAdjacentPages(currentPage) : { prevPage: null, nextPage: null };
+console.log("currentSlot",currentPage,getAdjacentPages(currentPage))
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href={`${base}materialSymbols.css`}>
+    <meta name="color-scheme" content="light dark" />
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=VyUT4i1M" is:inline></script>
+    <title>{title} - Documentación</title>
+  </head>
+  <body>
+    {/* Main Layout */}
+    <div class="layout">
+      {/* Mobile Navbar */}
+      <nav class="mobile-nav">
+        <div class="nav-content">
+          <div class="login-mobile">
+          </div>
+          <div class="nav-buttons">
+            {
+              Object.entries(documentationConfig).map(([key, page]) => (
+                <a 
+                  href={`${base}${page.slot}`} 
+                  class={`nav-link ${currentPage === key ? 'active' : ''}`}
+                >
+                  <span class="material-symbols-outlined">{page.icon}</span>
+                  <span class="nav-text">{page.name}</span>
+                </a>
+              ))
+            }
+          </div>
+          <div class="logo">
+            <a 
+            href={`${base}`} 
+            class={`nav-link`}
+          >
+            <span class="material-symbols-outlined">home</span>
+            <span class="nav-text">Inicio</span>
+          </a>
+          </div>
+        </div>
+      </nav>
+
+      {/* Desktop Sidebar */}
+      <aside class="sidebar">
+        <div class="sidebar-content">
+          <div class="logo">
+            <a 
+            href={`${base}`} 
+            class={`nav-link`}
+          >
+            <span class="material-symbols-outlined">home</span>
+            <span class="nav-text">Inicio</span>
+          </a>
+          </div>
+<!--           <div class="login-desktop relative">
+            <UserLogin></UserLogin>
+          </div> -->
+          
+          {/* Título de sección de documentación */}
+          <div class="docs-section-title">
+            <span class="material-symbols-outlined">menu_book</span>
+            <span>Documentación</span>
+          </div>
+          
+          <div class="nav-buttons">
+            {
+              Object.entries(documentationConfig)
+                .sort(([,a], [,b]) => a.order - b.order)
+                .map(([key, page]) => (
+                  <a 
+                    href={`${base}${page.slot}`} 
+                    class={`nav-link ${currentPage === key ? 'active' : ''}`}
+                  >
+                    <span class="nav-order">{page.order.toString().padStart(2, '0')}</span>
+                    <span class="material-symbols-outlined">{page.icon}</span>
+                    <span class="nav-text">{page.name}</span>
+                  </a>
+                ))
+            }
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main class="main-content">
+        <div class="documentation-wrapper">
+          {breadcrumbs.length > 0 && (
+            <Breadcrumbs items={breadcrumbs} />
+          )}
+          
+          <article>
+            <slot />
+          </article>
+
+          {showPagination && (prevPage || nextPage) && (
+            <Pagination 
+              prevPage={prevPage}
+              nextPage={nextPage}
+              baseUrl={base}
+            />
+          )}
+        </div>
+      </main>
+      
+      <button class="float-btn" id="MainModalshow">
+        <span class="material-symbols-outlined">view_headline</span>
+      </button>
+    </div>
+
+    <script>
+      import { DialogContainer } from "src/litcomponents/custom-modal";
+      const ActionDialog = document.getElementById('ActionDialog') as DialogContainer;
+      const MainModalshow = document.getElementById('MainModalshow');
+      
+      function listenerModalMenu(){
+        if (!MainModalshow) return;
+        if (!ActionDialog) return;
+        MainModalshow.addEventListener('click', () => {
+          ActionDialog.show();
+        });
+      }
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        listenerModalMenu();
+      });
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  @import '../assets/global.css';
+  
+  .hidden {
+    display: none !important;
+  }
+
+  /* Estilos específicos para documentación */
+  .docs-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 0.5rem;
+    color: #3b82f6;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-left: 3px solid #3b82f6;
+  }
+
+  .nav-link {
+    position: relative;
+  }
+
+  .nav-link.active {
+    background: #3b82f6 !important;
+    color: white !important;
+  }
+
+  .nav-link.active .material-symbols-outlined,
+  .nav-link.active .nav-order {
+    color: white !important;
+  }
+
+  .nav-order {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: solid 3px var(--primary-bg);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+  }
+
+  .documentation-wrapper {
+    max-width: 1200px;
+    margin-inline: auto;
+  }/*calc(12% - 5rem);*/
+</style>

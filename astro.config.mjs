@@ -6,9 +6,11 @@ import solidJs from '@astrojs/solid-js';
 
 import mdx from '@astrojs/mdx';
 
+import expressiveCode from 'astro-expressive-code';
+
 // https://astro.build/config
 export default defineConfig({
-  integrations: [lit(), solidJs(), mdx()],
+  integrations: [expressiveCode(), lit(), solidJs(), mdx()],
   site: 'https://nglmercer.github.io',
   base: '/',
 });

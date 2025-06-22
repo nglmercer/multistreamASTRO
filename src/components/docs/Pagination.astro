@@ -1,0 +1,143 @@
+---
+export interface Props {
+  prevPage?: {
+    name: string;
+    slot: string;
+  } | null;
+  nextPage?: {
+    name: string;
+    slot: string;
+  } | null;
+  baseUrl: string;
+}
+
+const { prevPage, nextPage, baseUrl } = Astro.props;
+---
+
+<nav class="pagination" aria-label="Navegación de páginas">
+  <div class="pagination-container">
+    {prevPage && (
+      <a href={`${baseUrl}${prevPage.slot}`} class="pagination-link prev" rel="prev">
+        <span class="material-symbols-outlined">arrow_back</span>
+        <div class="pagination-text">
+          <span class="pagination-label">Anterior</span>
+          <span class="pagination-title">{prevPage.name}</span>
+        </div>
+      </a>
+    )}
+    
+    {nextPage && (
+      <a href={`${baseUrl}${nextPage.slot}`} class="pagination-link next" rel="next">
+        <div class="pagination-text">
+          <span class="pagination-label">Siguiente</span>
+          <span class="pagination-title">{nextPage.name}</span>
+        </div>
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </a>
+    )}
+  </div>
+</nav>
+
+<style>
+.pagination {
+  margin: calc(var(--space-8) * 1.5) 0 var(--space-8);
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--space-8);
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.pagination-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-xl);
+  text-decoration: none;
+  color: var(--text-color);
+  transition: var(--theme-transition), transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 140px;
+  flex: 1;
+  max-width: 300px;
+}
+
+.pagination-link:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-light);
+  color: var(--primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.pagination-link.prev {
+  justify-content: flex-start;
+}
+
+.pagination-link.next {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.pagination-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.next .pagination-text {
+  text-align: right;
+}
+
+.pagination-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pagination-title {
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  margin-top: var(--space-1);
+  color: var(--text-color);
+}
+
+.material-symbols-outlined {
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .pagination-container {
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+  
+  .pagination-link {
+    width: 100%;
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .pagination-link.next {
+    margin-left: 0;
+  }
+  
+  .pagination-title {
+    display: none;
+  }
+}
+
+/* Modo oscuro (se aplica automáticamente con tus variables) */
+@media (prefers-color-scheme: dark) {
+  .pagination-link:hover {
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+  }
+}
+</style>

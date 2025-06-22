@@ -6,7 +6,13 @@ import { executeHttpRequest } from "src/fetch/executor";
 import { taskApi } from 'src/fetch/fetchapi.js';
 import { socket } from '@utils/socketManager.ts'; // Asumiendo que socketManager exporta 'socket'
 import { ReplacesValues } from './dataUtils.js';
-
+import { nextSpeech } from '@components/voicecomponents/initconfig';
+import {
+    COMPARATORS,
+    ROLECHECKS,
+    CHATOPTIONS,
+    COActions
+} from '../constants.js'
 async function filterItemsByIds(ids) {
     const items = await getAllDataFromDatabase(databases.ActionsDB);
     if (!Array.isArray(items) || !Array.isArray(ids)) {
@@ -123,6 +129,12 @@ const actionExecutionConfig = {
                 console.log("fetchForm result proccessedValue", result, proccessedValue);
             }
         }
+    },
+    "windowApi":{
+        verify: ["check", "value"],
+        callback: async ()=>{
+
+        }
     }
 };
 
@@ -138,3 +150,44 @@ export async function processMatchedItems(items, eventData, eventType) {
         processIndividualAction(actionExecutionConfig, processedActions, eventData, eventType);
     }
 }
+async function filterUser(action, string) {
+    if (!action || !string)return;
+    const filterItem = document.querySelector("user-filter");
+    if (!filterItem || !(COActions.addItemProgrammatically in filterItem) || !(COActions.removeItemProgrammatically in filterItem))return;
+    console.log("filterItem",filterItem)
+      switch (action){
+            case COActions.ban:
+                console.log(action, string);
+            filterItem.addItemProgrammatically(string);
+            break
+            case COActions.unban:
+                console.log(action, string);
+            filterItem.removeItemProgrammatically(string);
+            break
+            default:
+                console.log(action, string)
+        }
+}
+function COMMANDCHAT(string) {
+    const defaultSplit = " ";
+    if (!string) return string;
+
+    // Asegurarse de que sea string
+    const validString = String(string);
+
+    // Separar palabras
+    const split = validString.split(defaultSplit);
+
+    // Quitar la primera palabra (el comando)
+    split.shift();
+
+    // Unir el resto
+    const joined = split.join(defaultSplit);
+
+    // Eliminar caracteres no alfanuméricos ni espacios (solo letras, números y espacios)
+    const cleaned = joined.replace(/[^a-zA-Z0-9\s]/g, '');
+
+    return cleaned;
+}
+
+//console.log("COMMANDCHAT",COMMANDCHAT("!ban @eleqpmweqmweqmopwe "))

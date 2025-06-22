@@ -1,5 +1,5 @@
 ---
-import DocsLayout from '../layouts/DocsLayout.astro';
+import DocsLayout from '@layouts/DocsLayout.astro';
 // import markdow src/components/docs/examples
 import MarkdownContent from '@components/docs/examples/commands.md'
 import TtsMarkdownContent from '@components/docs/examples/texttospeach.md'
@@ -9,7 +9,7 @@ import 'github-markdown-css/github-markdown.css';
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
-<DocsLayout title="multistreamASTRO">
+<DocsLayout title="multistreamASTRO" currentPage="componentes">
 	<div slot="logo">
 		<h4 class="logo-text">Logo</h4>
 	</div>

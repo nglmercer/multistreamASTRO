@@ -1,0 +1,29 @@
+---
+import SidebarLayout from '@layouts/SidebarLayout.astro';
+// 1. Importa el contenido renderizado (como ya lo tenías)
+import MarkdownContent from '@components/docs/examples/replacevalues.md'
+
+// 2. IMPORTANTE: Importa el MISMO archivo pero con `?raw` para obtener el texto crudo
+import rawMarkdownString from '@components/docs/examples/replacevalues.md?raw'
+
+// 3. Importa el nuevo componente que creamos
+import RawContentControl from '@components/RawContentControl.astro';
+
+import 'github-markdown-css/github-markdown.css';
+---
+
+<SidebarLayout title="multistreamASTRO" activeConfig="A">
+	<div slot="logo">
+		<h4 class="logo-text">Logo</h4>
+	</div>
+	<div class="content grid gap-10">
+		<article class="markdown-body p-10 m-10">
+			<!-- El contenido Markdown renderizado como HTML -->
+			<MarkdownContent />
+
+			<!-- 4. Aquí usamos nuestro nuevo componente -->
+			<!-- Le pasamos el contenido crudo como una prop -->
+			<RawContentControl rawContent={rawMarkdownString} />
+		</article>
+	</div>
+</SidebarLayout>

@@ -1,0 +1,126 @@
+---
+// src/components/RawContentControl.astro
+
+// 1. Definimos las props que el componente espera recibir.
+// En este caso, una cadena de texto con el contenido crudo del Markdown.
+interface Props {
+  rawContent: string;
+}
+const { rawContent } = Astro.props;
+
+// Generamos un ID único para los elementos de este componente.
+// Esto es útil si usas el componente varias veces en la misma página,
+// para que los scripts no se confundan de elementos.
+const uniqueId = `raw-md-${Math.random().toString(36).substr(2, 9)}`;
+---
+
+<!-- 2. Estructura HTML del componente -->
+<div class="raw-controls-container">
+  <!-- Botón para copiar -->
+  <button id={`copy-btn-${uniqueId}`} class="raw-control-btn">
+    Copiar Markdown (Raw)
+  </button>
+  <!-- Botón para mostrar/ocultar -->
+  <button id={`toggle-btn-${uniqueId}`} class="raw-control-btn">
+    Ver Markdown (Raw)
+  </button>
+
+  <!-- Contenedor para el código crudo, inicialmente oculto -->
+  <div id={`raw-content-container-${uniqueId}`} class="raw-content-wrapper" style="display: none;">
+    <pre><code>{rawContent}</code></pre>
+  </div>
+</div>
+
+<!-- 3. Script del lado del cliente para la interactividad -->
+<script define:vars={{ rawContent, uniqueId }}>
+  // Obtenemos los elementos del DOM usando el ID único que generamos
+  const copyBtn = document.getElementById(`copy-btn-${uniqueId}`);
+  const toggleBtn = document.getElementById(`toggle-btn-${uniqueId}`);
+  const rawContainer = document.getElementById(`raw-content-container-${uniqueId}`);
+
+  // ---- Lógica para el botón de COPIAR ----
+  copyBtn.addEventListener('click', async () => {
+    try {
+      // Usamos la API del portapapeles del navegador para copiar el texto
+      await navigator.clipboard.writeText(rawContent);
+
+      // Damos feedback visual al usuario
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = '¡Copiado!';
+      copyBtn.disabled = true;
+
+      // Volvemos al estado original después de 2 segundos
+      setTimeout(() => {
+        copyBtn.textContent = originalText;
+        copyBtn.disabled = false;
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error al intentar copiar el contenido: ', err);
+      // Informar al usuario si algo falla
+      copyBtn.textContent = 'Error al copiar';
+    }
+  });
+
+  // ---- Lógica para el botón de MOSTRAR/OCULTAR ----
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = rawContainer.style.display === 'none';
+
+    if (isHidden) {
+      // Si está oculto, lo mostramos y cambiamos el texto del botón
+      rawContainer.style.display = 'block';
+      toggleBtn.textContent = 'Ocultar Markdown (Raw)';
+    } else {
+      // Si está visible, lo ocultamos y restauramos el texto
+      rawContainer.style.display = 'none';
+      toggleBtn.textContent = 'Ver Markdown (Raw)';
+    }
+  });
+</script>
+
+<!-- 4. Estilos (opcional, pero recomendado) -->
+<style>
+  .raw-controls-container {
+    margin-top: 2rem;
+    border-top: 1px solid #ddd;
+    padding-top: 1.5rem;
+  }
+  .raw-control-btn {
+    background-color: #f6f8fa;
+    border: 1px solid rgba(27, 31, 35, 0.15);
+    border-radius: 6px;
+    color: #24292e;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    padding: 5px 16px;
+    margin-right: 8px;
+    transition: background-color 0.2s;
+  }
+  .raw-control-btn:hover {
+    background-color: #f3f4f6;
+  }
+  .raw-control-btn:disabled {
+    background-color: #09b83e;
+    color: white;
+    border-color: #09b83e;
+    cursor: default;
+  }
+  .raw-content-wrapper {
+    margin-top: 1rem;
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    overflow: auto;
+  }
+  .raw-content-wrapper pre {
+    padding: 16px;
+    margin: 0;
+  }
+  .raw-content-wrapper code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 13px;
+    white-space: pre-wrap; /* Para que el texto se ajuste y no desborde */
+    word-break: break-all;
+  }
+</style>
