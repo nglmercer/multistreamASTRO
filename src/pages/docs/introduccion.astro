@@ -9,13 +9,21 @@ import 'github-markdown-css/github-markdown.css';
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
-<DocsLayout title="multistreamASTRO"  currentPage="introduccion">
+<DocsLayout title="multistreamASTRO" currentPage="introduccion">
 	<div slot="logo">
 		<h4 class="logo-text">Logo</h4>
 	</div>
 	<div class="content grid gap-10">
 		<article class="markdown-body p-10 m-10">
-
+			<OverlayMarkdownContent />
+		</article>
+		<br>
+		<article class="markdown-body p-10 m-10">
+			<TtsMarkdownContent />
+		</article>
+		<br>
+		<article class="markdown-body p-10 m-10">
+			<MarkdownContent />
 		</article>
 	</div>
 </DocsLayout>

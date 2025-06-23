@@ -1,0 +1,197 @@
+---
+interface Props {
+  href: string;
+  icon: string;
+  name: string;
+  isActive?: boolean;
+  imageUrl?: string;
+  imageAlt?: string;
+}
+
+const { href, icon, name, isActive = false, imageUrl, imageAlt = name } = Astro.props;
+---
+
+<a href={href} class:list={["project-card", { active: isActive }]}>
+  <!-- Image slot -->
+  <div class="image-container">
+    <slot name="image">
+      {imageUrl && (
+        <img src={imageUrl || "/placeholder.svg"} alt={imageAlt} class="project-image" />
+      )}
+    </slot>
+  </div>
+
+  <!-- Content container -->
+  <div class="content-container">
+    <!-- Header with icon and title -->
+    <div class="header">
+      <span class="material-symbols-outlined">{icon}</span>
+      <h3 class="project-title">{name}</h3>
+    </div>
+
+    <!-- Description slot -->
+    <div class="description">
+      <slot name="description">
+        <p>No description provided</p>
+      </slot>
+    </div>
+
+    <!-- Custom content slot -->
+    <div class="custom-content">
+      <slot />
+    </div>
+
+    <!-- Links/Actions slot -->
+    <div class="actions">
+      <slot name="actions">
+        <div class="default-links">
+          <span class="material-symbols-outlined">link</span>
+          <span class="link-text">View Project</span>
+        </div>
+      </slot>
+    </div>
+  </div>
+</a>
+
+<style>
+  .project-card {
+    display: block;
+    background: #1e293b;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    border-color: #3b82f6;
+  }
+
+  .project-card.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+  }
+
+  .image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: #0f172a;
+    overflow: hidden;
+  }
+
+  .project-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .project-card:hover .project-image {
+    transform: scale(1.05);
+  }
+
+  .content-container {
+    padding: 1.5rem;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .material-symbols-outlined {
+    font-size: 1.5rem;
+    color: #3b82f6;
+    font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24;
+  }
+
+  .project-card.active .material-symbols-outlined {
+    font-variation-settings:
+      'FILL' 1,
+      'wght' 500,
+      'GRAD' 0,
+      'opsz' 24;
+  }
+
+  .project-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 0;
+  }
+
+  .description {
+    margin-bottom: 1rem;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .description p {
+    margin: 0;
+  }
+
+  .custom-content {
+    margin-bottom: 1rem;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .default-links {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+
+  .default-links .material-symbols-outlined {
+    font-size: 1rem;
+    color: #64748b;
+  }
+
+  .link-text {
+    font-weight: 500;
+  }
+
+  /* Light theme support */
+  @media (prefers-color-scheme: light) {
+    .project-card {
+      background: white;
+      color: #1e293b;
+    }
+
+    .image-container {
+      background: #f1f5f9;
+    }
+
+    .project-title {
+      color: #1e293b;
+    }
+
+    .description {
+      color: #64748b;
+    }
+
+    .project-card:hover {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  }
+</style>

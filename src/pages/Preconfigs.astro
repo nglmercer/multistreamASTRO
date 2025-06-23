@@ -1,5 +1,8 @@
 ---
-import DocsLayout from '../layouts/DocsLayout.astro';
+import DocsLayout from '@layouts/DocsLayout.astro';
+import NavItems from '@config/items/NavItems.astro';
+import { documentationConfig } from 'src/config/documentation.js';
+
 // import markdow src/components/docs/examples
 import MarkdownContent from '@components/docs/examples/commands.md'
 import TtsMarkdownContent from '@components/docs/examples/texttospeach.md'
@@ -14,16 +17,11 @@ import 'github-markdown-css/github-markdown.css';
 		<h4 class="logo-text">Logo</h4>
 	</div>
 	<div class="content grid gap-10">
+		<div class="grid">
+			<NavItems config={documentationConfig} showImages={true} layout='grid'>
+			</NavItems>
+		</div>
 		<article class="markdown-body p-10 m-10">
-			<OverlayMarkdownContent />
-		</article>
-		<br>
-		<article class="markdown-body p-10 m-10">
-			<TtsMarkdownContent />
-		</article>
-		<br>
-		<article class="markdown-body p-10 m-10">
-			<MarkdownContent />
 		</article>
 	</div>
 </DocsLayout>

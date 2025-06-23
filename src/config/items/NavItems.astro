@@ -1,0 +1,321 @@
+---
+import ProjectCard from './ProjectCard.astro';
+import { type DocumentationConfig, documentationConfig, getOrderedDocPages } from 'src/config/documentation'
+
+interface Props {
+  currentPage?: string;
+  config?: DocumentationConfig;
+  showImages?: boolean;
+  layout?: 'list' | 'grid';
+}
+
+const { 
+    config = documentationConfig, 
+    currentPage,
+    showImages = false,
+    layout = 'grid'
+} = Astro.props;
+
+const urlbase = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const base = urlbase;
+
+// Get ordered pages
+const orderedPages = getOrderedDocPages();
+
+// Content data for each documentation section
+const sectionContent = {
+  introduccion: {
+    description: "Aprende los conceptos básicos y comienza tu viaje con nuestra documentación completa.",
+    image: "/placeholder.svg?height=200&width=400&text=Introducción",
+    badge: "Nuevo",
+    links: [
+      { icon: "play_arrow", text: "Comenzar" },
+      { icon: "schedule", text: "5 min" }
+    ]
+  },
+  instalacion: {
+    description: "Guía paso a paso para instalar y configurar el proyecto en tu entorno de desarrollo.",
+    image: "/placeholder.svg?height=200&width=400&text=Instalación",
+    badge: "Esencial",
+    links: [
+      { icon: "terminal", text: "CLI" },
+      { icon: "package", text: "NPM" }
+    ]
+  },
+  configuracion: {
+    description: "Personaliza y configura el proyecto según tus necesidades específicas.",
+    image: "/placeholder.svg?height=200&width=400&text=Configuración",
+    links: [
+      { icon: "tune", text: "Opciones" },
+      { icon: "code", text: "Ejemplos" }
+    ]
+  },
+  componentes: {
+    description: "Explora todos los componentes disponibles con ejemplos interactivos y documentación detallada.",
+    image: "/placeholder.svg?height=200&width=400&text=Componentes",
+    badge: "Popular",
+    links: [
+      { icon: "widgets", text: "Galería" },
+      { icon: "code_blocks", text: "Ejemplos" }
+    ]
+  },
+  apiReference: {
+    description: "Referencia completa de la API con todos los métodos, propiedades y ejemplos de uso.",
+    image: "/placeholder.svg?height=200&width=400&text=API",
+    links: [
+      { icon: "api", text: "Endpoints" },
+      { icon: "integration_instructions", text: "Guías" }
+    ]
+  }
+};
+---
+
+<div class:list={["documentation-nav", layout]}>
+  {orderedPages.map(([key, page]) => {
+    const content = sectionContent[key as keyof typeof sectionContent];
+    return (
+      <ProjectCard 
+        href={`${base}${page.slot}`}
+        icon={page.icon}
+        name={page.name}
+        isActive={currentPage === key}
+        imageUrl={showImages ? content?.image : undefined}
+        imageAlt={`${page.name} documentation`}
+      >
+        <!-- Custom image slot with overlay -->
+
+
+        <!-- Description slot -->
+        <div slot="description">
+          <p>{content?.description || `Documentación sobre ${page.name.toLowerCase()}`}</p>
+        </div>
+
+        <!-- Actions slot with custom links -->
+        <div slot="actions">
+          <div class="action-links">
+            {content?.links?.map(link => (
+              <div class="action-link">
+                <span class="material-symbols-outlined">{link.icon}</span>
+                <span>{link.text}</span>
+              </div>
+            )) || (
+              <div class="action-link">
+                <span class="material-symbols-outlined">arrow_forward</span>
+                <span>Ver más</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <!-- Additional custom content based on section -->
+        {key === 'introduccion' && (
+          <div class="intro-content">
+            <div class="quick-stats">
+              <div class="stat">
+                <span class="material-symbols-outlined">schedule</span>
+                <span>5 min lectura</span>
+              </div>
+              <div class="stat">
+                <span class="material-symbols-outlined">trending_up</span>
+                <span>Nivel: Básico</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {key === 'componentes' && (
+          <div class="components-preview">
+            <div class="component-icons">
+              <span class="material-symbols-outlined">button</span>
+              <span class="material-symbols-outlined">input</span>
+              <span class="material-symbols-outlined">card</span>
+              <span class="material-symbols-outlined">table</span>
+            </div>
+            <span class="component-count">20+ componentes</span>
+          </div>
+        )}
+
+        {key === 'apiReference' && (
+          <div class="api-info">
+            <div class="api-methods">
+              <span class="method get">GET</span>
+              <span class="method post">POST</span>
+              <span class="method put">PUT</span>
+              <span class="method delete">DELETE</span>
+            </div>
+          </div>
+        )}
+      </ProjectCard>
+    );
+  })}
+</div>
+
+<style>
+  .documentation-nav {
+    width: 100%;
+  }
+
+  .documentation-nav.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .documentation-nav.list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .image-slot {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+  }
+
+  .section-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 2;
+  }
+
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .overlay-icon {
+    font-size: 3rem;
+    color: white;
+    font-variation-settings: 'FILL' 1;
+  }
+
+  .documentation-nav :global(.project-card:hover) .image-overlay {
+    opacity: 1;
+  }
+
+  .action-links {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .action-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .action-link .material-symbols-outlined {
+    font-size: 1rem;
+    color: #3b82f6;
+  }
+
+  .intro-content {
+    margin-top: 1rem;
+  }
+
+  .quick-stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.75rem;
+  }
+
+  .stat .material-symbols-outlined {
+    font-size: 1rem;
+    color: #10b981;
+  }
+
+  .components-preview {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .component-icons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .component-icons .material-symbols-outlined {
+    font-size: 1.25rem;
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .component-count {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .api-info {
+    margin-top: 1rem;
+  }
+
+  .api-methods {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .method {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  .method.get { background: #10b981; }
+  .method.post { background: #3b82f6; }
+  .method.put { background: #f59e0b; }
+  .method.delete { background: #ef4444; }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .documentation-nav.grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .action-links {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+</style>

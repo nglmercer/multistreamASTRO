@@ -3,13 +3,13 @@ import { type DocumentationConfig } from '../config/documentation'
 interface Props {
   currentPage?: string;
   config?:DocumentationConfig;
-  base:string;
 }
 const { 
     config = "Documentación", 
     currentPage,
-    base
 } = Astro.props;
+const urlbase = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const base = urlbase;
 ---
 {
     Object.entries(config).map(([key, page]) => (

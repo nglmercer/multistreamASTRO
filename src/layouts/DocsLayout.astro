@@ -2,7 +2,7 @@
 import { documentationConfig } from '../config/documentation.js';
 import Pagination from '@components/docs/Pagination.astro';
 import Breadcrumbs from '@components/docs/Breadcrumbs.astro';
-
+import NavItems from './NavItems.astro'
 interface Props {
   title?: string;
   currentPage?: string;
@@ -58,19 +58,16 @@ console.log("currentSlot",currentPage,getAdjacentPages(currentPage))
       <nav class="mobile-nav">
         <div class="nav-content">
           <div class="login-mobile">
+            <a 
+            href={`${base}`} 
+            class={`nav-link`}
+          >
+            <span class="material-symbols-outlined">home</span>
+            <span class="nav-text">Inicio</span>
+          </a>
           </div>
           <div class="nav-buttons">
-            {
-              Object.entries(documentationConfig).map(([key, page]) => (
-                <a 
-                  href={`${base}${page.slot}`} 
-                  class={`nav-link ${currentPage === key ? 'active' : ''}`}
-                >
-                  <span class="material-symbols-outlined">{page.icon}</span>
-                  <span class="nav-text">{page.name}</span>
-                </a>
-              ))
-            }
+            <NavItems config={documentationConfig} currentPage={currentPage}>
           </div>
           <div class="logo">
             <a 
@@ -107,20 +104,7 @@ console.log("currentSlot",currentPage,getAdjacentPages(currentPage))
           </div>
           
           <div class="nav-buttons">
-            {
-              Object.entries(documentationConfig)
-                .sort(([,a], [,b]) => a.order - b.order)
-                .map(([key, page]) => (
-                  <a 
-                    href={`${base}${page.slot}`} 
-                    class={`nav-link ${currentPage === key ? 'active' : ''}`}
-                  >
-                    <span class="nav-order">{page.order.toString().padStart(2, '0')}</span>
-                    <span class="material-symbols-outlined">{page.icon}</span>
-                    <span class="nav-text">{page.name}</span>
-                  </a>
-                ))
-            }
+            <NavItems config={documentationConfig} currentPage={currentPage}>
           </div>
         </div>
       </aside>
