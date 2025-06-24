@@ -1,21 +1,22 @@
 ---
 import DocsLayout from '@layouts/DocsLayout.astro';
-// import markdow src/components/docs/examples
-import MarkdownInstall from '@components/docs/core/installation.md'
+import MarkdownContent from '@components/docs/examples/overlays.md'
 import 'github-markdown-css/github-markdown.css';
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
-<DocsLayout title="multistreamASTRO"  currentPage="instalacion">
+<DocsLayout title="multistreamASTRO" currentPage="tts">
 	<div slot="logo">
 		<h4 class="logo-text">Logo</h4>
 	</div>
 	<div class="content grid gap-10">
 		<article class="markdown-body p-10 m-10">
-			<MarkdownInstall/>
+			<MarkdownContent />
 		</article>
 	</div>
 </DocsLayout>
+
+
 
 

@@ -36,13 +36,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
     <title>{title}</title>
   </head>
   <body>
-    <dialog-container id="ActionDialog" style="position: absolute;">
-      <div class="modal__container">
-        <Actiontest/>
-      </div>
-    </dialog-container>
-    <Dialog></Dialog>
-    <DialogManagerSolid client:only="solid-js"/>
+    
 
     {/* Main Layout */}
     <div class="layout">
@@ -126,6 +120,13 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
       });
 
     </script>
+        <dialog-container id="ActionDialog">
+          <div class="modal__container">
+            <Actiontest/>
+          </div>
+        </dialog-container>
+        <Dialog></Dialog>
+        <DialogManagerSolid client:only="solid-js"/>
   </body>
 </html>
 

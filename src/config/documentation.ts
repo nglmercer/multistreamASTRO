@@ -41,11 +41,17 @@ export const documentationConfig: DocumentationConfig = {
     slot: "docs/componentes",
     order: 4
   },
+  overlay: {
+    name: "Overlay",
+    icon: "filter",
+    slot: "docs/widget/overlay",
+    order: 5
+  },
   apiReference: {
     name: "API Reference",
     icon: "code",
     slot: "docs/api-reference",
-    order: 5
+    order: 7
   }
 };
 
