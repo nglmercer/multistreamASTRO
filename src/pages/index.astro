@@ -2,10 +2,12 @@
 import SidebarLayout from '../layouts/SidebarLayout.astro';
 import MarkdownContent from '@components/docs/main/main.md'
 import 'github-markdown-css/github-markdown.css';
-
+import NavItems from '@config/items/NavItems.astro';
+import { documentationConfig } from 'src/config/documentation.js';
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
+
 
 <SidebarLayout title="multistreamASTRO" activeConfig="A">
 	<div slot="logo">
@@ -15,6 +17,8 @@ import 'github-markdown-css/github-markdown.css';
 		<article class="markdown-body p-10 m-10">
 			<MarkdownContent />
 		</article>
+		<NavItems config={documentationConfig} showImages={true} layout='grid'>
+		</NavItems>
 	</div>
 </SidebarLayout>
 

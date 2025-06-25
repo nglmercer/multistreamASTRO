@@ -8,15 +8,3 @@
 5. [Ejemplos Prácticos](#ejemplos-prácticos)
 6. [Solución de Problemas](#solución-de-problemas)
 7. [Preguntas Frecuentes](#preguntas-frecuentes)
-
----
-
-
-## 🆘 Soporte
-
-¿Necesitas ayuda adicional? 
-
-- 💬 **Discord**: memelser [nglmercer#4105]
-- 🎥 **YouTube**: Proximamente
-
----

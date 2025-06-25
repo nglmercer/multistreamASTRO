@@ -23,21 +23,43 @@ const {
   showPagination = true 
 } = Astro.props;
 
-// Obtener página anterior y siguiente para paginación
-function getAdjacentPages(currentSlot:string | undefined) {
-  if (!currentSlot)return {}
-  const orderedPages = Object.entries(documentationConfig)
-    .sort(([,a], [,b]) => a.order - b.order);
+function getAdjacentPages(currentRelativePath: string | undefined) {
+  if (!currentRelativePath) {
+    return { prevPage: null, nextPage: null };
+  }
+
+  // Obtenemos todas las páginas y las ordenamos por el campo `order`.
+  const orderedPages = Object.values(documentationConfig)
+    .sort((a, b) => a.order - b.order);
   
-  const currentIndex = orderedPages.findIndex(([, page]) => page.slot === `docs/${currentSlot}`);
+  // CAMBIO CLAVE: Buscamos por coincidencia directa con el currentPage
+  // o por el último segmento del slot
+  const currentIndex = orderedPages.findIndex(page => {
+    // Opción 1: Coincidencia directa
+    if (page.slot === currentRelativePath) {
+      return true;
+    }
+    
+    // Opción 2: Comparar por el último segmento del slot
+    const lastSegment = page.slot.split('/').pop();
+    return lastSegment === currentRelativePath;
+  });
   
-  const prevPage = currentIndex > 0 ? orderedPages[currentIndex - 1][1] : null;
-  const nextPage = currentIndex < orderedPages.length - 1 ? orderedPages[currentIndex + 1][1] : null;
-  console.log("currentSlot",currentSlot)
+  // Si no se encuentra la página, no hay paginación.
+  if (currentIndex === -1) {
+    console.log("No se encontró la página:", currentRelativePath);
+    console.log("Páginas disponibles:", orderedPages.map(p => ({ slot: p.slot, lastSegment: p.slot.split('/').pop() })));
+    return { prevPage: null, nextPage: null };
+  }
+
+  // Obtenemos la página anterior y siguiente basándonos en el índice.
+  const prevPage = currentIndex > 0 ? orderedPages[currentIndex - 1] : null;
+  const nextPage = currentIndex < orderedPages.length - 1 ? orderedPages[currentIndex + 1] : null;
+  
   return { prevPage, nextPage };
 }
 
-const { prevPage, nextPage } = currentPage ? getAdjacentPages(currentPage) : { prevPage: null, nextPage: null };
+const { prevPage, nextPage } = getAdjacentPages(currentPage);
 console.log("currentSlot",currentPage,getAdjacentPages(currentPage))
 ---
 
@@ -205,7 +227,12 @@ console.log("currentSlot",currentPage,getAdjacentPages(currentPage))
   }
 
   .documentation-wrapper {
-    max-width: 1200px;
+    max-width: 100dvw;
     margin-inline: auto;
+    overflow: auto;
   }/*calc(12% - 5rem);*/
+  article {
+    max-width: 100dvw;
+    overflow-x: auto;
+  }
 </style>

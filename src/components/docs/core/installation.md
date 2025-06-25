@@ -4,7 +4,7 @@ Aplicación open source para configurar alertas, overlays y widgets para transmi
 
 ## 🚀 Instalación
 
-1. Ve a la sección de [Releases](https://github.com/nglmercer/multistream-app/releases).
+1. Ve a la sección de [Releases](https://github.com/nglmercer/multistream-live/releases).
 2. Descarga la última versión correspondiente a tu sistema operativo:
 
    - **Windows**: `.exe` (instalador), `.nsi` o `.zip` (versión portable)

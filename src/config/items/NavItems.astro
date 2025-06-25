@@ -1,7 +1,13 @@
 ---
 import ProjectCard from './ProjectCard.astro';
-import { type DocumentationConfig, documentationConfig, getOrderedDocPages } from 'src/config/documentation'
-
+import { type DocumentationConfig,type DocumentationPage, documentationConfig, getOrderedDocPages } from 'src/config/documentation';
+import grassblock from 'src/assets/images/grassblock.png';
+import releasesimg from '@assets/images/release.png';
+import apirestimg from '@assets/images/api-rest.png';
+import overlayimg from '@assets/images/overlay.png';
+import ttsimg from '@assets/images/ttsimage.webp';
+import pluginsimg from '@assets/images/plugins.png';
+import configsimg from '@assets/images/configs.png';
 interface Props {
   currentPage?: string;
   config?: DocumentationConfig;
@@ -26,7 +32,7 @@ const orderedPages = getOrderedDocPages();
 const sectionContent = {
   introduccion: {
     description: "Aprende los conceptos básicos y comienza tu viaje con nuestra documentación completa.",
-    image: "/placeholder.svg?height=200&width=400&text=Introducción",
+    image: "/favicon.svg",
     badge: "Nuevo",
     links: [
       { icon: "play_arrow", text: "Comenzar" },
@@ -35,7 +41,7 @@ const sectionContent = {
   },
   instalacion: {
     description: "Guía paso a paso para instalar y configurar el proyecto en tu entorno de desarrollo.",
-    image: "/placeholder.svg?height=200&width=400&text=Instalación",
+    image: releasesimg.src,
     badge: "Esencial",
     links: [
       { icon: "terminal", text: "CLI" },
@@ -44,7 +50,7 @@ const sectionContent = {
   },
   configuracion: {
     description: "Personaliza y configura el proyecto según tus necesidades específicas.",
-    image: "/placeholder.svg?height=200&width=400&text=Configuración",
+    image: configsimg.src,
     links: [
       { icon: "tune", text: "Opciones" },
       { icon: "code", text: "Ejemplos" }
@@ -52,7 +58,7 @@ const sectionContent = {
   },
   componentes: {
     description: "Explora todos los componentes disponibles con ejemplos interactivos y documentación detallada.",
-    image: "/placeholder.svg?height=200&width=400&text=Componentes",
+    image: pluginsimg.src,
     badge: "Popular",
     links: [
       { icon: "widgets", text: "Galería" },
@@ -61,17 +67,47 @@ const sectionContent = {
   },
   apiReference: {
     description: "Referencia completa de la API con todos los métodos, propiedades y ejemplos de uso.",
-    image: "/placeholder.svg?height=200&width=400&text=API",
+    image: apirestimg.src,
     links: [
       { icon: "api", text: "Endpoints" },
       { icon: "integration_instructions", text: "Guías" }
     ]
+  },
+  minecraft: {
+    description: "ejemplos de comandos.",
+    image: grassblock.src,
+    links: [
+      { icon: "api", text: "Commands" },
+      { icon: "integration_instructions", text: "Guías" }
+    ]
+  },
+  overlay: {
+    description: "overlays widgets.",
+    image: overlayimg.src,
+    links: [
+      { icon: "api", text: "Commands" },
+      { icon: "integration_instructions", text: "Guías" }
+    ]
+  },
+  tts: {
+    description: "overlays widgets.",
+    image: ttsimg.src,
+    links: [
+      { icon: "api", text: "Commands" },
+      { icon: "integration_instructions", text: "Guías" }
+    ]
   }
 };
+function getKeyForPage(page:DocumentationPage) {
+  return Object.entries(documentationConfig).find(([key, configPage]) => 
+    configPage.slot === page.slot
+  )?.[0];
+}
 ---
 
 <div class:list={["documentation-nav", layout]}>
-  {orderedPages.map(([key, page]) => {
+  {orderedPages.map((page) => {
+    const key = getKeyForPage(page);
     const content = sectionContent[key as keyof typeof sectionContent];
     return (
       <ProjectCard 
@@ -125,13 +161,7 @@ const sectionContent = {
 
         {key === 'componentes' && (
           <div class="components-preview">
-            <div class="component-icons">
-              <span class="material-symbols-outlined">button</span>
-              <span class="material-symbols-outlined">input</span>
-              <span class="material-symbols-outlined">card</span>
-              <span class="material-symbols-outlined">table</span>
-            </div>
-            <span class="component-count">20+ componentes</span>
+            <span class="component-count">10+ componentes</span>
           </div>
         )}
 
