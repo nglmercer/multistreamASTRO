@@ -1,6 +1,5 @@
 ---
-import ActionsFormCsomponent from "./ActionsForm.astro";
-import SwitchE from "@components/switchE.astro";
+import ActionsForm from "./Actions.astro";
 ---
 
 <script src="/src/litcomponents/modal.js"></script>
@@ -33,36 +32,10 @@ import SwitchE from "@components/switchE.astro";
     <h2>Acciones </h2>
     <obj-table id="ActionConfigManager" darkmode></obj-table>
   </div>
-    <dialog-container class="ActionModal" id="ActionModal">    
-      <ActionsFormCsomponent id="actionForm">
-        <div slot="fields">
-          <SwitchE
-          id="fetchForm"
-          label="Habilitar Configuración HTTP"
-          checked={false}>
-          <http-request-config id="fetchForm_config"></http-request-config>
-          </SwitchE>
-        </div>
-        <div slot="actions" class="ActionForm-buttons">
-          <button type="button" class="btn btn-secondary" data-action="reset">
-            Reiniciar
-          </button>
-          <button type="button" class="btn btn-secondary" data-action="export">
-            Exportar
-          </button>
-          <button type="button" class="btn btn-secondary" data-action="import">
-            Importar
-          </button>
-          <button type="button" class="btn btn-primary" data-action="submit">
-            Guardar
-          </button>
-        </div>
-      </ActionsFormCsomponent>
-  </dialog-container>
+    <ActionsForm/>
   <single-dbmanager db-key="ActionsDB"></single-dbmanager>
 
 </div>
-<script src="/src/components/actions/actions.js"></script>
 <script src="/src/components/actionsjs/actionstable.ts"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>

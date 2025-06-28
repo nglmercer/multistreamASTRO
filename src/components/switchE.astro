@@ -43,7 +43,6 @@ const switchId = `${id}_check`;
   document.addEventListener("DOMContentLoaded", () => {
   const switchElement = document.getElementById(switchId);
   const elementWrapper = document.querySelector(`[data-field="${id}"]`);
-  console.log(`Switch ${id} initialized with checked=${checked}`, switchElement, elementWrapper);
   function initlistenersform(){
     if (!switchElement) return;
       switchElement.addEventListener("change", (event) => {
@@ -53,8 +52,8 @@ const switchId = `${id}_check`;
         elementWrapper.classList.toggle("hidden",!IsChecked);
         console.log(`Switch ${id} changed to ${IsChecked}`, elementWrapper);
       });
-    
-      console.log("elementWrapper initialized", elementWrapper);
+    //  console.log(`Switch ${id} initialized with checked=${checked}`, switchElement, elementWrapper);
+
       return elementWrapper;
     }
     initlistenersform()

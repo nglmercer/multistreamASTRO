@@ -5,6 +5,8 @@ import ExampleContent from '@components/docs/examples/commands.md';
 import McpContent from '@components/docs/examples/mc/mcp.md';
 import MarkdownDropdown from '@components/docs/MarkdownDropdown.astro';
 import 'github-markdown-css/github-markdown.css';
+import ActionsForm from "@components/actions/Actions.astro";
+
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
@@ -23,6 +25,7 @@ import 'github-markdown-css/github-markdown.css';
 				<McpContent />
 			</MarkdownDropdown>
 		</article>
+		<ActionsForm></ActionsForm>
 	</div>
 </DocsLayout>
 
