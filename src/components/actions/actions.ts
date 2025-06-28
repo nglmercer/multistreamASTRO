@@ -9,6 +9,7 @@ import { CInput } from "src/litcomponents/CInput.js";
 import { actionEmitter } from "@components/actionsjs/actionemitter.ts";
 import { seleccionarYParsearJSON } from "@utils/jsonbackups/import.ts";
 import { exportarJSON } from "@utils/jsonbackups/export.ts";
+import { safeParse } from "@utils/jsonutils/safeparse.ts";
 // Elementos DOM globales con validación
 const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
@@ -29,6 +30,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } catch (error) {
     console.error("Error during DOM initialization:", error);
+  }
+  const queryParams = new URLSearchParams(window.location.search);
+  const queryObject = Object.fromEntries(queryParams.entries())
+  if (!queryObject || !queryObject.data) return
+  if (queryObject.import === 'action'){
+    openModal();
+    const querydata = safeParse(queryObject.data)
+    setFormData(querydata)
+    console.log("queryObject",queryObject,querydata)
   }
 });
 

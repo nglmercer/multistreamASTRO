@@ -1,0 +1,168 @@
+---
+// MarkdownDropdown.astro
+export interface Props {
+  title: string;
+  open?: boolean;
+  id?: string;
+}
+
+const { title, open = false, id } = Astro.props;
+const dropdownId = id || `dropdown-${Math.random().toString(36).substr(2, 9)}`;
+---
+
+<details class="markdown-dropdown" open={open}>
+  <summary class="dropdown-title">
+    <span class="title-text">{title}</span>
+    <span class="dropdown-icon">▼</span>
+  </summary>
+  <div class="dropdown-content">
+    <slot />
+  </div>
+</details>
+
+<style>
+  .markdown-dropdown {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin: 1rem 0;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .markdown-dropdown:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .dropdown-title {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: #374151;
+    background: #f8fafc;
+    border-radius: 7px 7px 0 0;
+    transition: background-color 0.2s ease;
+    user-select: none;
+  }
+
+  .dropdown-title:hover {
+    background: #f1f5f9;
+  }
+
+  .dropdown-title::-webkit-details-marker {
+    display: none;
+  }
+
+  .title-text {
+    flex: 1;
+    font-size: 1.1rem;
+  }
+
+  .dropdown-icon {
+    transition: transform 0.2s ease;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .markdown-dropdown[open] .dropdown-icon {
+    transform: rotate(180deg);
+  }
+
+  .dropdown-content {
+    padding: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 0 0 7px 7px;
+  }
+
+  /* Estilos para el contenido markdown dentro del dropdown */
+  .dropdown-content :global(h1),
+  .dropdown-content :global(h2),
+  .dropdown-content :global(h3),
+  .dropdown-content :global(h4),
+  .dropdown-content :global(h5),
+  .dropdown-content :global(h6) {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .dropdown-content :global(p) {
+    margin: 0 0 1rem 0;
+    line-height: 1.6;
+  }
+
+  .dropdown-content :global(ul),
+  .dropdown-content :global(ol) {
+    margin: 0 0 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .dropdown-content :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  .dropdown-content :global(code) {
+    background: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    font-size: 0.875rem;
+  }
+
+  .dropdown-content :global(pre) {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .dropdown-content :global(blockquote) {
+    border-left: 4px solid #e5e7eb;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: #6b7280;
+  }
+
+  /* Tema oscuro */
+  @media (prefers-color-scheme: dark) {
+    .markdown-dropdown {
+      background: #1f2937;
+      border-color: #374151;
+    }
+
+    .dropdown-title {
+      background: #374151;
+      color: #f9fafb;
+    }
+
+    .dropdown-title:hover {
+      background: #4b5563;
+    }
+
+    .dropdown-content {
+      background: #1f2937;
+      border-top-color: #4b5563;
+    }
+
+    .dropdown-content :global(code) {
+      background: #374151;
+      color: #f9fafb;
+    }
+
+    .dropdown-content :global(pre) {
+      background: #111827;
+      border-color: #374151;
+    }
+
+    .dropdown-content :global(blockquote) {
+      border-left-color: #4b5563;
+      color: #9ca3af;
+    }
+  }
+</style>
