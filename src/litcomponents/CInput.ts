@@ -50,7 +50,7 @@ function safeParse(value: InputReturnType): InputReturnType {
 export class CInput extends LitElement {
     @property({ type: String, reflect: true }) type: InputType = 'text';
     @property({ type: String, reflect: true }) name?: string;
-    @property({ type: String }) value?: string = ''; // Always string for attribute compatibility
+    @property() value?: InputReturnType | any = '';
     @property({ type: String, reflect: true }) placeholder?: string;
     @property({ type: Boolean, reflect: true }) disabled: boolean = false;
     @property({ type: Boolean, reflect: true }) readonly: boolean = false;
@@ -208,166 +208,201 @@ export class CInput extends LitElement {
 
     static styles = css`
         :host {
-            display: block; /* Or inline-block depending on desired layout */
+            display: block;
             margin-block-start: 0.5rem;
             margin-block-end: 0.5rem;
-            color-scheme: light dark; /* Basic dark mode support */
-            --inp-text-color: inherit;
-            --inp-bg-color: inherit;
-            --inp-border-color: #ccc; /* Softer default border */
-            --inp-focus-border-color: #2196F3;
-            --inp-focus-shadow-color: rgba(33, 150, 243, 0.3);
-            --inp-disabled-bg: #f0f0f0;
-            --inp-disabled-color: #999;
-            --inp-disabled-border-color: #ddd;
-            --inp-readonly-bg: #f8f8f8;
-            --inp-error-border-color: red;
-            --inp-error-shadow-color: rgba(255, 0, 0, 0.2);
-            --inp-slider-bg: #ccc;
+            /* Habilita herencia de color y fondo para que el componente se integre mejor. */
+            color: inherit;
+            background-color: transparent;
+
+            /* --- VARIABLES DE DISEÑO --- */
+            /* Colores base para Light Mode */
+            --inp-text-color: #212529; /* Texto más oscuro para mejor contraste */
+            --inp-bg-color: #fff;
+            --inp-border-color: #ced4da; /* Gris estándar de Bootstrap, muy legible */
+            --inp-border-radius: 0.375rem; /* 6px, un poco más suave */
+            
+            /* Colores de Foco */
+            --inp-focus-border-color: #86b7fe; /* Azul de foco de Bootstrap */
+            --inp-focus-shadow-color: rgba(13, 110, 253, 0.25);
+            
+            /* Colores de Estados */
+            --inp-disabled-bg: #e9ecef;
+            --inp-disabled-color: #6c757d;
+            --inp-disabled-border-color: #ced4da;
+            --inp-readonly-bg: #e9ecef; /* A menudo se ve igual que disabled */
+            --inp-error-border-color: #dc3545; /* Rojo de error de Bootstrap */
+            --inp-error-shadow-color: rgba(220, 53, 69, 0.25);
+
+            /* Colores para el Switch */
+            --inp-slider-bg: #ced4da;
             --inp-slider-knob: white;
-            --inp-slider-active-bg: #2196F3;
-            --inp-padding: 0.5em 0.75em; /* Consistent padding */
-            --inp-border-radius: 4px;
+            --inp-slider-active-bg: #0d6efd; /* Azul primario de Bootstrap */
+
+            /* Dimensiones */
+            --inp-padding: 0.5em 0.75em;
             --inp-font-size: 1rem;
+            
+            /* Propiedades heredables */
             font-size: var(--inp-font-size);
+            font-family: inherit; /* Permite que la fuente del host se propague */
         }
         
+        /* --- DARK MODE --- */
         :host([darkmode]) {
-            --inp-border-color: #555;
-            --inp-focus-border-color: #4dabf7; /* Lighter blue for dark mode */
+            color-scheme: dark; /* Pista clave para que el navegador use estilos oscuros por defecto */
+            --inp-text-color: #dee2e6;
+            --inp-bg-color: #212529;
+            --inp-border-color: #495057;
+            
+            --inp-focus-border-color: #4dabf7;
             --inp-focus-shadow-color: rgba(77, 171, 247, 0.3);
-            --inp-disabled-bg: #2a2a2a;
-            --inp-disabled-color: #777;
-            --inp-disabled-border-color: #444;
-            --inp-readonly-bg: #222;
-            --inp-slider-bg: #555;
-            --inp-slider-knob: #ccc;
-            --inp-slider-active-bg: #4dabf7;
-            --inp-bg-color: #333; /* Darker background for inputs */
-            --inp-text-color: #fff; /* Lighter text for dark mode */
+            
+            --inp-disabled-bg: #343a40;
+            --inp-disabled-color: #6c757d;
+            --inp-disabled-border-color: #495057;
+            --inp-readonly-bg: #343a40;
+
+            --inp-slider-bg: #495057;
+            --inp-slider-knob: #adb5bd;
+            --inp-slider-active-bg: #3b82f6; /* Un azul vibrante para dark mode */
         }
 
+        /* --- Contenedor General --- */
         .inp-cont {
-            display: flex; /* For potential future label/input alignment */
-            flex-direction: column; /* Default stacking */
+            display: flex;
+            flex-direction: column;
         }
         
-        /* General input styling */
+        /* --- ESTILOS GENERALES PARA INPUTS, TEXTAREA, SELECT --- */
         input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), 
         textarea, 
         select {
             padding: var(--inp-padding);
             border: 1px solid var(--inp-border-color);
             border-radius: var(--inp-border-radius);
-            font-size: inherit; /* Inherit from host */
+            font-size: inherit;
+            font-family: inherit;
+            line-height: 1.5;
             background-color: var(--inp-bg-color);
             color: var(--inp-text-color);
             box-sizing: border-box;
-            width: 100%; /* Make them take full width of container by default */
+            width: 100%;
             margin: 0;
             transition: border-color 0.2s, box-shadow 0.2s;
+            /* Para asegurar que el navegador no ponga un fondo raro en iOS */
+            -webkit-appearance: none;
+            appearance: none;
         }
         
-        option { /* For select dropdown */
-            color: initial; /* Reset for system appearance */
+        /* Re-introducir la flecha en los selects, ya que appearance:none la quita */
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+            padding-right: 2.5rem; /* Dejar espacio para la flecha */
+        }
+        :host([darkmode]) select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+        
+        /* Para select multiple, no queremos la flecha */
+        select[multiple] {
+            background-image: none;
+            padding-right: var(--inp-padding); /* Resetear el padding */
+            min-height: 120px; /* Un poco más de altura por defecto */
+        }
+        
+        /* --- ESTILOS PARA LAS OPCIONES DEL SELECT --- */
+        option {
+            /* En modo normal, dejamos que el navegador decida los colores */
+            color: initial;
             background-color: initial;
         }
-        
-        textarea { 
-            resize: vertical; 
-            min-height: 80px;
-            line-height: 1.5;
-        }
 
-        /* States: Disabled and Readonly */
-        input:disabled, textarea:disabled, select:disabled,
-        input[readonly], textarea[readonly], select[readonly] /* Readonly often styled like disabled */
-         {
+        :host([darkmode]) option {
+            /* En dark mode, SÍ forzamos los colores para evitar el blanco brillante */
+            color: var(--inp-text-color);
+            background-color: var(--inp-bg-color);
+        }
+        
+        /* ★★★ LA CLAVE: ESTILO PARA LA OPCIÓN SELECCIONADA ★★★ */
+        select option:checked {
+            /* Usamos el color de foco para resaltar. !important puede ser necesario
+            para sobreescribir los estilos ultra-específicos del User-Agent. */
+            background-color: var(--inp-focus-border-color) !important;
+            color: white !important;
+        }
+        
+        /* --- ESTILOS DE ESTADO (DISABLED, READONLY, FOCUS, INVALID) --- */
+        input:disabled, textarea:disabled, select:disabled {
             background-color: var(--inp-disabled-bg);
             color: var(--inp-disabled-color);
             border-color: var(--inp-disabled-border-color);
             cursor: not-allowed;
-        }
-        input[readonly], textarea[readonly] {
-             background-color: var(--inp-readonly-bg);
-             cursor: default; /* Readonly is not "not-allowed" but "no-drop" can be too strong */
-        }
-        :host([readonly]) select { /* Custom styling for readonly select if needed */
-             pointer-events: none; /* Simulate readonly for select */
+            /* Para selects con flecha personalizada, la quitamos en disabled */
+            background-image: none;
         }
 
-        /* Focus state */
-        input:not([type="checkbox"]):not([type="radio"]):not([disabled]):not([readonly]):focus,
-        textarea:not([disabled]):not([readonly]):focus,
-        select:not([disabled]):not([readonly]):focus {
-            outline: none;
+        input[readonly], textarea[readonly], select[readonly] {
+            background-color: var(--inp-readonly-bg);
+            cursor: default;
+        }
+
+        :host([readonly]) select {
+            pointer-events: none;
+        }
+
+        input:not([disabled]):focus, textarea:not([disabled]):focus, select:not([disabled]):focus {
+            outline: 0;
             border-color: var(--inp-focus-border-color);
-            box-shadow: 0 0 0 3px var(--inp-focus-shadow-color);
+            box-shadow: 0 0 0 0.25rem var(--inp-focus-shadow-color);
         }
 
-        /* Invalid state */
         :host([invalid]) .input-element:not([type="checkbox"]):not([type="radio"]) {
             border-color: var(--inp-error-border-color) !important;
-            box-shadow: 0 0 0 3px var(--inp-error-shadow-color) !important;
-        }
-        :host([invalid]) .radio-group,
-        :host([invalid]) .sw,
-        :host([invalid]) .cb-label {
-            outline: 2px solid var(--inp-error-border-color); /* Visual cue for group/label types */
-            outline-offset: 2px;
+            box-shadow: 0 0 0 0.25rem var(--inp-error-shadow-color) !important;
         }
 
-        /* Checkbox / Switch / Radio specific styling */
-        .cb-label, .radio-label {
+        /* --- ESTILOS PARA CHECKBOX, RADIO, SWITCH --- */
+        .cb-label, .radio-label, .sw-label {
             display: inline-flex;
             align-items: center;
-            margin-right: 1em; /* Spacing between multiple radios/checkboxes */
+            gap: 0.5em; /* 'gap' es más moderno que margin-right */
             cursor: pointer;
-            position: relative; /* For custom styling if needed */
-        }
-        .cb-label input[type="checkbox"], .radio-label input[type="radio"] {
-             margin-right: 0.5em;
-        }
-        .label-text {
             user-select: none;
         }
 
-        /* Switch Styles */
-        .sw { position: relative; display: inline-block; width: 50px; height: 26px; cursor:pointer; }
-        .sw input { opacity: 0; width: 0; height: 0; }
-        .sldr { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--inp-slider-bg); transition: .3s; border-radius: 26px; }
-        .sldr:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: var(--inp-slider-knob); transition: .3s; border-radius: 50%; }
+        /* Quitar el padding del contenedor para estos tipos */
+        :host([type="radio"]) .inp-cont,
+        :host([type="checkbox"]) .inp-cont,
+        :host([type="switch"]) .inp-cont {
+            padding: 0;
+        }
+
+        /* Mejorar el foco para accesibilidad */
+        input[type="checkbox"]:focus-visible, 
+        input[type="radio"]:focus-visible,
+        .sw input:focus-visible + .sldr {
+            outline: 2px solid var(--inp-focus-border-color);
+            outline-offset: 2px;
+            box-shadow: 0 0 0 0.25rem var(--inp-focus-shadow-color);
+        }
         
+        /* Switch Styles */
+        .sw { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+        .sw input { opacity: 0; width: 0; height: 0; }
+        .sldr { position: absolute; cursor: pointer; inset: 0; background-color: var(--inp-slider-bg); transition: .3s; border-radius: 26px; }
+        .sldr:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: var(--inp-slider-knob); transition: .3s; border-radius: 50%; }
         input:checked + .sldr { background-color: var(--inp-slider-active-bg); }
         input:checked + .sldr:before { transform: translateX(24px); }
-        
-        /* Focus visible for accessibility on switch/checkbox/radio */
-        input[type="checkbox"]:focus-visible, 
-        input[type="radio"]:focus-visible {
-             outline: 2px solid var(--inp-focus-border-color);
-             outline-offset: 2px;
-        }
-        input[type="checkbox"]:focus-visible + .sldr { /* For switch */
-            box-shadow: 0 0 0 3px var(--inp-focus-shadow-color);
-        }
-        
-        /* Select multiple styling */
-        select[multiple] {
-            min-height: 100px; /* Or adjust as needed */
-        }
-        select option:checked { /* More subtle highlighting for selected options */
-            /* background-color: var(--inp-focus-border-color); */
-            /* color: white; */
-        }
+
+        /* Grupo de Radios */
         .radio-group {
             display: flex;
-            flex-direction: column; /* or 'row' if preferred */
-            gap: 0.5em;
-        }
-        :host([type="radio"]) .inp-cont, 
-        :host([type="checkbox"]) .inp-cont, 
-        :host([type="switch"]) .inp-cont {
-             padding: 0; /* Remove padding for wrapper of these types */
+            flex-direction: column;
+            gap: 0.75em;
         }
     `;
 

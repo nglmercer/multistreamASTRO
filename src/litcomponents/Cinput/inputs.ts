@@ -239,12 +239,13 @@ class CheckboxInputHandler implements IInputHandler {
 // Select input handler
 class SelectInputHandler implements IInputHandler {
     render(context: InputContext): TemplateResult {
+        // ELIMINAMOS EL BINDING .value DEL <select>
+        //console.log("context",context)
         return html`
             <select
                 class="input-element"
                 id=${ifDefined(context.id)}
                 name=${ifDefined(context.name)}
-                .value=${!context.multiple ? (context.internalValue === null || context.internalValue === undefined ? '' : String(context.internalValue)) : undefined}
                 ?disabled=${context.disabled}
                 ?readonly=${context.readonly} 
                 ?required=${context.required}
@@ -253,10 +254,12 @@ class SelectInputHandler implements IInputHandler {
                 ?multiple=${context.multiple}
             >
                 ${context.placeholder && !context.multiple && !context.internalValue ? html`<option value="" disabled selected hidden>${context.placeholder}</option>` : ''}
+                
                 ${map(context.options, (opt) => {
                     let isSelected = false;
-                    if (context.multiple) {
-                        isSelected = Array.isArray(context.internalValue) && context.internalValue.includes(String(opt.value));
+                    if (context.multiple && Array.isArray(context.internalValue)) {
+                        // Comparamos siempre como strings para evitar problemas de tipo (ej. 5 vs "5")
+                        isSelected = context.internalValue.includes(String(opt.value));
                     } else {
                         isSelected = String(opt.value) == String(context.internalValue ?? '');
                     }
@@ -272,7 +275,8 @@ class SelectInputHandler implements IInputHandler {
 
     parseValue(val: InputReturnType, multiple: boolean = false): string | string[] {
          if (multiple) {
-            if (Array.isArray(val)) {
+            console.log("if (multiple) {",multiple,val)
+            if (Array.isArray(val)) { // <--- ESTA LÍNEA AHORA SE EJECUTARÁ
                 return val.map(String);
             }
             if (typeof val === 'string') {

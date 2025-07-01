@@ -1,10 +1,11 @@
 import {
     DynObjDisp,
     ObjEditFrm,
+} from './modal.ts';
+import {
     CDlg,
     DlgCont,
-    CInp
-} from './modal';
+} from './dialog.js'
 import { DialogContent, DialogContainer } from './custom-modal.js';
 import {CInput} from './CInput.js';
 // Declare custom elements for improved autocompletion in HTML templates
@@ -14,7 +15,6 @@ declare global {
         'obj-edit-frm': ObjEditFrm;
         'c-dlg': CDlg;
         'dlg-cont': DlgCont;
-        'c-inp': CInp;
         'dialog-content': DialogContent;
         'dialog-container': DialogContainer;
         'c-input': CInput;

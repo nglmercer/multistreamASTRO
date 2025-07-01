@@ -113,7 +113,7 @@ export async function openDynamicModal(
 
         const itemData = data || initialData;
         console.log(`Configurando modal para ${formType}:`, { config: fCfg, data: itemData });
-
+        
         editorEl.fCfg = fCfg;
         editorEl.itm = itemData;
         editorEl.hdrKey = configGenerator.title || `Configurar ${formType}`;
