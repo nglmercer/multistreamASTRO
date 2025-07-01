@@ -7,7 +7,7 @@ import {
     updateTableData,
     setupModalEventListeners,
     setupTableActionListeners
-} from '/src/components/actionsjs/crudUIHelpers.js'; // Ajusta ruta
+} from '@components/actionsjs/crudUIHelpers.ts'; // Ajusta ruta
 import { getGiftList, mapgifts, geticonfromarray } from '@utils/transform/gifts.ts'; // Ajusta ruta
 import { mapUsersToSelectOptions } from '@utils/transform/users.ts'; // Ajusta ruta
 import { displayAllUsers } from '@utils/userdata/UserProcessor.ts'; // Ajusta ruta
