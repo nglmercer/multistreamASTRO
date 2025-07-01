@@ -39,6 +39,7 @@ async function initTablelisteners() {
   managerEl.data = await renderdata();
   managerEl.keys = ["id", "name"];
   console.log("Inicializando listeners de tabla...", editorEl, managerEl);
+  managerEl.addAction('Copy','Duplicar')
   managerEl.addEventListener("action", async (e) => {
     const {detail} = e as CustomEvent<EventDetail>;
     if (detail.originalAction === "edit") {
@@ -56,6 +57,21 @@ async function initTablelisteners() {
         if (result){
             const deleteResult = await actionDbManager.deleteData(id);
             actionEmitter.emit("deleteAction", deleteResult);
+        }
+      })
+      .catch((error: boolean) => {
+        console.error("Error al mostrar el diálogo de confirmación:", error);
+      });
+    }
+    if (detail.originalAction === "Copy") {
+      const {id} = detail.item
+      window.showDialog(`Duplicar Elemento: ${id}`, 'aceptar', 'cancelar')
+      .then(async (result:boolean) => {
+        console.log("Resultado de la confirmación:", result);
+        if (result){
+            delete detail.item.id;
+            console.log(detail.item,"modified")
+            actionDbManager.saveData(detail.item)
         }
       })
       .catch((error: boolean) => {

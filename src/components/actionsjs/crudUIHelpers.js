@@ -192,16 +192,18 @@ export function setupTableActionListeners(managerEl, openModalFn, dbManagerMap, 
             openModalFn(formType, item);
 
         } else if (action === 'delete') {
-            if (confirm(`¿Seguro que quieres eliminar "${item.name || 'item'}" (ID: ${item.id}) de tipo ${formType}?`)) {
-                try {
-                    await dbManager.deleteData(item.id);
-                    console.log(`Elemento ${item.id} de tipo ${formType} eliminado.`);
-                    if (afterDelete) afterDelete(compId, item);
-                } catch (error) {
-                    console.error(`Error al eliminar ${item.id} de tipo ${formType}:`, error);
-                    alert(`Error al eliminar: ${error.message}`);
+            const { id, name } = item;
+            window.showDialog(`eliminar elemento ${name} con ID: ${id}`, 'aceptar', 'cancelar')
+                .then(async (result) => {
+                console.log("Resultado de la confirmación:", result);
+                if (result){
+                    const deleteResult = await dbManager.deleteData(item.id);
+                    if (deleteResult) afterDelete(compId, item);
                 }
-            }
+                })
+                .catch((error) => {
+                console.error("Error al mostrar el diálogo de confirmación:", error);
+                });
         } else {
             console.log(`Acción no manejada "${action}" para ${formType}:`, item);
         }
