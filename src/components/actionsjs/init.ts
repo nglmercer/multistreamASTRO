@@ -2,12 +2,20 @@
 import { databases, IndexedDBManager, getAllDataFromDatabase } from '@utils/idb.ts';
 import Emitter, { emitter } from '@utils/Emitter.ts';
 import {
+    // Importamos las funciones
     openDynamicModal,
     initializeTables,
     updateTableData,
     setupModalEventListeners,
-    setupTableActionListeners
-} from '@components/actionsjs/crudUIHelpers.ts'; // Ajusta ruta
+    setupTableActionListeners,
+    // ¡Y también importamos los TIPOS que definimos!
+    type IModalElement,
+    type IEditorElement,
+    type IGridManagerElement,
+    type TFormConfigs,
+    type TDbManagerMap,
+    type ITableConfig
+} from '@components/actionsjs/crudUIHelpers';
 import { getGiftList, mapgifts, geticonfromarray } from '@utils/transform/gifts.ts'; // Ajusta ruta
 import { mapUsersToSelectOptions } from '@utils/transform/users.ts'; // Ajusta ruta
 import { displayAllUsers } from '@utils/userdata/UserProcessor.ts'; // Ajusta ruta
@@ -23,15 +31,13 @@ async function fetchGiftOptions() {
         { value: 'usuario', label: 'Usuario exacto' },
     ];
  }
-async function getAllActions() {
+ async function getAllActions() {
     try {
-        let actions = [];
         const allactionsDb = await getAllDataFromDatabase(databases.ActionsDB);
         if (allactionsDb && Array.isArray(allactionsDb)) {
-            actions = allactionsDb.map(item => ({ value: item.id, label: item.name }));
+            return allactionsDb.map(item => ({ value: item.id, label: item.name }));
         }
-        console.log("getAllActions", actions);
-        return actions;
+        return [];
     } catch (error) {
         console.error("Error getting actions:", error);
         return [];
@@ -47,14 +53,16 @@ getAllActions()
     ]
 }
 async function fetchUsers(){
-    const usersmap = mapUsersToSelectOptions(await displayAllUsers());
-    console.log("fetchUsers", usersmap);
-    return [
-        ...usersmap,
-        { value: '7339395551567954950', label: 'cristobaltrs'}
-    ]
+    const users = await displayAllUsers();
+    // Crear función de mapeo que funcione con ambos tipos
+    const usersmap = users.map(user => ({
+        value: user.userId,
+        label: user.uniqueId || user.nickname || 'Usuario sin nombre'
+    }));
+    return [...usersmap, { value: '7339395551567954950', label: 'cristobaltrs' }];
 }
-const formConfigurations = {
+
+const formConfigurations: TFormConfigs | any = {
     comment: {
         title: "Configurar Evento de Comentario",
         getInitialData: () => ({
@@ -171,18 +179,20 @@ const pageConfig = {
     eventTypes: ['comment', 'gift', 'bits', 'likes','follow'] // Tipos gestionados en esta página
 };
 
-const modalEl = document.getElementById(pageConfig.modalId);
-const editorEl = document.getElementById(pageConfig.editorId);
-const managerEl = document.getElementById(pageConfig.managerId);
+const modalEl = document.getElementById(pageConfig.modalId) as IModalElement;
+const editorEl = document.getElementById(pageConfig.editorId) as IEditorElement;
+const managerEl = document.getElementById(pageConfig.managerId) as IGridManagerElement;
 
 if (!modalEl || !editorEl || !managerEl) {
     console.error("Error: Elementos UI necesarios no encontrados.");
     // Podrías detener aquí o mostrar un error visual
-}
+} else {
+
+
 
 const globalEmitter = new Emitter(); // Un Emitter para todos los eventos de esta página
 
-const dbConfigMap = {
+const dbConfigMap: Record<string, any> = {
   comment: databases.commentEventsDB,
   gift: databases.giftEventsDB,
   bits: databases.bitsEventsDB,
@@ -191,20 +201,20 @@ const dbConfigMap = {
   follow: databases.followEventsDB
 };
 
-const dbManagerMap = {};
+const dbManagerMap: TDbManagerMap = {};
 pageConfig.eventTypes.forEach(type => {
     if(dbConfigMap[type] && formConfigurations[type]) {
         dbManagerMap[type] = new IndexedDBManager(dbConfigMap[type], globalEmitter);
     } else {
-         console.warn(`Configuración de DB o Formulario faltante para el tipo: ${type}`);
+        console.warn(`Configuración de DB o Formulario faltante para el tipo: ${type}`);
     }
 });
 
 
-const tableConfigs = {};
+const tableConfigs: Record<string, ITableConfig> = {};
 pageConfig.eventTypes.forEach(type => {
-    if(dbManagerMap[type]) { // Solo añade si el manager se pudo crear
-        tableConfigs[`${type}Events`] = { // Convención: compId = type + "Events"
+    if(dbManagerMap[type]) {
+        tableConfigs[`${type}Events`] = {
             title: formConfigurations[type].title || `Eventos ${type}`,
             formConfig: formConfigurations[type],
             dbConfig: dbConfigMap[type]
@@ -213,11 +223,12 @@ pageConfig.eventTypes.forEach(type => {
 });
 
 
-function openModal(type, data = null) {
+
+function openModal(type: string, data: Record<string, any> | null = null) {
     openDynamicModal(modalEl, editorEl, type, formConfigurations, data);
 }
 
-function refreshTable(compId) {
+function refreshTable(compId: string) {
     const config = tableConfigs[compId];
     if (config) {
         updateTableData(managerEl, compId, config.dbConfig, getAllDataFromDatabase);
@@ -226,10 +237,11 @@ function refreshTable(compId) {
     }
 }
 
-// Listener para botones "Añadir" específicos por tipo
-document.body.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-form-type]');
-    if (button && pageConfig.eventTypes.includes(button.dataset.formType)) {
+
+document.body.addEventListener('click', (event: MouseEvent) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-form-type]');
+    // si `button` no es null, tendrá la propiedad `dataset`.
+    if (button?.dataset.formType && pageConfig.eventTypes.includes(button.dataset.formType)) {
         openModal(button.dataset.formType);
     }
 });
@@ -278,3 +290,4 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(() => console.log('Gestor de eventos inicializado.'))
     .catch(error => console.error('Error inicializando gestor de eventos:', error));
 });
+}

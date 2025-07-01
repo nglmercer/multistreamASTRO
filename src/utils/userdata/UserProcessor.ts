@@ -3,7 +3,9 @@ import {
   getAllDataFromDatabase,
   type DatabaseItem,
 } from "../idb.ts";
-
+import { 
+  type TikTokUser
+} from "@utils/transform/Types.ts"
 // Tipos específicos para el procesamiento de usuarios
 interface EventData {
   userId?: string | number | null;
@@ -419,7 +421,7 @@ async function setupData(event: EventType, data: EventData): Promise<void> {
 /**
  * Función para mostrar todos los usuarios
  */
-async function displayAllUsers(): Promise<UserData[]> {
+async function displayAllUsers(): Promise<TikTokUser[] | UserData[]> {
   try {
     const users = await userProcessor.getAllUsers();
     console.log("All users:", users);

@@ -285,12 +285,17 @@ export function setupTableActionListeners(
 
         } else if (action === 'delete') {
             const { id, name } = item;
-            const confirmed = confirm(`¿Seguro que quieres eliminar "${name || 'el elemento'}" con ID: ${id}?`);
-            
-            if (confirmed) {
-                await dbManager.deleteData(id);
-                afterDelete(compId, item);
-            }
+            window.showDialog(`eliminar elemento ${name} con ID: ${id}`, 'aceptar', 'cancelar')
+                .then(async (result) => {
+                console.log("Resultado de la confirmación:", result);
+                if (result){
+                    const deleteResult = await dbManager.deleteData(item.id);
+                    if (deleteResult) afterDelete(compId, item);
+                }
+                })
+                .catch((error) => {
+                console.error("Error al mostrar el diálogo de confirmación:", error);
+                });
         } else {
             console.log(`Acción no manejada "${action}" para ${formType}:`, item);
         }

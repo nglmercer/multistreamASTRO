@@ -1,5 +1,7 @@
 // ./Types.ts
-
+import { 
+    type UserData
+  } from "@utils/userdata/UserProcessor"
 // Interface for the raw gift object structure likely coming from TikTok/localStorage
 export interface TikTokGiftRaw {
     name: string;
@@ -38,7 +40,7 @@ export type GiftListCriteria = 'gift' | 'cost';
 export type GiftSortCriteria = 'name' | 'cost';
 
 // Interface for a TikTok User, based on the provided data
-export interface TikTokUser {
+export interface TikTokUser extends UserData {
     followRole: number;
     gifterLevel: number;
     isModerator: boolean;
