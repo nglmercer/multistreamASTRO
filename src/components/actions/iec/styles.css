@@ -1,0 +1,109 @@
+/* database-components.css - Estilos globales */
+
+.database-component {
+    border-radius: 8px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    width: 100%;
+    color: white;
+  }
+  
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .btn-export {
+    background-color: #4CAF50;
+  }
+  
+  .btn-export:hover:not(:disabled) {
+    background-color: #45a049;
+  }
+  
+  .btn-import {
+    background-color: #2196F3;
+  }
+  
+  .btn-import:hover:not(:disabled) {
+    background-color: #1976D2;
+  }
+  
+  .status-message {
+    padding: 10px;
+    border-radius: 4px;
+    display: none;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  
+  .status-message.success {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid var(--success-border);
+    display: block;
+  }
+  
+  .status-message.error {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid var(--error-border);
+    display: block;
+  }
+  
+  .status-message.info {
+    background-color: var(--info-bg);
+    color: var(--info-text);
+    border: 1px solid var(--info-border);
+    display: block;
+  }
+  
+  /* Variables CSS para tema claro */
+  :root {
+    --bg-color: #ffffff;
+    --border-color: #ddd;
+    --text-color: #333;
+    --success-bg: #d4edda;
+    --success-text: #155724;
+    --success-border: #c3e6cb;
+    --error-bg: #f8d7da;
+    --error-text: #721c24;
+    --error-border: #f5c6cb;
+    --info-bg: #d1ecf1;
+    --info-text: #0c5460;
+    --info-border: #bee5eb;
+  }
+  
+  /* Variables CSS para tema oscuro */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-color: #1a1a1a;
+      --border-color: #444;
+      --text-color: #ffffff;
+      --success-bg: #0f3a1a;
+      --success-text: #7dcf8a;
+      --success-border: #2d5a3d;
+      --error-bg: #3a0f1a;
+      --error-text: #f08a97;
+      --error-border: #5a2d37;
+      --info-bg: #0f2a3a;
+      --info-text: #7dcdf0;
+      --info-border: #2d4a5a;
+    }
+  }

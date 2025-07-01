@@ -222,7 +222,6 @@ class ObjectTableLit extends BaseLitElement {
         css`
             :host {
                 border: 1px solid var(--border-color-primary);
-                padding: 10px;
                 border-radius: 5px;
                 /* El fondo y color principal ya vienen de BaseLitElement :host */
             }
@@ -230,7 +229,6 @@ class ObjectTableLit extends BaseLitElement {
             table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-top: 10px;
                 font-size: 0.95em;
             }
             th, td {

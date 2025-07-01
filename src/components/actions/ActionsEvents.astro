@@ -1,7 +1,11 @@
 ---
 import ActionsForm from "./Actions.astro";
+import Export from "./iec/export.astro";
+import Import from "./iec/import.astro";
+import Notify from '@components/notify.astro'
+import { databases } from "@config/idbconfig";
 ---
-
+<link rel="stylesheet" href="src/components/actions/iec/styles.css">
 <script src="/src/litcomponents/modal.js"></script>
 <script src="/src/components/actionsjs/table.js"></script>
 <script src="/src/components/actionsjs/init.js"></script>
@@ -29,29 +33,20 @@ import ActionsForm from "./Actions.astro";
 
   <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
   <div class="grid gap-5 m-5">
-    <h2>Acciones </h2>
+    <div class="flex center">
+      <h2>Acciones </h2>
+      <Import  databaseConfig={databases.ActionsDB} buttonText="Importar"></Import>
+      <Export  databaseConfig={databases.ActionsDB} buttonText="Exportar"></Export>
+    </div>
     <obj-table id="ActionConfigManager" darkmode></obj-table>
   </div>
     <ActionsForm/>
-  <single-dbmanager db-key="ActionsDB"></single-dbmanager>
-
+    <Notify></Notify>
 </div>
 <script src="/src/components/actionsjs/actionstable.ts"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>
-  #modal-container dyn-obj-disp {
-    /* Estilo más general */
-    min-width: 400px;
-    display: block; /* Asegurar que toma espacio */
-    background-color: #222; /* Fondo para el contenido del modal */
-    border-radius: 8px;
-    /* obj-edit-form dentro no necesita borde/padding extra */
-  }
-  #modal-container dyn-obj-disp obj-edit-frm {
-    border: none;
-    padding: 0;
-    background: transparent;
-  }
+ /*  @import './iec/styles.css'; */
   .output {
     margin-top: 1rem;
     padding: 1rem;

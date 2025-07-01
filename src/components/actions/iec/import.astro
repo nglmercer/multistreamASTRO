@@ -1,0 +1,106 @@
+---
+// DatabaseImporter.astro
+import type { DatabaseConfig } from '@config/idbconfig';
+
+export interface Props {
+  databaseConfig: DatabaseConfig;
+  className?: string;
+  buttonText?: string;
+}
+
+const { 
+  databaseConfig, 
+  className = '', 
+  buttonText = '📥 Importar Base de Datos' 
+} = Astro.props;
+---
+
+<div class={`database-component database-importer ${className}`}>
+  <button 
+    id="import-btn"
+    class="btn btn-import"
+    data-database-name={databaseConfig.name}
+    data-database-version={databaseConfig.version}
+    data-database-store={databaseConfig.store}
+  >
+    <span class="material-symbols-outlined">download</span>
+    {buttonText || 'Importar Base de Datos'}
+  </button>
+  
+  <input
+    type="file"
+    id="file-input"
+    accept=".json"
+    style="display: none;"
+  />
+</div>
+
+<script>
+  import { importDataToDatabase, readJSONFile } from "@utils/idb.ts";
+  import type { DatabaseConfig } from '@config/idbconfig';
+
+  async function handleImport(
+    button: HTMLButtonElement, 
+    file: File
+  ): Promise<void> {
+    const databaseConfig: DatabaseConfig = {
+      name: button.dataset.databaseName!,
+      version: parseInt(button.dataset.databaseVersion!),
+      store: button.dataset.databaseStore!
+    };
+
+    if (!databaseConfig.name || !databaseConfig.version || !databaseConfig.store) {
+      window.NotificationManager?.show('Configuración de base de datos inválida', { type: 'error' });
+      return;
+    }
+
+    try {
+      button.disabled = true;
+      window.NotificationManager?.show('Importando base de datos...', { type: 'info' });
+
+      const data = await readJSONFile(file);
+      
+      if (!Array.isArray(data)) {
+        window.NotificationManager?.show('❌ El archivo debe contener un array de datos', { type: 'error' });
+        return;
+      }
+
+      const success = await importDataToDatabase(databaseConfig, data);
+      
+      if (success) {
+        window.NotificationManager?.show(
+          `✅ Importación exitosa: ${data.length} registros importados`, 
+          { type: 'success' }
+        );
+      } else {
+        window.NotificationManager?.show('❌ Error durante la importación', { type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error durante la importación:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      window.NotificationManager?.show(`❌ Error: ${errorMessage}`, { type: 'error' });
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+
+    if (!importBtn || !fileInput) return;
+
+    importBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (!file) return;
+
+      await handleImport(importBtn, file);
+      fileInput.value = ''; // Limpiar input
+    });
+  });
+</script>

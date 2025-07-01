@@ -1,0 +1,80 @@
+---
+// DatabaseExporter.astro
+import type { DatabaseConfig } from '@config/idbconfig';
+
+export interface Props {
+  databaseConfig: DatabaseConfig;
+  className?: string;
+  buttonText?: string;
+}
+
+const { 
+  databaseConfig, 
+  className = '', 
+  buttonText = '📤 Exportar Base de Datos' 
+} = Astro.props;
+---
+
+<div class={`database-component database-exporter ${className}`}>
+  <button 
+    id="export-btn"
+    class="btn btn-export"
+    data-database-name={databaseConfig.name}
+    data-database-version={databaseConfig.version}
+    data-database-store={databaseConfig.store}
+  >
+    <span class="material-symbols-outlined">upload</span>
+    {buttonText || 'Exportar Base de Datos'}
+  </button>
+</div>
+
+<script>
+  import { getAllDataFromDatabase, downloadJSON } from "@utils/idb.ts";
+  import type { DatabaseConfig } from '@config/idbconfig';
+
+  async function handleExport(button: HTMLButtonElement): Promise<void> {
+    const databaseConfig: DatabaseConfig = {
+      name: button.dataset.databaseName!,
+      version: parseInt(button.dataset.databaseVersion!),
+      store: button.dataset.databaseStore!
+    };
+
+    if (!databaseConfig.name || !databaseConfig.version || !databaseConfig.store) {
+      window.NotificationManager?.show('Configuración de base de datos inválida', { type: 'error' });
+      return;
+    }
+
+    try {
+      button.disabled = true;
+      window.NotificationManager?.show('Exportando base de datos...', { type: 'info' });
+
+      const data = await getAllDataFromDatabase(databaseConfig);
+      
+      if (data.length === 0) {
+        window.NotificationManager?.show('La base de datos está vacía', { type: 'info' });
+        return;
+      }
+
+      const filename = `${databaseConfig.name}_backup_${new Date().toISOString().split('T')[0]}.json`;
+      downloadJSON(data, filename);
+      
+      window.NotificationManager?.show(
+        `✅ Exportación exitosa: ${data.length} registros exportados`, 
+        { type: 'success' }
+      );
+    } catch (error) {
+      console.error('Error durante la exportación:', error);
+      window.NotificationManager?.show('❌ Error durante la exportación', { type: 'error' });
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
+    
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => handleExport(exportBtn));
+    }
+  });
+</script>

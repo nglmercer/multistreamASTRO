@@ -1,0 +1,374 @@
+---
+// NotificationManager.astro
+export interface Props {
+  containerId?: string;
+  autoHideDelay?: number;
+}
+
+const { containerId = 'nm-notification-container', autoHideDelay = 3000 } = Astro.props;
+
+// Generar ID único para evitar conflictos
+const containerClass = `nm-container`;
+const notificationClass = `nm-notification`;
+---
+
+<div id={containerId} class={containerClass}></div>
+
+<style is:global>
+  /* Estilos globales para que se apliquen a elementos creados dinámicamente */
+  .nm-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .nm-notification {
+    padding: 12px 16px 12px 40px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: nm-slideIn 0.3s ease-out;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid transparent;
+  }
+
+  .nm-notification:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .nm-notification::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Light theme styles */
+  @media (prefers-color-scheme: light) {
+    .nm-notification.nm-success {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+      color: #166534;
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+    
+    .nm-notification.nm-success::before {
+      content: '✓';
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .nm-notification.nm-error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+      color: #991b1b;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .nm-notification.nm-error::before {
+      content: '✕';
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    .nm-notification.nm-info {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+      color: #1e40af;
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+    
+    .nm-notification.nm-info::before {
+      content: 'ⓘ';
+      color: #3b82f6;
+      font-weight: bold;
+    }
+
+    .nm-notification.nm-warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+      color: #92400e;
+      border-color: rgba(245, 158, 11, 0.2);
+    }
+    
+    .nm-notification.nm-warning::before {
+      content: '⚠';
+      color: #f59e0b;
+      font-weight: bold;
+    }
+  }
+
+  /* Dark theme styles */
+  @media (prefers-color-scheme: dark) {
+    .nm-notification.nm-success {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.08));
+      color: #86efac;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+    
+    .nm-notification.nm-success::before {
+      content: '✓';
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .nm-notification.nm-error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    .nm-notification.nm-error::before {
+      content: '✕';
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    .nm-notification.nm-info {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.08));
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .nm-notification.nm-info::before {
+      content: 'ⓘ';
+      color: #3b82f6;
+      font-weight: bold;
+    }
+
+    .nm-notification.nm-warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.08));
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    
+    .nm-notification.nm-warning::before {
+      content: '⚠';
+      color: #f59e0b;
+      font-weight: bold;
+    }
+  }
+
+  @keyframes nm-slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes nm-slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .nm-notification.nm-removing {
+    animation: nm-slideOut 0.3s ease-in forwards;
+  }
+
+  /* Responsive design */
+  @media (max-width: 480px) {
+    .nm-container {
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: none;
+    }
+    
+    .nm-notification {
+      font-size: 13px;
+      padding: 10px 14px 10px 36px;
+    }
+    
+    .nm-notification::before {
+      width: 18px;
+      height: 18px;
+      font-size: 14px;
+      left: 10px;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .nm-notification {
+      border-width: 2px;
+      font-weight: 600;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .nm-notification {
+      animation: none;
+      transition: none;
+    }
+    
+    .nm-notification:hover {
+      transform: none;
+    }
+    
+    .nm-notification.nm-removing {
+      animation: none;
+      opacity: 0;
+    }
+  }
+</style>
+
+<script define:vars={{ containerId, autoHideDelay, containerClass, notificationClass }}>
+  function createNotification(message, options = {}) {
+    const { 
+      type = 'info', 
+      autoHide = true, 
+      delay = autoHideDelay,
+      persistent = false 
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error('Notification container not found:', containerId);
+      return;
+    }
+    const notification = document.createElement('div');
+    notification.className = `${notificationClass} nm-${type}`;
+    notification.textContent = message;
+    notification.setAttribute('role', 'alert');
+    notification.setAttribute('aria-live', 'polite');
+    
+    // Añadir botón de cerrar para notificaciones persistentes
+    if (persistent || !autoHide) {
+      const closeBtn = document.createElement('button');
+      closeBtn.innerHTML = '×';
+      closeBtn.style.cssText = `
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: inherit;
+      `;
+      closeBtn.setAttribute('aria-label', 'Cerrar notificación');
+      closeBtn.addEventListener('click', (e) => {
+        removeNotification(notification);
+      });
+      closeBtn.addEventListener('mouseover', () => closeBtn.style.opacity = '1');
+      closeBtn.addEventListener('mouseout', () => closeBtn.style.opacity = '0.7');
+      notification.appendChild(closeBtn);
+    }
+    
+    // Remover notificación al hacer clic (solo si no es persistente)
+    if (!persistent) {
+      notification.addEventListener('click', () => {
+        removeNotification(notification);
+      });
+    }
+
+    container.appendChild(notification);
+
+    if (autoHide && !persistent) {
+        removeNotification(notification,delay);
+    }
+
+    return notification;
+  }
+
+  function removeNotification(notification,delay = 300) {
+    if (!notification || !notification.parentNode) return;
+    setTimeout(() => {
+        notification.classList.add('nm-removing');
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, delay);
+  }
+
+  function clearAll(delay = 300) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const notifications = container.querySelectorAll(`.${notificationClass}`);
+    notifications.forEach(notification => {
+      removeNotification(notification,delay);
+    });
+  }
+
+  function showSuccess(message, options = {}) {
+    return createNotification(message, { ...options, type: 'success' });
+  }
+
+  function showError(message, options = {}) {
+    return createNotification(message, { ...options, type: 'error' });
+  }
+
+  function showInfo(message, options = {}) {
+    return createNotification(message, { ...options, type: 'info' });
+  }
+
+  function showWarning(message, options = {}) {
+    return createNotification(message, { ...options, type: 'warning' });
+  }
+
+  // Exponer funciones globalmente
+  window.NotificationManager = {
+    show: createNotification,
+    success: showSuccess,
+    error: showError,
+    info: showInfo,
+    warning: showWarning,
+    clear: clearAll
+  };
+</script>
+
+<script>
+  interface NotificationOptions {
+    type?: 'success' | 'error' | 'info' | 'warning';
+    autoHide?: boolean;
+    delay?: number;
+    persistent?: boolean;
+  }
+
+  declare global {
+    interface Window {
+      NotificationManager: {
+        show: (message: string, options?: NotificationOptions) => HTMLElement | undefined;
+        success: (message: string, options?: Omit<NotificationOptions, 'type'>) => HTMLElement | undefined;
+        error: (message: string, options?: Omit<NotificationOptions, 'type'>) => HTMLElement | undefined;
+        info: (message: string, options?: Omit<NotificationOptions, 'type'>) => HTMLElement | undefined;
+        warning: (message: string, options?: Omit<NotificationOptions, 'type'>) => HTMLElement | undefined;
+        clear: () => void;
+      };
+    }
+  }
+</script>

@@ -1,5 +1,5 @@
 import Emitter, { emitter } from "./Emitter";
-
+import { databases } from "@config/idbconfig";
 interface DatabaseConfig {
   name: string;
   version: number;
@@ -45,21 +45,6 @@ const EmitEvents: emitevents[] = [
   "export",
   "import"
 ];
-
-const databases: Record<string, DatabaseConfig> = {
-  commentEventsDB: {
-    name: "commentEvents",
-    version: 1,
-    store: "commentEvents",
-  },
-  giftEventsDB: { name: "giftEvents", version: 1, store: "giftEvents" },
-  bitsEventsDB: { name: "bitsEvents", version: 1, store: "bitsEvents" },
-  likesEventsDB: { name: "likesEvents", version: 1, store: "likesEvents" },
-  followEventsDB: { name: "followEvents", version: 1, store: "followEvents"},
-  eventsDB: { name: "Events", version: 1, store: "events" },
-  ActionsDB: { name: "Actions", version: 1, store: "actions" },
-  banDB: { name: "Bans", version: 1, store: "bans" },
-};
 
 class IndexedDBManager {
   private dbConfig: DatabaseConfig;
@@ -639,12 +624,39 @@ async function importDataToDatabase(
   });
 }
 
+function downloadJSON(data: any[], filename: string): void {
+  const dataStr = JSON.stringify(data, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
+function readJSONFile(file: File): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse((e.target as FileReader).result as string);
+        resolve(data);
+      } catch (error) {
+        reject(new Error('El archivo no es un JSON válido'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Error al leer el archivo'));
+    reader.readAsText(file);
+  });
+}
 export {
   databases,
   IndexedDBManager,
   getAllDataFromDatabase,
   importDataToDatabase,
+  downloadJSON,
+  readJSONFile,
   type DatabaseConfig,
   type DatabaseIndex,
   type DatabaseItem,
