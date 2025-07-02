@@ -24,18 +24,20 @@ const {
 ---
 
 <div class={`grid gap-5 m-5 ${className}`} id={sectionId}>
-  <div class="flex center">
+  <div class="flex beetwen">
     <button id={buttonId} class="primary">{buttonText}</button>
-    <Import 
-      databaseConfig={databaseConfig} 
-      buttonText="Importar"
-      uniqueId={`import-${sectionId}`}
-    />
-    <Export 
-      databaseConfig={databaseConfig} 
-      buttonText="Exportar"
-      uniqueId={`export-${sectionId}`}
-    />
+    <div class="flex">
+      <Import 
+        databaseConfig={databaseConfig} 
+        buttonText="Importar"
+        uniqueId={`import-${sectionId}`}
+      />
+      <Export 
+        databaseConfig={databaseConfig} 
+        buttonText="Exportar"
+        uniqueId={`export-${sectionId}`}
+      />
+    </div>
   </div>
-  <obj-table id={tableId} darkmode></obj-table>
+  <obj-table id={tableId} darkmode style="margin-inline: 4px"></obj-table>
 </div>

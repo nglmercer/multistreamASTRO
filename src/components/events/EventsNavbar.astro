@@ -1,0 +1,267 @@
+---
+// src/components/events/EventsNavbar.astro
+export interface Props {
+  eventSections: Array<{
+    databaseConfig: any;
+    buttonText: string;
+    buttonId: string;
+    tableId: string;
+    sectionId: string;
+    title: string;
+  }>;
+}
+
+const { eventSections } = Astro.props;
+
+// Mapeo de iconos de Material Symbols para cada tipo de evento
+const getEventIcon = (sectionId: string) => {
+  if (sectionId.includes('comment')) return 'comment';
+  if (sectionId.includes('gift')) return 'redeem';
+  if (sectionId.includes('bits')) return 'currency_bitcoin';
+  if (sectionId.includes('likes')) return 'favorite';
+  if (sectionId.includes('follow')) return 'group_add';
+  return 'event';
+};
+---
+
+<nav class="events-navbar">
+  <div class="navbar-container">
+    <div class="navbar-brand w-full center">
+      <span class="material-symbols-outlined brand-icon">dashboard</span>
+      <h2>Gestión de Eventos</h2>
+    </div>
+    
+    <div class="navbar-tabs">
+      {eventSections.map((section, index) => (
+        <button
+          class={`nav-tab ${index === 0 ? 'active' : ''}`}
+          data-target={section.sectionId}
+          data-event-type={section.sectionId.replace('-section', '')}
+        >
+          <span class="material-symbols-outlined tab-icon">
+            {getEventIcon(section.sectionId)}
+          </span>
+          <span class="tab-text">{section.title}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+</nav>
+
+<style>
+  .events-navbar {
+    background: linear-gradient(135deg, #667eea 0%, #4b58a2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;  
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .navbar-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .navbar-brand h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .brand-icon {
+    font-size: 1.8rem;
+    opacity: 0.9;
+  }
+
+  .navbar-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+  }
+
+  .nav-tab:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-tab.active {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .tab-icon {
+    font-size: 1.2rem;
+  }
+
+  .tab-text {
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .navbar-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .navbar-tabs {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .nav-tab .tab-text {
+      display: none;
+    }
+
+    .navbar-tabs {
+      gap: 4px;
+    }
+
+    .nav-tab {
+      padding: 8px 12px;
+    }
+  }
+</style>
+
+<script>
+  interface SectionDisplayNameMap {
+    [key: string]: string;
+  }
+
+  class EventsNavbarManager {
+    private activeSection: string | null = null;
+    private readonly sectionNameMap: SectionDisplayNameMap = {
+      'comment-section': 'Comentarios',
+      'gift-section': 'Regalos', 
+      'bits-section': 'Bits',
+      'likes-section': 'Likes',
+      'follow-section': 'Seguimientos'
+    };
+
+    constructor() {
+      this.init();
+    }
+
+    private init(): void {
+      this.setupNavigation();
+    }
+
+    private setupNavigation(): void {
+      const navTabs = document.querySelectorAll<HTMLButtonElement>('.nav-tab');
+      
+      navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const targetSection = tab.dataset.target;
+          if (targetSection) {
+            this.switchToSection(targetSection);
+            this.updateActiveTab(tab);
+          }
+        });
+      });
+
+      // Activar la primera sección by default
+      if (navTabs.length > 0) {
+        const firstTab = navTabs[0];
+        const firstTarget = firstTab.dataset.target;
+        if (firstTarget) {
+          this.switchToSection(firstTarget);
+        }
+      }
+    }
+
+    private switchToSection(sectionId: string): void {
+      // Ocultar todas las secciones
+      const allSections = document.querySelectorAll<HTMLElement>('.event-section');
+      allSections.forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+      });
+
+      // Mostrar la sección activa
+      const targetSection = document.getElementById(sectionId);
+      if (targetSection) {
+        targetSection.classList.add('active');
+        targetSection.style.display = 'block';
+        this.activeSection = sectionId;
+        
+        // Actualizar estado en la UI
+        this.updateActiveSection(sectionId);
+      }
+    }
+
+    private updateActiveTab(activeTab: HTMLButtonElement): void {
+      // Remover clase active de todos los tabs
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Agregar clase active al tab seleccionado
+      activeTab.classList.add('active');
+    }
+
+    private updateActiveSection(sectionId: string): void {
+      const activeSectionElement = document.getElementById('active-section');
+      if (activeSectionElement) {
+        const sectionName = this.getSectionDisplayName(sectionId);
+        activeSectionElement.textContent = sectionName;
+      }
+    }
+
+    private getSectionDisplayName(sectionId: string): string {
+      return this.sectionNameMap[sectionId] || sectionId;
+    }
+
+    // Método público para obtener la sección activa
+    public getActiveSection(): string | null {
+      return this.activeSection;
+    }
+  }
+
+  // Hacer la clase disponible globalmente para otros scripts
+  declare global {
+    interface Window {
+      EventsNavbarManager?: typeof EventsNavbarManager;
+      eventsNavbarManager?: EventsNavbarManager;
+    }
+  }
+
+  // Inicializar cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', () => {
+    const manager = new EventsNavbarManager();
+    
+    // Hacer disponible globalmente
+    window.EventsNavbarManager = EventsNavbarManager;
+    window.eventsNavbarManager = manager;
+  });
+</script>

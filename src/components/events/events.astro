@@ -1,6 +1,7 @@
 ---
 // /src/pages/events/events.astro
 import DatabaseSection from "@components/actions/DatabaseSection.astro";
+import EventsNavbar from "@components/events/EventsNavbar.astro";
 import Notify from '@components/notify.astro';
 import { databases } from "@config/idbconfig";
 
@@ -48,31 +49,69 @@ const eventSections = [
   }
 ];
 ---
-    <!-- Secciones de eventos -->
-      {eventSections.map((section, index) => (
-        <section 
-          id={section.sectionId}
-          class={`event-section ${index === 0 ? 'active' : ''}`}
-        >
-          <DatabaseSection 
-            databaseConfig={section.databaseConfig}
-            buttonText={section.buttonText}
-            buttonId={section.buttonId}
-            tableId={section.tableId}
-            sectionId={section.sectionId}
-          />
-        </section>
-      ))}
 
+<div class="events-container p-10">
+  <!-- Navbar de navegación -->
+  <EventsNavbar eventSections={eventSections} />
+
+  <!-- Contenedor de las secciones de eventos -->
+  <div class="events-content">
+    {eventSections.map((section, index) => (
+      <section
+        id={section.sectionId}
+        class={`event-section ${index === 0 ? 'active' : ''}`}
+        style={index === 0 ? '' : 'display: none;'}
+      >
+        
+        <DatabaseSection
+          databaseConfig={section.databaseConfig}
+          buttonText={section.buttonText}
+          buttonId={section.buttonId}
+          tableId={section.tableId}
+          sectionId={section.sectionId}
+        />
+      </section>
+    ))}
+  </div>
 
   <!-- Notificaciones -->
   <Notify />
+</div>
 
-  <script>
-    import { EventsManager } from '@components/events/EventsManager.js';
-    document.addEventListener('DOMContentLoaded', () => {
-      new EventsManager();
-    });
+<style>
 
+  .events-content {
+    background: var(--primary-bg, #f9f9f9);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
 
-  </script>
+  .event-section {
+    min-height: 500px;
+    transition: opacity 0.3s ease;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .event-section:not(.active) {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .event-section.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+</style>

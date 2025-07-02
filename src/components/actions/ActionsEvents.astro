@@ -20,18 +20,9 @@ const databaseSections = [
 <link rel="stylesheet" href="src/components/actions/iec/styles.css">
 <script src="/src/litcomponents/modal.js"></script>
 <script src="/src/components/actionsjs/table.ts"></script>
-<script src="/src/components/actionsjs/init.ts"></script>
 <script src="/src/litcomponents/Database/single-dbmanager.js"></script>
 
 <div class="container">
-  <div class="button-group">
-    <button data-form-type="comment" class="primary">Evento Comentario</button>
-    <button data-form-type="bits" class="primary">Evento Bits</button>
-    <button data-form-type="likes" class="primary">Evento Likes</button>
-    <button data-form-type="follow" class="primary">Evento Follow</button>
-    <button data-form-type="gift" class="primary">Evento Regalo</button>
-  </div>
-  
   <dlg-cont id="modal-container">
     <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode></dyn-obj-disp>
   </dlg-cont>
@@ -39,7 +30,11 @@ const databaseSections = [
   <dlg-cont id="Action-modal">
     <obj-edit-frm id="Action-editor" mode="edit" darkmode></obj-edit-frm>
   </dlg-cont>  
-  <!-- Secciones de bases de datos generadas dinámicamente -->
+
+    <div class="flex center navbar-brand p-10">
+      <span class="material-symbols-outlined brand-icon">dashboard</span>
+      <h2>Gestión de Acciones</h2>
+    </div>
     {databaseSections.map((section) => (
       <DatabaseSection
         databaseConfig={section.databaseConfig}
@@ -49,6 +44,7 @@ const databaseSections = [
         sectionId={section.sectionId}
       />
     ))}
+    <div class="separator-gradient"></div>
     <Events></Events>
   <ActionsForm/>
   <Notify></Notify>
@@ -58,6 +54,14 @@ const databaseSections = [
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>
  /*  @import './iec/styles.css'; */
+ .navbar-brand {
+    background: linear-gradient(135deg, #667eea 0%, #4b58a2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
   .output {
     margin-top: 1rem;
     padding: 1rem;
