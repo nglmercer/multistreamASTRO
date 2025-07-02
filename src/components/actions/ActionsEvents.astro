@@ -1,48 +1,59 @@
 ---
+import Events from "@components/events/events.astro";
 import ActionsForm from "./Actions.astro";
-import Export from "./iec/export.astro";
-import Import from "./iec/import.astro";
-import Notify from '@components/notify.astro'
+import DatabaseSection from "./DatabaseSection.astro";
+import Notify from '@components/notify.astro';
 import { databases } from "@config/idbconfig";
+
+// Configuración de las secciones de base de datos
+const databaseSections = [
+  {
+    databaseConfig: databases.ActionsDB,
+    buttonText: "Agregar Acción",
+    buttonId: "ActionsDBButton",
+    tableId: "ActionConfigManager",
+    sectionId: "actions-section"
+  }
+];
 ---
+
 <link rel="stylesheet" href="src/components/actions/iec/styles.css">
 <script src="/src/litcomponents/modal.js"></script>
 <script src="/src/components/actionsjs/table.ts"></script>
 <script src="/src/components/actionsjs/init.ts"></script>
 <script src="/src/litcomponents/Database/single-dbmanager.js"></script>
-<script>
 
-</script>
 <div class="container">
-
   <div class="button-group">
     <button data-form-type="comment" class="primary">Evento Comentario</button>
     <button data-form-type="bits" class="primary">Evento Bits</button>
     <button data-form-type="likes" class="primary">Evento Likes</button>
     <button data-form-type="follow" class="primary">Evento Follow</button>
     <button data-form-type="gift" class="primary">Evento Regalo</button>
-    <button id="actionButton" class="primary">Acción</button>
   </div>
-
+  
   <dlg-cont id="modal-container">
-    <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode> </dyn-obj-disp>
+    <dyn-obj-disp id="dynamic-editor" mode="edit" darkmode></dyn-obj-disp>
   </dlg-cont>
+  
   <dlg-cont id="Action-modal">
-    <obj-edit-frm id="Action-editor" mode="edit" darkmode> </obj-edit-frm>
-  </dlg-cont>
-
-  <grid-manager-lit id="eventConfigManager" darkmode></grid-manager-lit>
-  <div class="grid gap-5 m-5">
-    <div class="flex center">
-      <h2>Acciones </h2>
-      <Import  databaseConfig={databases.ActionsDB} buttonText="Importar"></Import>
-      <Export  databaseConfig={databases.ActionsDB} buttonText="Exportar"></Export>
-    </div>
-    <obj-table id="ActionConfigManager" darkmode></obj-table>
-  </div>
-    <ActionsForm/>
-    <Notify></Notify>
+    <obj-edit-frm id="Action-editor" mode="edit" darkmode></obj-edit-frm>
+  </dlg-cont>  
+  <!-- Secciones de bases de datos generadas dinámicamente -->
+    {databaseSections.map((section) => (
+      <DatabaseSection
+        databaseConfig={section.databaseConfig}
+        buttonText={section.buttonText}
+        buttonId={section.buttonId}
+        tableId={section.tableId}
+        sectionId={section.sectionId}
+      />
+    ))}
+    <Events></Events>
+  <ActionsForm/>
+  <Notify></Notify>
 </div>
+
 <script src="/src/components/actionsjs/actionstable.ts"></script>
 <script src="/src/components/actionsjs/evalue.js"></script>
 <style>

@@ -81,6 +81,12 @@ export interface ICompActionDetail {
     item: { id: any; name?: string; [key: string]: any };
 }
 
+// Tipo para el resultado de getDBC
+export interface IDbcResult {
+    formType: string;
+    dbManager: IDbManager;
+}
+
 // --- Implementación de Funciones Tipadas ---
 
 export async function openDynamicModal(
@@ -159,7 +165,7 @@ export async function initializeTables(
             const fieldConfig = await config.formConfig.getFieldConfig();
             
             const preDefinedKeys = Object.entries(fieldConfig)
-                .filter(([key, field]) => !field.hidden)
+                .filter(([, field]) => !field.hidden)
                 .map(([key]) => key);
 
             const displayKeys = isArray({ value: displayKeysArray, defaultvalue: preDefinedKeys });
@@ -271,35 +277,71 @@ export function setupTableActionListeners(
         const { compId, action, item } = (e as CustomEvent<ICompActionDetail>).detail;
         
         // Lógica simplificada para encontrar formType, asume convención
-        const formType = Object.keys(tableConfigs).find(key => key.startsWith(compId.replace(/Events$/, '')) || key === compId)?.replace(/Events$/, '');
+        const dbcResult = getDBC(compId, tableConfigs, dbManagerMap);
         
-        if (!formType || !dbManagerMap[formType]) {
+        if (!dbcResult) {
             console.error(`No se pudo determinar un formType o DB Manager válido para compId: ${compId}`);
             return;
         }
 
-        const dbManager = dbManagerMap[formType];
+        const { formType, dbManager } = dbcResult;
 
         if (action === 'edit') {
             openModalFn(formType, item);
 
         } else if (action === 'delete') {
             const { id, name } = item;
-            window.showDialog(`eliminar elemento ${name} con ID: ${id}`, 'aceptar', 'cancelar')
-                .then(async (result) => {
-                console.log("Resultado de la confirmación:", result);
-                if (result){
-                    const deleteResult = await dbManager.deleteData(item.id);
-                    if (deleteResult) afterDelete(compId, item);
-                }
+            // Asumiendo que window.showDialog existe en el contexto global
+            (window as any).showDialog(`eliminar elemento ${name} con ID: ${id}`, 'aceptar', 'cancelar')
+                .then(async (result: boolean) => {
+                    console.log("Resultado de la confirmación:", result);
+                    if (result) {
+                        const deleteResult = await dbManager.deleteData(item.id);
+                        if (deleteResult) afterDelete(compId, item);
+                    }
                 })
-                .catch((error) => {
-                console.error("Error al mostrar el diálogo de confirmación:", error);
+                .catch((error: any) => {
+                    console.error("Error al mostrar el diálogo de confirmación:", error);
                 });
         } else {
             console.log(`Acción no manejada "${action}" para ${formType}:`, item);
         }
     });
+
+    managerEl.addEventListener('default-action', async (e: Event) => {
+        const compId = (e as CustomEvent).detail;
+        const dbcResult = getDBC(compId, tableConfigs, dbManagerMap);
+        
+        if (!dbcResult) {
+            console.error(`No se pudo determinar un formType válido para compId: ${compId}`);
+            return;
+        }
+
+        const { formType } = dbcResult;
+        console.log("compId", compId);
+        openModalFn(formType, {});
+    });
+}
+
+function getDBC(
+    compId: string,
+    tableConfigs: TTableConfigs,
+    dbManagerMap: TDbManagerMap
+): IDbcResult | undefined {
+    const formType = Object.keys(tableConfigs).find(key => 
+        key.startsWith(compId.replace(/Events$/, '')) || key === compId
+    )?.replace(/Events$/, '');
+        
+    if (!formType || !dbManagerMap[formType]) {
+        console.error(`No se pudo determinar un formType o DB Manager válido para compId: ${compId}`);
+        return undefined;
+    }
+
+    const dbManager = dbManagerMap[formType];
+    return {
+        formType,
+        dbManager
+    };
 }
 
 // --- Función Helper Tipada ---

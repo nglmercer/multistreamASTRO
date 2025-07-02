@@ -17,7 +17,7 @@ const pageConfig = {
   modalId: "Action-modal",
   editorId: "Action-editor",
   managerId: "ActionConfigManager",
-  addButtonId: "actionButton",
+  addButtonId: "ActionsDBButton",
   dbConfig: databases.ActionsDB,
   baseCompId: "actionsTable",
 };
@@ -85,12 +85,12 @@ actionEmitter.onAny(async(event:string,data) => {
     console.log("event", `Evento emitido: ${event}`, data);
     await refreshTable();
 });
-setTimeout(() => {
+/* setTimeout(() => {
   actionEmitter.emit("exampleEvent", {
     message: "This is an example event",
     timestamp: new Date().toISOString()
   });
-}, 5000); // emit exampleEvent after 5 seconds
+}, 5000); // emit exampleEvent after 5 seconds */
 async function renderdata() {
   const data = await actionDbManager.getAllData();
   return data;

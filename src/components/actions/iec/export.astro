@@ -1,30 +1,35 @@
 ---
-// DatabaseExporter.astro
+// Export.astro
 import type { DatabaseConfig } from '@config/idbconfig';
 
 export interface Props {
   databaseConfig: DatabaseConfig;
   className?: string;
   buttonText?: string;
+  uniqueId?: string;
 }
 
-const { 
-  databaseConfig, 
-  className = '', 
-  buttonText = '📤 Exportar Base de Datos' 
+const {
+  databaseConfig,
+  className = '',
+  buttonText = '📤 Exportar Base de Datos',
+  uniqueId = 'default'
 } = Astro.props;
+
+const exportBtnId = `export-btn-${uniqueId}`;
 ---
 
 <div class={`database-component database-exporter ${className}`}>
-  <button 
-    id="export-btn"
+  <button
+    id={exportBtnId}
     class="btn btn-export"
     data-database-name={databaseConfig.name}
     data-database-version={databaseConfig.version}
     data-database-store={databaseConfig.store}
+    data-component-id={exportBtnId}
   >
     <span class="material-symbols-outlined">upload</span>
-    {buttonText || 'Exportar Base de Datos'}
+    {buttonText}
   </button>
 </div>
 
@@ -47,9 +52,9 @@ const {
     try {
       button.disabled = true;
       window.NotificationManager?.show('Exportando base de datos...', { type: 'info' });
-
-      const data = await getAllDataFromDatabase(databaseConfig);
       
+      const data = await getAllDataFromDatabase(databaseConfig);
+     
       if (data.length === 0) {
         window.NotificationManager?.show('La base de datos está vacía', { type: 'info' });
         return;
@@ -57,9 +62,9 @@ const {
 
       const filename = `${databaseConfig.name}_backup_${new Date().toISOString().split('T')[0]}.json`;
       downloadJSON(data, filename);
-      
+     
       window.NotificationManager?.show(
-        `✅ Exportación exitosa: ${data.length} registros exportados`, 
+        `✅ Exportación exitosa: ${data.length} registros exportados`,
         { type: 'success' }
       );
     } catch (error) {
@@ -70,11 +75,14 @@ const {
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const exportBtn = document.getElementById('export-btn') as HTMLButtonElement;
+  // Usar delegación de eventos para manejar múltiples instancias
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest('[data-component-id^="export-btn-"]') as HTMLButtonElement;
     
-    if (exportBtn) {
-      exportBtn.addEventListener('click', () => handleExport(exportBtn));
+    if (button && button.classList.contains('btn-export')) {
+      e.preventDefault();
+      handleExport(button);
     }
   });
 </script>

@@ -1,0 +1,41 @@
+---
+// DatabaseSection.astro
+import Export from "./iec/export.astro";
+import Import from "./iec/import.astro";
+import type { DatabaseConfig } from "@config/idbconfig";
+
+export interface Props {
+  databaseConfig: DatabaseConfig;
+  buttonText: string;
+  buttonId: string;
+  tableId: string;
+  sectionId: string;
+  className?: string;
+}
+
+const {
+  databaseConfig,
+  buttonText,
+  buttonId,
+  tableId,
+  sectionId,
+  className = ""
+} = Astro.props;
+---
+
+<div class={`grid gap-5 m-5 ${className}`} id={sectionId}>
+  <div class="flex center">
+    <button id={buttonId} class="primary">{buttonText}</button>
+    <Import 
+      databaseConfig={databaseConfig} 
+      buttonText="Importar"
+      uniqueId={`import-${sectionId}`}
+    />
+    <Export 
+      databaseConfig={databaseConfig} 
+      buttonText="Exportar"
+      uniqueId={`export-${sectionId}`}
+    />
+  </div>
+  <obj-table id={tableId} darkmode></obj-table>
+</div>

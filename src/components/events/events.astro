@@ -1,0 +1,78 @@
+---
+// /src/pages/events/events.astro
+import DatabaseSection from "@components/actions/DatabaseSection.astro";
+import Notify from '@components/notify.astro';
+import { databases } from "@config/idbconfig";
+
+// Configuración de las secciones de eventos
+const eventSections = [
+  {
+    databaseConfig: databases.commentEventsDB,
+    buttonText: "Agregar Evento Comment",
+    buttonId: "CommentButton",
+    tableId: "commentEventsDBConfigManager",
+    sectionId: "comment-section",
+    title: "Eventos de Comentario"
+  },
+  {
+    databaseConfig: databases.giftEventsDB,
+    buttonText: "Agregar Evento Gift",
+    buttonId: "GiftButton",
+    tableId: "giftEventsDBConfigManager",
+    sectionId: "gift-section",
+    title: "Eventos de Regalo"
+  },
+  {
+    databaseConfig: databases.bitsEventsDB,
+    buttonText: "Agregar Evento Bits",
+    buttonId: "BitsButton",
+    tableId: "bitsEventsDBConfigManager",
+    sectionId: "bits-section",
+    title: "Eventos de Bits"
+  },
+  {
+    databaseConfig: databases.likesEventsDB,
+    buttonText: "Agregar Evento Likes",
+    buttonId: "LikesButton",
+    tableId: "likesEventsDBConfigManager",
+    sectionId: "likes-section",
+    title: "Eventos de Likes"
+  },
+  {
+    databaseConfig: databases.followEventsDB,
+    buttonText: "Agregar Evento Follow",
+    buttonId: "FollowButton",
+    tableId: "followEventsDBConfigManager",
+    sectionId: "follow-section",
+    title: "Eventos de Seguimiento"
+  }
+];
+---
+    <!-- Secciones de eventos -->
+      {eventSections.map((section, index) => (
+        <section 
+          id={section.sectionId}
+          class={`event-section ${index === 0 ? 'active' : ''}`}
+        >
+          <DatabaseSection 
+            databaseConfig={section.databaseConfig}
+            buttonText={section.buttonText}
+            buttonId={section.buttonId}
+            tableId={section.tableId}
+            sectionId={section.sectionId}
+          />
+        </section>
+      ))}
+
+
+  <!-- Notificaciones -->
+  <Notify />
+
+  <script>
+    import { EventsManager } from '@components/events/EventsManager.js';
+    document.addEventListener('DOMContentLoaded', () => {
+      new EventsManager();
+    });
+
+
+  </script>

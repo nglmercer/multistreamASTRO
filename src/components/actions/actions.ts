@@ -13,15 +13,15 @@ import { safeParse } from "@utils/jsonutils/safeparse.ts";
 // Elementos DOM globales con validación
 const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
-const actionButton = document.getElementById("actionButton");
+const ActionsDBButton = document.getElementById("ActionsDBButton");
 const ActionModal = document.getElementById("ActionModal") as DialogContainer;
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     listenersForm();
 
-    if (actionButton) {
-      actionButton.addEventListener("click", () => {
+    if (ActionsDBButton) {
+      ActionsDBButton.addEventListener("click", () => {
         openModal();
         resetForm();
       });

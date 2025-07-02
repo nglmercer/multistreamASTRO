@@ -1,37 +1,45 @@
 ---
-// DatabaseImporter.astro
+// Import.astro
 import type { DatabaseConfig } from '@config/idbconfig';
 
 export interface Props {
   databaseConfig: DatabaseConfig;
   className?: string;
   buttonText?: string;
+  uniqueId?: string;
 }
 
-const { 
-  databaseConfig, 
-  className = '', 
-  buttonText = '📥 Importar Base de Datos' 
+const {
+  databaseConfig,
+  className = '',
+  buttonText = '📥 Importar Base de Datos',
+  uniqueId = 'default'
 } = Astro.props;
+
+const importBtnId = `import-btn-${uniqueId}`;
+const fileInputId = `file-input-${uniqueId}`;
 ---
 
 <div class={`database-component database-importer ${className}`}>
-  <button 
-    id="import-btn"
+  <button
+    id={importBtnId}
     class="btn btn-import"
     data-database-name={databaseConfig.name}
     data-database-version={databaseConfig.version}
     data-database-store={databaseConfig.store}
+    data-component-id={importBtnId}
+    data-file-input={fileInputId}
   >
     <span class="material-symbols-outlined">download</span>
-    {buttonText || 'Importar Base de Datos'}
+    {buttonText}
   </button>
-  
+ 
   <input
     type="file"
-    id="file-input"
+    id={fileInputId}
     accept=".json"
     style="display: none;"
+    data-import-button={importBtnId}
   />
 </div>
 
@@ -40,7 +48,7 @@ const {
   import type { DatabaseConfig } from '@config/idbconfig';
 
   async function handleImport(
-    button: HTMLButtonElement, 
+    button: HTMLButtonElement,
     file: File
   ): Promise<void> {
     const databaseConfig: DatabaseConfig = {
@@ -57,19 +65,19 @@ const {
     try {
       button.disabled = true;
       window.NotificationManager?.show('Importando base de datos...', { type: 'info' });
-
-      const data = await readJSONFile(file);
       
+      const data = await readJSONFile(file);
+     
       if (!Array.isArray(data)) {
         window.NotificationManager?.show('❌ El archivo debe contener un array de datos', { type: 'error' });
         return;
       }
 
       const success = await importDataToDatabase(databaseConfig, data);
-      
+     
       if (success) {
         window.NotificationManager?.show(
-          `✅ Importación exitosa: ${data.length} registros importados`, 
+          `✅ Importación exitosa: ${data.length} registros importados`,
           { type: 'success' }
         );
       } else {
@@ -84,23 +92,37 @@ const {
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const importBtn = document.getElementById('import-btn') as HTMLButtonElement;
-    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+  // Delegación de eventos para botones de importar
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest('[data-component-id^="import-btn-"]') as HTMLButtonElement;
+    
+    if (button && button.classList.contains('btn-import')) {
+      e.preventDefault();
+      const fileInputId = button.dataset.fileInput;
+      const fileInput = document.getElementById(fileInputId!) as HTMLInputElement;
+      
+      if (fileInput) {
+        fileInput.click();
+      }
+    }
+  });
 
-    if (!importBtn || !fileInput) return;
-
-    importBtn.addEventListener('click', () => {
-      fileInput.click();
-    });
-
-    fileInput.addEventListener('change', async (e) => {
-      const target = e.target as HTMLInputElement;
+  // Delegación de eventos para inputs de archivo
+  document.addEventListener('change', async (e) => {
+    const target = e.target as HTMLInputElement;
+    
+    if (target.type === 'file' && target.dataset.importButton) {
       const file = target.files?.[0];
       if (!file) return;
 
-      await handleImport(importBtn, file);
-      fileInput.value = ''; // Limpiar input
-    });
+      const buttonId = target.dataset.importButton;
+      const button = document.getElementById(buttonId) as HTMLButtonElement;
+      
+      if (button) {
+        await handleImport(button, file);
+        target.value = ''; // Limpiar input
+      }
+    }
   });
 </script>

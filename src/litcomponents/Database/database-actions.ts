@@ -12,7 +12,7 @@ import {
 /**
  * Clase base para componentes de acciones de base de datos
  */
-abstract class DatabaseActionButton extends LitElement {
+abstract class DatabaseActionsDBButton extends LitElement {
   /**
    * La clave (key) de la base de datos
    */
@@ -356,7 +356,7 @@ abstract class DatabaseActionButton extends LitElement {
 }
 
 @customElement('export-button')
-export class ExportButton extends DatabaseActionButton {
+export class ExportButton extends DatabaseActionsDBButton {
   protected get defaultButtonText(): string {
     return 'Exportar';
   }
@@ -463,7 +463,7 @@ export class ExportButton extends DatabaseActionButton {
 }
 
 @customElement('import-button')
-export class ImportButton extends DatabaseActionButton {
+export class ImportButton extends DatabaseActionsDBButton {
   /**
    * Si mostrar el diálogo de confirmación (por defecto true)
    */

@@ -193,7 +193,7 @@ abstract class BaseLitElement extends LitElement {
     }
   }
 
-  protected _renderActionButtons(index: number) {
+  protected _renderActionsDBButtons(index: number) {
     let acts = [...this.actions];
     if (this.data.length > 0 || this.keys.length > 0) {
       if (!acts.some(a => a.name === 'edit')) {
@@ -286,7 +286,7 @@ export class ObjectTableLit extends BaseLitElement {
                   return html`<td class="${(typeof val === 'string' && val.length > 50) ? 'wrap' : ''}">${dVal}</td>`;
                 })}
                 <td class="acts-cell">
-                  ${this._renderActionButtons(idx)}
+                  ${this._renderActionsDBButtons(idx)}
                 </td>
               </tr>
             `)}
@@ -409,7 +409,7 @@ export class ObjectCardsLit extends BaseLitElement {
               })}
             </div>
             <div class="card-acts">
-              ${this._renderActionButtons(idx)}
+              ${this._renderActionsDBButtons(idx)}
             </div>
           </div>
         `)}
@@ -515,7 +515,7 @@ export class ObjectFlexListLit extends BaseLitElement {
               })}
             </div>
             <div class="item-acts">
-              ${this._renderActionButtons(idx)}
+              ${this._renderActionsDBButtons(idx)}
             </div>
           </div>
         `)}
@@ -756,11 +756,18 @@ export class GridManagerLit extends LitElement {
 
     return html`
       <div class="comp-wrap" data-comp-id=${id} ?darkmode=${this.darkMode}>
-        ${cfg.title ? html`<h3 class="comp-title">${cfg.title}</h3>` : nothing}
+        ${cfg.title ? html`<button id=${(id)} class="comp-title"  @click=${() => this._EmitEv(id)}>${cfg.title}</button>` : nothing}
         ${compTpl}
       </div>`;
   }
-
+  private _EmitEv(id:string,name:string = 'default-action'): void {
+    console.log(`GM: Emitiendo acción `, id);
+    this.dispatchEvent(new CustomEvent(name, {
+      detail: id,
+      bubbles: true,
+      composed: true
+    }));
+  }
   render() {
     if (this.darkMode) {
       this.setAttribute('darkmode', '');

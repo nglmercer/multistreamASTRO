@@ -228,7 +228,7 @@ abstract class BaseLitElement extends LitElement {
         }));
     }
 
-    protected _renderActionButtons(idx: number): TemplateResult[] {
+    protected _renderActionsDBButtons(idx: number): TemplateResult[] {
         let acts = [...this.actions];
         if (this.data.length > 0 || this.keys.length > 0) {
             if (!this._isActionHidden('edit') && !acts.some(a => a.name === 'edit'))
@@ -387,7 +387,7 @@ class ObjectTableLit extends BaseLitElement {
                                 return html`<td class="${(typeof val === 'string' && val.length > 50) ? 'wrap' : ''}">${dVal}</td>`;
                             })}
                             <td class="acts-cell">
-                                ${this._renderActionButtons(idx)}
+                                ${this._renderActionsDBButtons(idx)}
                             </td>
                         </tr>
                     `)}
