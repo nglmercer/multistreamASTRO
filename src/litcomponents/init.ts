@@ -8,9 +8,11 @@ import {
 } from './dialog.js'
 import { DialogContent, DialogContainer } from './custom-modal.js';
 import {CInput} from './CInput.js';
+import {ReplacerConfigForm} from './ReplacerConfigForm.ts';
 // Declare custom elements for improved autocompletion in HTML templates
 declare global {
     interface HTMLElementTagNameMap {
+        'replacer-config-form': ReplacerConfigForm;
         'dyn-obj-disp': DynObjDisp;
         'obj-edit-frm': ObjEditFrm;
         'c-dlg': CDlg;

@@ -1,0 +1,231 @@
+---
+import '@components/replace/ReplacerConfig.css';
+---
+<div class="action-buttons" id="replacer-config-buttons">
+    <button type="button" class="button button-success">
+        <span class="material-symbols-outlined">add</span>
+        Agregar Reemplazo
+    </button>
+    <button type="button" class="button button-warning">
+        <span class="material-symbols-outlined">file_download</span>
+        Importar Configuración
+    </button>
+    <button type="button" class="button button-info">
+        <span class="material-symbols-outlined">file_upload</span>
+        Exportar Configuración
+    </button>
+</div>
+<dlg-cont id="replacer-config-modal">
+  <div class="grid grid-cols-2 gap-4 modal__container">
+    <div class="flex beetwen gap-8 center">
+      <label class="form-label" for="pattern-newItem">Patrón</label><input
+        type="text"
+        class="form-input form-input-mono"
+        placeholder="uniqueId"
+        id="pattern-newItem"
+      />
+    </div>
+    <div class="flex beetwen gap-8 center">
+      <label class="form-label" for="dataKey-newItem">Clave de Datos</label
+      ><input
+        type="text"
+        class="form-input"
+        placeholder="uniqueId"
+        id="dataKey-newItem"
+      />
+    </div>
+    <div class="flex beetwen gap-8 center">
+      <label class="form-label" for="defaultValue-newItem"
+        >Valor por Defecto</label
+      ><input
+        type="text"
+        class="form-input"
+        placeholder="testUser"
+        id="defaultValue-newItem"
+      />
+    </div>
+    <div class="replacement-item-action">
+      <button type="button" class="button button-success"
+        >➕ Agregar Reemplazo</button
+      >
+    </div>
+  </div>
+</dlg-cont>
+<obj-table id="replacer-table"darkmode style="margin-inline: 4px"></obj-table>
+
+<script>
+    import type { DlgCont } from "@litcomponents/dialog";
+    import type { ObjectTableLit } from "@litcomponents/tables";
+    import { ConfigurableReplacer, type ReplacementOption, type ReplacementConfig } from '@components/replace/ConfigurableReplacer';
+    // --- Tipos para mayor claridad y seguridad ---
+    type TableItem = ReplacementOption & { pattern: string };
+    type TableActionEventDetail = {
+        index: number;
+        item: TableItem;
+        originalAction: string;
+    };
+
+    /**
+     * Actualiza los datos en el componente de la tabla.
+     * @param table El componente de la tabla a actualizar.
+     * @param replacerInstance La instancia de ConfigurableReplacer con los datos.
+     */
+    function updateTableUI(table: ObjectTableLit, replacerInstance: ConfigurableReplacer): void {
+        table.data = Object.entries(replacerInstance.config.replacements).map(([pattern, config]) => ({
+            pattern,
+            ...config
+        }));
+    }
+
+    /**
+     * Importa una configuración desde un archivo JSON.
+     * @param table El componente de la tabla para actualizar después de la importación.
+     * @param replacerInstance La instancia de ConfigurableReplacer a actualizar.
+     */
+    function _importConfig(table: ObjectTableLit, replacerInstance: ConfigurableReplacer): void {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e: Event) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (re: ProgressEvent<FileReader>) => {
+                try {
+                    const importedConfig = JSON.parse(re.target?.result as string);
+                    
+                    replacerInstance.config.removeBackslashes = importedConfig.removeBackslashes ?? replacerInstance.config.removeBackslashes;
+                    replacerInstance.config.useLocalStorage = importedConfig.useLocalStorage ?? replacerInstance.config.useLocalStorage;
+                    
+                    if (importedConfig.replacements) {
+                        replacerInstance.config.replacements = { ...replacerInstance.config.replacements, ...importedConfig.replacements };
+                    }
+                    
+                    replacerInstance.saveConfig();
+                    updateTableUI(table, replacerInstance);
+                    alert("Configuración importada con éxito.");
+                } catch (error) {
+                    console.error('Error al importar la configuración:', error);
+                    alert("Error: El archivo de configuración no es un JSON válido.");
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    /**
+     * Exporta la configuración actual a un archivo JSON.
+     * @param replacerInstance La instancia de ConfigurableReplacer cuya configuración se exportará.
+     */
+    function _exportConfig(replacerInstance: ConfigurableReplacer): void {
+        const configToExport = {
+            ...replacerInstance.config,
+            exportedAt: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(configToExport, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `replacer-config-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Punto de entrada principal: inicializa la UI, los listeners y la lógica de la página.
+     */
+    function initialize() {
+        // --- 1. Obtención y validación de elementos del DOM ---
+        const replacerTable = document.querySelector<ObjectTableLit>("#replacer-table");
+        const modal = document.querySelector<DlgCont>("#replacer-config-modal");
+        const newItemBtn = document.querySelector<HTMLButtonElement>("#replacer-config-buttons .button-success");
+        const importBtn = document.querySelector<HTMLButtonElement>("#replacer-config-buttons .button-warning");
+        const exportBtn = document.querySelector<HTMLButtonElement>("#replacer-config-buttons .button-info");
+        const modalSaveBtn = document.querySelector<HTMLButtonElement>("#replacer-config-modal .button-success");
+
+        // Elementos del formulario en el modal
+        const patternInput = document.querySelector<HTMLInputElement>("#pattern-newItem");
+        const dataKeyInput = document.querySelector<HTMLInputElement>("#dataKey-newItem");
+        const defaultValueInput = document.querySelector<HTMLInputElement>("#defaultValue-newItem");
+
+        if (!replacerTable || !modal || !newItemBtn || !importBtn || !exportBtn || !modalSaveBtn || !patternInput || !dataKeyInput || !defaultValueInput) {
+            console.error("Faltan elementos esenciales en el DOM. No se pudo inicializar el componente.");
+            return;
+        }
+
+        // --- 2. Inicialización del estado y la lógica ---
+        const replacer = new ConfigurableReplacer({ useLocalStorage: true });
+        let editingPattern: string | null = null; // Estado local para saber si se está editando
+
+        // --- 3. Configuración inicial de la UI ---
+        replacerTable.keys = ["pattern", "dataKey", "defaultValue"];
+        updateTableUI(replacerTable, replacer);
+
+        // --- 4. Asignación de Event Listeners ---
+        
+        // Abrir modal para crear un nuevo item
+        newItemBtn.addEventListener("click", () => {
+            editingPattern = null;
+            patternInput.value = "";
+            dataKeyInput.value = "";
+            defaultValueInput.value = "";
+            modal.show();
+        });
+
+        // Botones de Importar/Exportar
+        importBtn.addEventListener("click", () => _importConfig(replacerTable, replacer));
+        exportBtn.addEventListener("click", () => _exportConfig(replacer));
+
+        // Guardar cambios desde el modal (Crear o Editar)
+        modalSaveBtn.addEventListener("click", () => {
+            const pattern = patternInput.value.trim();
+            if (!pattern) {
+                alert("El campo 'Patrón' no puede estar vacío.");
+                return;
+            }
+
+            // Si se está editando y el patrón ha cambiado, elimina el antiguo.
+            if (editingPattern && editingPattern !== pattern) {
+                delete replacer.config.replacements[editingPattern];
+            }
+
+            replacer.config.replacements[pattern] = {
+                dataKey: dataKeyInput.value.trim(),
+                defaultValue: defaultValueInput.value,
+            };
+
+            replacer.saveConfig();
+            updateTableUI(replacerTable, replacer);
+            modal.hide();
+            editingPattern = null;
+        });
+
+        // Acciones de la tabla (Editar / Eliminar)
+        replacerTable.addEventListener("action", (e: Event) => {
+            const { item, originalAction } = (e as CustomEvent<TableActionEventDetail>).detail;
+
+            if (originalAction === 'delete') {
+                if (confirm(`¿Estás seguro de eliminar el patrón "${item.pattern}"?`)) {
+                    delete replacer.config.replacements[item.pattern];
+                    replacer.saveConfig();
+                    updateTableUI(replacerTable, replacer);
+                }
+            } else if (originalAction === 'edit') {
+                editingPattern = item.pattern;
+                patternInput.value = item.pattern;
+                dataKeyInput.value = item.dataKey;
+                defaultValueInput.value = item.defaultValue;
+                modal.show();
+            }
+        });
+    }
+
+    // Ejecutar la inicialización cuando el DOM esté completamente cargado.
+    document.addEventListener("DOMContentLoaded", initialize);
+</script>
+

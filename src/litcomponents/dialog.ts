@@ -16,36 +16,6 @@ interface Option {
   callback?: (event: MouseEvent) => void;
 }
 
-/**
- * Parsea de forma segura un valor que podría ser una cadena JSON.
- * El tipo 'unknown' es más seguro que 'any' porque obliga a verificar el tipo.
- * @param value El valor a parsear.
- * @returns El valor parseado o el original si no se puede parsear.
- */
-function safeParse(value: unknown): unknown {
-  try {
-    if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
-      return value;
-    }
-
-    if (typeof value === 'string' && (value.trim().startsWith('{') || value.trim().startsWith('['))) {
-      try {
-        return JSON.parse(value);
-      } catch (error) {
-        // Intenta corregir JSON malformado (claves sin comillas, comillas simples)
-        const fixedJson = value
-          .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')
-          .replace(/:\s*'([^']+)'/g, ': "$1"');
-        
-        return JSON.parse(fixedJson);
-      }
-    }
-    return value;
-  } catch (error) {
-    console.error("Error al parsear JSON:", error, "Valor recibido:", value);
-    return value;
-  }
-}
 
 // El decorador @customElement registra el componente con el nombre de etiqueta proporcionado.
 // Reemplaza la necesidad de una función externa como `registerComponents`.

@@ -3,7 +3,7 @@ import SidebarLayout from '../layouts/SidebarLayout.astro';
 // Importa el componente SolidJS
 import ReplacerConfigForm from '../components/replace/ReplacerConfig.jsx';
 import SystemHealth from '@components/SystemHealth.astro';
-
+import Newconfig from '@components/replace/newitem/newconfig.astro';
 ---
 
 <SidebarLayout title="multistreamASTRO" activeConfig="A">
@@ -20,10 +20,11 @@ import SystemHealth from '@components/SystemHealth.astro';
       client:only="solid-js"
 
     />
+    <Newconfig />
     <SystemHealth/>
 	</div>
 </SidebarLayout>
 
-<style is:global>
+<style>
   /* Puedes mantener estilos globales aquí o moverlos si son específicos del componente */
 </style>

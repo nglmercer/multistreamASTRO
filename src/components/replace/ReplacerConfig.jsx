@@ -3,7 +3,6 @@ import { createSignal, createEffect } from 'solid-js';
 import './ReplacerConfig.css';
 import { ConfigurableReplacer } from './ConfigurableReplacer';
 import TestReplacer from './TestReplacer';
-import ReplacerConfigForm from './ReplacerConfigForm';
 
 export default function ReplacerConfig() {
   const [instanceId, setInstanceId] = createSignal("default");
@@ -23,6 +22,7 @@ export default function ReplacerConfig() {
     setReplacements(defaultReplacements);
     loadSavedConfig();
   });
+
 
   const loadSavedConfig = () => {
     try {
@@ -56,7 +56,6 @@ export default function ReplacerConfig() {
           <p class="subtitle">Gestiona patrones de reemplazo dinámicamente</p>
         </div>
         
-        <div class="config-card-body">
           {/* Componente de Pruebas */}
           <TestReplacer 
             instanceId={instanceId()}
@@ -64,19 +63,6 @@ export default function ReplacerConfig() {
             useLocalStorage={useLocalStorage()}
             replacements={replacements()}
           />
-
-          {/* Componente del Formulario */}
-          <ReplacerConfigForm
-            instanceId={instanceId()}
-            removeBackslashes={removeBackslashes()}
-            useLocalStorage={useLocalStorage()}
-            replacements={replacements()}
-            onInstanceIdChange={setInstanceId}
-            onRemoveBackslashesChange={setRemoveBackslashes}
-            onUseLocalStorageChange={setUseLocalStorage}
-            onReplacementsChange={setReplacements}
-          />
-        </div>
       </div>
     </div>
   );
