@@ -102,7 +102,7 @@ export default function TestReplacer(props) {
           <button 
             type="button" 
             onClick={testReplace}
-            class="button button-primary button-full-width"
+            class="button button-info button-full-width"
           >
             🧪 Probar Reemplazo
           </button>

@@ -15,7 +15,7 @@ import '@components/replace/ReplacerConfig.css';
         Exportar Configuración
     </button>
 </div>
-<dlg-cont id="replacer-config-modal">
+<dlg-cont id="replacer-config-modal" style="position:absolute;">
   <div class="grid grid-cols-2 gap-4 modal__container">
     <div class="flex beetwen gap-8 center">
       <label class="form-label" for="pattern-newItem">Patrón</label><input
@@ -45,9 +45,14 @@ import '@components/replace/ReplacerConfig.css';
       />
     </div>
     <div class="replacement-item-action">
-      <button type="button" class="button button-success"
-        >➕ Agregar Reemplazo</button
-      >
+        <button type="button" class="btn button-success">
+            Guardar
+            <span class="material-symbols-outlined">save</span>
+        </button>
+        <button type="button" class="btn btn-secondary">
+            Cancelar
+            <span class="material-symbols-outlined">cancel</span>
+        </button>
     </div>
   </div>
 </dlg-cont>
@@ -146,14 +151,14 @@ import '@components/replace/ReplacerConfig.css';
         const newItemBtn = document.querySelector<HTMLButtonElement>("#replacer-config-buttons .button-success");
         const importBtn = document.querySelector<HTMLButtonElement>("#replacer-config-buttons .button-warning");
         const exportBtn = document.querySelector<HTMLButtonElement>("#replacer-config-buttons .button-info");
-        const modalSaveBtn = document.querySelector<HTMLButtonElement>("#replacer-config-modal .button-success");
-
+        const modalAddBtn = document.querySelector<HTMLButtonElement>("#replacer-config-modal .button-success");
+        const modalCancelBtn = document.querySelector<HTMLButtonElement>("#replacer-config-modal .btn-secondary");
         // Elementos del formulario en el modal
         const patternInput = document.querySelector<HTMLInputElement>("#pattern-newItem");
         const dataKeyInput = document.querySelector<HTMLInputElement>("#dataKey-newItem");
         const defaultValueInput = document.querySelector<HTMLInputElement>("#defaultValue-newItem");
 
-        if (!replacerTable || !modal || !newItemBtn || !importBtn || !exportBtn || !modalSaveBtn || !patternInput || !dataKeyInput || !defaultValueInput) {
+        if (!replacerTable || !modal || !newItemBtn || !importBtn || !exportBtn || !modalAddBtn || !patternInput || !dataKeyInput || !defaultValueInput) {
             console.error("Faltan elementos esenciales en el DOM. No se pudo inicializar el componente.");
             return;
         }
@@ -182,7 +187,7 @@ import '@components/replace/ReplacerConfig.css';
         exportBtn.addEventListener("click", () => _exportConfig(replacer));
 
         // Guardar cambios desde el modal (Crear o Editar)
-        modalSaveBtn.addEventListener("click", () => {
+        modalAddBtn.addEventListener("click", () => {
             const pattern = patternInput.value.trim();
             if (!pattern) {
                 alert("El campo 'Patrón' no puede estar vacío.");
@@ -204,7 +209,10 @@ import '@components/replace/ReplacerConfig.css';
             modal.hide();
             editingPattern = null;
         });
-
+        modalCancelBtn?.addEventListener("click", () => {
+            modal.hide();
+            editingPattern = null; // Resetea el estado de edición
+        });
         // Acciones de la tabla (Editar / Eliminar)
         replacerTable.addEventListener("action", (e: Event) => {
             const { item, originalAction } = (e as CustomEvent<TableActionEventDetail>).detail;

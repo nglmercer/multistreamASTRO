@@ -126,7 +126,6 @@ export class ReplacerConfigForm extends LitElement {
 
     .button-success {
       background-color: var(--success-color);
-      color: white;
     }
 
     .button-success:hover {

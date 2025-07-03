@@ -260,7 +260,7 @@
 }
 
 .button-success {
-  background: linear-gradient(135deg, var(--color-green-500), #16a34a);
+  background: linear-gradient(215deg, var(--color-green-500), #18773b);
   color: var(--color-white);
 }
 
@@ -280,7 +280,7 @@
 }
 
 .button-info {
-  background: linear-gradient(135deg, var(--secondary-light), var(--color-cyan-500));
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
   color: var(--color-white);
 }
 
@@ -350,7 +350,7 @@
   }
 
   .button-info {
-    background: linear-gradient(135deg, var(--secondary-dark), var(--color-cyan-400));
+    background: linear-gradient(165deg, var(--secondary-dark), var(--color-primary-600));
   }
 
   .button-info:hover:not(:disabled) {
