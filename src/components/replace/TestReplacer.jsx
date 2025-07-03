@@ -74,16 +74,8 @@ export default function TestReplacer(props) {
     testReplace();
   })
   return (
-    <section class="config-section test-area-section">
-      <h2 class="section-title">Probar Reemplazos</h2>
-      <button 
-            type="button" 
-            onClick={testReplace}
-            class="button button-primary button-full-width"
-          >
-            🧪 Probar Reemplazo
-          </button>
-      <div class="grid responsive-columns">
+    <section class="config-section">
+      <div class="grid responsive-columns gap-10">
         <div class="test-input-group">
           <div class="form-group flex-col">
             <label for="testInput" class="form-label">Entrada de Prueba</label>
@@ -107,7 +99,15 @@ export default function TestReplacer(props) {
               placeholder='{"uniqueId": "usuario123", "comment": "¡Hola mundo!", "likeCount": "999"}'
             />
           </div>
+          <button 
+            type="button" 
+            onClick={testReplace}
+            class="button button-primary button-full-width"
+          >
+            🧪 Probar Reemplazo
+          </button>
         </div>
+        
         <div class="test-result-group">
           <label class="form-label">Resultado</label>
           {!resultError() && testResult() ? (
