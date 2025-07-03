@@ -10,9 +10,11 @@ export interface MiddlewareContext<TData = any> {
 
 // Interfaz base para la configuración de cualquier middleware
 export interface BaseMiddlewareConfig {
-    type: string;       // Identificador único del tipo de middleware
+    type: string;
     enabled: boolean;
-    // Podrías añadir propiedades comunes como `order` para la ejecución
+    // --- NUEVOS CAMPOS ---
+    friendlyName?: string; // Título legible para la UI
+    description?: string;  // Descripción para la UI, puede contener placeholders
 }
 
 // Resultado de la ejecución de un middleware

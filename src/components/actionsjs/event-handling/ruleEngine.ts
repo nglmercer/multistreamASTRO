@@ -12,6 +12,7 @@ import {
     CONTENT_FILTER_TYPE,
     WHITELIST_TYPE,
 } from './middlewares/middlewareTypes.js';
+import { safeParse } from '@utils/jsonutils/safeparse.js';
 import { BrowserLogger, LogLevel } from '@utils/Logger.js';
 import './middlewares/preventIdenticalPrevious.js';
 import './middlewares/preventDuplicateFollow.js';
@@ -32,7 +33,7 @@ const platformEventTypeMap: Record<string, string> = {
 // Puedes usar `Record<string, any>` o `any` para la constante principal y luego
 // ser específico dentro.
 
-export const eventRules: Record<string, any> = { // O const eventRules: any = {
+export const eventRules: Record<string, any> = { // O idealmente: export const eventRules: EventRules = {
     chat: {
         middlewares: [
             {
@@ -40,30 +41,42 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
                 enabled: true,
                 dataPath: 'uniqueId',
                 localStorageKey: 'WhitelistKeywords',
-                whitelistMode: 'allowIfContains', // o 'allowIfNotContains'
-                skipAllMiddlewares: true // opcional, si quieres saltar los demás middlewares
+                whitelistMode: 'allowIfContains',
+                skipAllMiddlewares: true,
+                // --- METADATOS PARA LA UI ---
+                friendlyName: 'Whitelist de Usuarios/Contenido',
+                description: 'Permitir solo eventos si el campo "{{dataPath}}" coincide con la lista en "{{localStorageKey}}". Salta los demás filtros si coincide.'
             },
             {
-                type: PREVENT_IDENTICAL_PREVIOUS_TYPE, // Idealmente: PREVENT_IDENTICAL_PREVIOUS_TYPE,
+                type: PREVENT_IDENTICAL_PREVIOUS_TYPE,
                 enabled: true,
                 userIdentifierPath: 'uniqueId',
                 contentPaths: ['comment'],
+                // --- METADATOS PARA LA UI ---
+                friendlyName: 'Prevenir Mensajes Idénticos',
+                description: 'Evita que un mismo usuario (identificado por "{{userIdentifierPath}}") envíe mensajes idénticos de forma consecutiva.'
             },
             {
-                type: CONTENT_FILTER_TYPE, // Usar la constante importada
+                type: CONTENT_FILTER_TYPE,
                 enabled: true,
-                dataPath: 'comment', // El campo del objeto 'data' que contiene el texto a verificar
-                localStorageKey: 'blockedChatKeywords', // La clave en localStorage para la lista de palabras
-                filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
-                blockReason: 'Mensaje contiene una palabra prohibida.'
+                dataPath: 'comment',
+                localStorageKey: 'blockedChatKeywords',
+                filterMode: 'blockIfContains',
+                blockReason: 'Mensaje contiene una palabra prohibida.',
+                // --- METADATOS PARA LA UI ---
+                friendlyName: 'Filtro de Palabras Prohibidas',
+                description: 'Bloquea mensajes si su contenido ("{{dataPath}}") incluye términos de la lista "{{localStorageKey}}".'
             },
             {
-                type: CONTENT_FILTER_TYPE, // Usar la constante importada
+                type: CONTENT_FILTER_TYPE,
                 enabled: true,
-                dataPath: 'uniqueId', // El campo del objeto 'data' que contiene el texto a verificar
-                localStorageKey: 'blockedUsersKeywords', // La clave en localStorage para la lista de palabras
-                filterMode: 'blockIfContains', // Bloquear si el 'comment' CONTIENE alguna palabra de 'blockedChatKeywords'
-                blockReason: 'Mensaje contiene una usuario prohibido.'
+                dataPath: 'uniqueId',
+                localStorageKey: 'blockedUsersKeywords',
+                filterMode: 'blockIfContains',
+                blockReason: 'Mensaje contiene una usuario prohibido.',
+                // --- METADATOS PARA LA UI ---
+                friendlyName: 'Bloqueo de Usuarios por ID',
+                description: 'Bloquea todos los mensajes de usuarios cuyo ID ("{{dataPath}}") esté en la lista "{{localStorageKey}}".'
             }
         ],
         roleChecks: {
@@ -142,9 +155,12 @@ export const eventRules: Record<string, any> = { // O const eventRules: any = {
         },
         middlewares: [
             {
-                type: PREVENT_DUPLICATE_FOLLOW_TYPE, 
+                type: PREVENT_DUPLICATE_FOLLOW_TYPE,
                 enabled: true,
-                userIdentifierPath: 'uniqueId'
+                userIdentifierPath: 'uniqueId',
+                 // --- METADATOS PARA LA UI ---
+                friendlyName: 'Prevenir Follows Duplicados',
+                description: 'Evita que se procese más de un evento de "follow" para el mismo usuario (identificado por "{{userIdentifierPath}}") en un corto periodo de tiempo.'
             }
         ]
     }
@@ -171,7 +187,7 @@ function initializeMiddlewareStatesFromLocalStorage() {
                 const storedState = localStorage.getItem(key);
                 if (storedState !== null) {
                     try {
-                        middleware.enabled = JSON.parse(storedState);
+                        middleware.enabled = safeParse(storedState);
                         logger.log(`[LocalStorage] Loaded state for ${key}: ${middleware.enabled}`);
                     } catch (e) {
                         logger.error(`[LocalStorage] Error parsing stored state for ${key}:`, e);

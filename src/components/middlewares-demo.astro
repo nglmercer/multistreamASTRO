@@ -1,103 +1,107 @@
----
-// Importamos las reglas y la función para actualizarlas
-
----
-
+<!-- Tu HTML principal no cambia -->
 <main class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-6">Gestor de Middlewares (Demo Client-Side)</h1>
-
+  <h2 class="text-2xl font-bold mb-6">Gestor de Middlewares</h2>
   <div id="middlewares-container" class="space-y-8">
-    <!-- El contenido se generará dinámicamente por JavaScript -->
-    <!-- Example for one, will be dynamic -->
-    <!--
-    <div class="flex items-center space-x-2 p-2 border rounded">
-      <label for="middleware-chat-preventIdenticalPrevious" class="font-medium">Middleware Chat (Prevent Identical)</label>
-      <c-input
-        id="middleware-chat-preventIdenticalPrevious"
-        type="checkbox"
-      ></c-input>
-      <span>Filtrar mensajes de chat idénticos</span>
-    </div>
-    -->
+    <!-- El contenido se generará dinámicamente -->
   </div>
 </main>
 
-<script >
-import { eventRules, updateMiddlewareEnabledState } from '@components/actionsjs/event-handling/ruleEngine.js';
-import type { EventRules,AnyMiddlewareConfig } from '@components/actionsjs/event-handling/middlewares/middlewareTypes.js'; // For typing client-side script
-const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules)); 
-
+<script>
+  // Importaciones...
+  import { eventRules, updateMiddlewareEnabledState } from '@components/actionsjs/event-handling/ruleEngine.js';
+  import type { EventRules, AnyMiddlewareConfig } from '@components/actionsjs/event-handling/middlewares/middlewareTypes.js';
   import { CInput } from 'src/litcomponents/CInput';
+
+  const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules));
+
+  /**
+   * Procesa una descripción de plantilla, reemplazando placeholders {{key}}
+   * con valores del objeto de configuración del middleware.
+   * @param {string} template - La cadena de descripción con placeholders.
+   * @param {AnyMiddlewareConfig} config - El objeto de configuración del middleware.
+   * @returns {string} - La descripción renderizada.
+   */
+  function renderDescription(template: string, config: AnyMiddlewareConfig): string {
+    if (!template) {
+        // Si no hay plantilla, genera una descripción genérica como fallback.
+        return `Middleware de tipo: ${config.type}. Revisa la configuración para más detalles.`;
+    }
+    // Usa una expresión regular para encontrar todos los placeholders {{key}}
+    return template.replace(/\{\{(.*?)\}\}/g, (match, key) => {
+      const value = config[key.trim() as keyof AnyMiddlewareConfig];
+      // Si la clave existe en la config, devuelve su valor, si no, devuelve el placeholder original.
+      return value !== undefined ? `<strong>${value}</strong>` : match;
+    });
+  }
+
 
   function renderMiddlewareToggles() {
     const container = document.getElementById('middlewares-container');
     if (!container) return;
-    container.innerHTML = ''; // Clear previous toggles
+    container.innerHTML = ''; // Limpiar contenido previo
 
     for (const [eventType, ruleEntry] of Object.entries(initialRulesForClient)) {
       const middlewares = ruleEntry.middlewares as AnyMiddlewareConfig[];
-      if (middlewares && middlewares.length > 0) {
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'p-4 border rounded-md shadow-sm';
+      if (!middlewares || middlewares.length === 0) continue;
+
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'p-4 border rounded-md shadow-sm';
+      
+      const groupTitle = document.createElement('h3');
+      groupTitle.className = 'text-xl font-semibold mb-3 capitalize border-b pb-2';
+      groupTitle.textContent = `Filtros para Eventos de ${eventType}`;
+      groupDiv.appendChild(groupTitle);
+
+      middlewares.forEach((middlewareConfig) => {
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'flex items-start space-x-3 p-2'; // items-start para alinear bien con texto de varias líneas
+
+        const checkboxId = `middleware-${eventType}-${middlewareConfig.type}`;
         
-        const groupTitle = document.createElement('h2');
-        groupTitle.className = 'text-xl font-semibold mb-3 capitalize';
-        groupTitle.textContent = `${eventType} Middlewares`;
-        groupDiv.appendChild(groupTitle);
+        const checkbox = document.createElement('c-input') as CInput;
+        checkbox.setAttribute('type', 'switch');
+        checkbox.setAttribute('id', checkboxId);
+        
+        // Forma MÁS SEGURA y recomendada de manejar estado booleano en componentes
+        if (middlewareConfig.enabled) {
+          checkbox.setAttribute('checked', '');
+        }
+        // Asignamos el valor booleano a la propiedad interna para que el componente lo maneje.
+        // Asumiendo que `setVal` o una propiedad directa maneja esto.
+        // `CInput` debería idealmente manejar `checked` como una propiedad booleana.
+        checkbox.value = middlewareConfig.enabled;
 
-        middlewares.forEach((middlewareConfig) => {
-          const isCheckedInitially = middlewareConfig.enabled; // This comes from initialRulesForClient, which reflects localStorage
-          console.log("middlewareConfig",middlewareConfig)
-          const wrapperDiv = document.createElement('div');
-          wrapperDiv.className = 'flex items-center space-x-3 mb-2 p-2 border-b last:border-b-0';
 
-          const checkboxId = `middleware-${eventType}-${middlewareConfig.type}`;
+        // Contenedor para el título y la descripción
+        const textContainer = document.createElement('div');
+        textContainer.className = 'flex flex-col flex-grow';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', checkboxId);
+        label.className = 'font-medium cursor-pointer';
+        // USA EL NUEVO CAMPO 'friendlyName', con fallback a 'type'
+        label.textContent = middlewareConfig.friendlyName || middlewareConfig.type;
+        
+        const description = document.createElement('p'); // Usar <p> para mejor semántica
+        description.className = 'text-sm text-gray-600 mt-1';
+        // USA LA NUEVA FUNCIÓN DE RENDERIZADO
+        description.innerHTML = renderDescription(middlewareConfig.description || '', middlewareConfig);
+
+        textContainer.appendChild(label);
+        textContainer.appendChild(description);
+
+        checkbox.addEventListener('change', (e: Event) => {
+          const isChecked = (e as CustomEvent<{ value: any }>).detail.value;
+          console.log(`Toggle change for ${eventType}.${middlewareConfig.type}: ${isChecked}`,isChecked);
           
-          // Using CInput
-          const checkbox = document.createElement('c-input') as CInput;
-          checkbox.setAttribute('type', 'switch');
-          checkbox.setAttribute('id', checkboxId);
-          
-          // Set initial checked state for c-input
-          // CInput might take 'checked' attribute or a .value property
-          // If CInput's value prop handles boolean for checkbox:
-          checkbox.value = JSON.stringify(isCheckedInitially); // "true" / "false"
-          // Or if it needs 'checked' attribute:
-          if (isCheckedInitially) {
-            checkbox.setAttribute('checked', '');
-          }
-
-
-          const label = document.createElement('label');
-          label.setAttribute('for', checkboxId);
-          label.className = 'flex-grow cursor-pointer';
-          label.textContent = `${middlewareConfig.type} - `;
-          
-          const description = document.createElement('span');
-          description.className = 'text-sm text-gray-600 ml-auto';
-          //@ts-ignore
-          description.textContent = `${middlewareConfig.userIdentifierPath || middlewareConfig.localStorageKey || middlewareConfig.userIdentifierPath}`;
-          checkbox.addEventListener('change', async (e) => {
-            // For CInput, the value might be in e.target.value or e.target.checked
-            // Let's assume CInput component correctly sets its `value` property
-            let isChecked = (typeof checkbox.value === 'string' ? JSON.parse(checkbox.value): checkbox.value) as boolean; 
-
-
-            console.log(`Toggle change for ${eventType}.${middlewareConfig.type}: ${isChecked}`);
-            
-            // Call the function from ruleEngine.js (needs to be accessible)
-            // Assuming updateMiddlewareEnabledState is globally available or correctly imported/passed
-            const success = await updateMiddlewareEnabledState(eventType, middlewareConfig.type, isChecked);
-            console.log(`Middleware ${middlewareConfig.type} for ${eventType} updated: ${success}`);
-          });
-
-          wrapperDiv.appendChild(checkbox);
-          wrapperDiv.appendChild(label);
-          wrapperDiv.appendChild(description);
-          groupDiv.appendChild(wrapperDiv);
+          updateMiddlewareEnabledState(eventType, middlewareConfig.type, isChecked);
         });
-        container.appendChild(groupDiv);
-      }
+
+        wrapperDiv.appendChild(checkbox);
+        wrapperDiv.appendChild(textContainer);
+        groupDiv.appendChild(wrapperDiv);
+      });
+      container.appendChild(groupDiv);
     }
   }
 
@@ -105,7 +109,3 @@ const initialRulesForClient: EventRules = JSON.parse(JSON.stringify(eventRules))
     renderMiddlewareToggles();
   });
 </script>
-
-<style is:global>
-  /* Your global styles, Tailwind should handle most of this */
-</style>

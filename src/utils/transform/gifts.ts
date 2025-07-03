@@ -9,7 +9,7 @@ import type {
     // If you plan to use TikTokUser here, import it as well:
     // TikTokUser
 } from './Types'; // Assuming Types.ts is in the same directory
-
+import giftJSON from './gift.json'; // Importing the JSON file
 // --- Helper Functions ---
 
 function geticonfromarray(array?: string[]): string {
@@ -105,8 +105,8 @@ function mapgiftsbycost(
 
 function getGiftList(by: GiftListCriteria = "gift"): MappedGift[] {
     let gifts: MappedGift[] = [];
-    const tiktokEvents: TikTokGiftRaw[] | undefined = getAgifts();
-
+    const tiktokEvents: TikTokGiftRaw[] | undefined = getAgifts() || giftJSON;
+    console.log("getGiftList called with by:", by, "and tiktokEvents:", tiktokEvents,giftJSON);
     try {
         if (tiktokEvents && Array.isArray(tiktokEvents) && tiktokEvents.length > 0) {
             if (!by || by === 'gift') {
