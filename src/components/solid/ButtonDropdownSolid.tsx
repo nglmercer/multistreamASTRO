@@ -87,7 +87,7 @@ const ButtonDropdownSolid: Component<ButtonDropdownProps> = (props) => {
     // Si el menú es muy ancho, intentar reducir su ancho máximo
     const maxWidth = Math.min(
       viewportWidth - 2 * margin,
-      Math.max(buttonRect.width, 300) // Mínimo 300px o el ancho del botón
+      Math.max(buttonRect.width, 450) // Mínimo 300px o el ancho del botón
     );
 
     return {

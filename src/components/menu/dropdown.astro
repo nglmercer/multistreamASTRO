@@ -98,7 +98,6 @@ const {
         // Si el menú es muy ancho, intentar reducir su ancho máximo
         const maxWidth = Math.min(
             viewportWidth - 2 * margin,
-            Math.max(buttonRect.width, 300) // Mínimo 300px o el ancho del botón
         );
 
         return {
@@ -460,7 +459,6 @@ body {
         right: 0 !important;
         transform: none !important;
         min-width: 100%;
-        width: 100%;
         max-width: none !important;
     }
 
