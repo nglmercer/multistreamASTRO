@@ -9,7 +9,7 @@ import type {
     // If you plan to use TikTokUser here, import it as well:
     // TikTokUser
 } from './Types'; // Assuming Types.ts is in the same directory
-import giftJSON from './gift.json'; // Importing the JSON file
+import giftJSON from '@utils/transform/gift.json'; // Importing the JSON file directly
 // --- Helper Functions ---
 
 function geticonfromarray(array?: string[]): string {
