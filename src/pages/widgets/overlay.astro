@@ -1,6 +1,9 @@
 ---
 // src/components/widgets/OverlayWidget.astro
 import SidebarLayout from '@layouts/WidgetLayout.astro';
+import '@components/widgets/overlay/styles.css';
+//  @import '/overlay/styles.css'; 
+
 ---
 <SidebarLayout>
   <div id="overlay-container">
@@ -14,7 +17,7 @@ import SidebarLayout from '@layouts/WidgetLayout.astro';
 </SidebarLayout>
 
 <script>
-  import { initOverlaySystem } from './overlay/overlay-manager.ts';
+  import { initOverlaySystem } from '@components/widgets/overlay/overlay-manager.ts';
   // Asegúrate que el DOM esté listo si initOverlaySystem no maneja DOMContentLoaded internamente.
   // En este caso, nuestro initOverlaySystem YA ESPERA a ser llamado DESPUÉS de DOMContentLoaded o lo maneja dentro.
   // Por seguridad, o si initOverlaySystem accediera al DOM inmediatamente:
@@ -27,5 +30,4 @@ import SidebarLayout from '@layouts/WidgetLayout.astro';
 
 <style>
   /* Asumiendo que styles.css está en el mismo directorio 'overlay' que el manager.ts */
-  @import './overlay/styles.css'; 
 </style>
