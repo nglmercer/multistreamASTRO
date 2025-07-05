@@ -25,8 +25,3 @@ la url externa solo copia y pega una,O si es local siempre coloca `/media/URL DE
 - ejemplos:
    - local : `/media/d:/imagen.jpg` || `/media/home/melser/imagen.jpg`
    - url : `https://example.com/imagen.jpg`
-
-#### Salida o URL del Overlay
-puede utilizar tanto la url local como la url remota
-- url local : `localhost:9001/widgets/overlay`
-- url remota : `https://nglmercer.github.io/multistreamASTRO/widgets/overlay/?host=http://localhost:9001`

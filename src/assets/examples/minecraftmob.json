@@ -13,7 +13,7 @@
             }
         ],
         "params": [],
-        "body": "{\n  \"cmds\": [\n    \"say uniqueId say hello\",\n    \"say uniqueId say comment\",\n    \"say uniqueId give {likes} likes\"\n  ]\n}",
+        "body": "  {\"cmds\": [\n    \"execute at @p run title @a title {\\\"text\\\":\\\"uniqueId\\\",\\\"color\\\":\\\"gold\\\"}\",\n    \"execute at @p run title @a subtitle {\\\"text\\\":\\\"gifted giftName xrepeatCount\\\",\\\"color\\\":\\\"gold\\\"}\",\n    \"execute at @p run summon zombie ~ ~ ~ {CustomName:'{\\\"text\\\":\\\"uniqueId\\\",\\\"color\\\":\\\"red\\\"}',CustomNameVisible:1b}\"\n  ]}",
         "bodyType": "json",
         "auth": {}
     }

@@ -1,21 +1,35 @@
 ---
 import DocsLayout from '@layouts/DocsLayout.astro';
-// import markdow src/components/docs/examples
 import MarkdownContent from '@components/docs/examples/overlays.md'
 import 'github-markdown-css/github-markdown.css';
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import { Code } from 'astro-expressive-code/components';
+// Obtener la URL actual del lado del servidor
+const baseUrl = Astro.site?.toString();
+const localbaseUrl = Astro.url.origin;
+
+
+const codeToShow = `
+${(baseUrl + '/widgets/overlay')+'?host=http://localhost:9001'}
+`;
 ---
 
 <DocsLayout title="multistreamASTRO" currentPage="overlay">
-	<div slot="logo">
-		   
-	</div>
-	<div class="content grid gap-10">
-		<article class="markdown-body p-10 m-10">
-			<MarkdownContent />
-		</article>
-	</div>
+    <div slot="logo">
+           
+    </div>
+    <div class="content grid gap-10">
+        
+        <!-- Opción 1: Markdown con variables interpoladas -->
+        <article class="markdown-body p-10 m-10">
+            <MarkdownContent />
+			<h2>Salida o URL del Overlay</h2>
+			<span>			puede utilizar tanto la url local como la url remota</span>
+            <!-- Enlaces dinámicos generados -->
+			 <h3>Url Remota</h3>
+            <Code code={codeToShow} lang="yaml" />
+			<h3>Url local</h3>
+			<Code code={(localbaseUrl + '/widgets/overlay').replace(/\/$/, '')} lang="yaml" />
+        </article>
+
+    </div>
 </DocsLayout>
-
-

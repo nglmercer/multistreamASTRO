@@ -6,7 +6,13 @@ import McpContent from '@components/docs/examples/mc/mcp.md';
 import MarkdownDropdown from '@components/docs/MarkdownDropdown.astro';
 import 'github-markdown-css/github-markdown.css';
 import ActionsForm from "@components/actions/Actions.astro";
-
+import minecraftjson from '@assets/examples/minecraftmob.json';
+import { Code } from 'astro-expressive-code/components';
+const baseUrl = Astro.site?.toString();
+const localbaseUrl = Astro.url.origin;
+const encodedData = encodeURIComponent(JSON.stringify(minecraftjson, null, 2));
+const exampleUrl = `/Actions?import=action&data=${encodedData}`;
+const exampleUrlraw = ('/Actions?import=action&data='+JSON.stringify(minecraftjson, null, 2));
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
@@ -24,6 +30,8 @@ import ActionsForm from "@components/actions/Actions.astro";
 			<MarkdownDropdown title="Generar comando con AI o MCP">
 				<McpContent />
 			</MarkdownDropdown>
+			<a href={localbaseUrl+exampleUrl}><h3>Importar ejemplo</h3></a>
+			<Code code={localbaseUrl+exampleUrlraw} lang="yaml" />
 		</article>
 		<ActionsForm></ActionsForm>
 	</div>

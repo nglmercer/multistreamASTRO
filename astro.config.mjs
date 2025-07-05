@@ -11,6 +11,6 @@ import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
 export default defineConfig({
   integrations: [expressiveCode(), lit(), solidJs(), mdx()],
-  site: 'https://nglmercer.github.io',
+  site: 'https://nglmercer.github.io/multistreamASTRO',
   base: '/',
 });
