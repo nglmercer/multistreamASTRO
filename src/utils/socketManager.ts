@@ -221,20 +221,21 @@ const initializeSocketManager = (): SocketManager => {
 };
 const socketManager = initializeSocketManager();
 
+
+
+export const socket = socketManager.getSocket();
+export const TiktokEmitter = socketManager.getTiktokEmitter();
 window.addEventListener('message', (event) => {
     // IMPORTANTE: Verificar el origen por seguridad
     console.log('Mensaje recibido:', event.data);
     if (event.data && event.data.payload) {
       const {eventName,data} = event.data.payload;
       if (!eventName || !data) return;
-      socketManager.getTiktokEmitter().emit(eventName, data);
+      TiktokEmitter.emit(eventName, data);
       localStorageManager.set(eventName, data);
       setupData(eventName as EventType,data);
     }
 }); 
-
-export const socket = socketManager.getSocket();
-export const TiktokEmitter = socketManager.getTiktokEmitter();
 export const KickEmitter = socketManager.getKickEmitter();
 export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
 export const kickLiveEvents = socketManager.kickLiveEvents;
