@@ -222,6 +222,15 @@ const initializeSocketManager = (): SocketManager => {
 };
 const socketManager = initializeSocketManager();
 
+window.addEventListener('message', (event) => {
+    // IMPORTANTE: Verificar el origen por seguridad
+    console.log('Mensaje recibido:', event.data);
+    if (event.data && event.data.payload) {
+      const {eventName,data} = event.data.payload;
+      if (!eventName || !data) return;
+      socketManager.getTiktokEmitter().emit(eventName, data);
+    }
+}); 
 
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
