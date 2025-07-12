@@ -129,7 +129,12 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
         <DialogManagerSolid client:only="solid-js"/>
   </body>
 </html>
-
+<script>
+  window.addEventListener('message', (event) => {
+    // IMPORTANTE: Verificar el origen por seguridad
+    console.log('Mensaje recibido:', event.data);
+});
+</script>
 <style is:global>
   @import '../assets/global.css';
   .hidden {
