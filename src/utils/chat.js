@@ -189,18 +189,7 @@ async function lastElement() {
 
 
 }
-async function downloadJson(data, filename = 'data.json') {
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
+
 function appendMessage(data, container, autoHide = false) {
     const elementWebComponent = document.getElementById(container);
     //console.log("appendMessage", data, container, autoHide);
@@ -229,32 +218,57 @@ const handlekickChat = async (data, aditionaldata = { type: "text", value: timeN
     const newhtml = webcomponentchat(parsedata, aditionaldata);
     appendMessage(newhtml, "chatcontainer");
 }
+// Función helper para obtener datos de usuario con compatibilidad
+function getUserData(data, field) {
+    // Primero intenta obtener el dato directamente de data
+    if (data[field] !== undefined && data[field] !== null) {
+        return data[field];
+    }
+    
+    // Si no existe o es null/undefined, intenta obtenerlo de data.user
+    if (data.user && data.user[field] !== undefined && data.user[field] !== null) {
+        return data.user[field];
+    }
+    
+    // Si no existe en ninguno, retorna null o valor por defecto
+    return null;
+}
+
+// Función mejorada webcomponentchat con compatibilidad
 function webcomponentchat(data, additionaldata = {}) {
     const content = [
-        { type: 'text', value: data.nickname, title: data.uniqueId, class: 'username-text' },
-        { type: 'text', value: data.comment, class: 'chat-message-text' },
-        // { type: 'image', value: data.profilePictureUrl } // Usually avatar is handled separately
+        { 
+            type: 'text', 
+            value: getUserData(data, 'nickname'), 
+            title: getUserData(data, 'uniqueId'), 
+            class: 'username-text' 
+        },
+        { 
+            type: 'text', 
+            value: getUserData(data, 'comment'), 
+            class: 'chat-message-text' 
+        },
+        // { type: 'image', value: getUserData(data, 'profilePictureUrl') } // Avatar manejado por separado
     ];
-
-    // Safely add additionaldata if it has a type (ensures it's a valid content item)
+    
+    // Agregar additionaldata si tiene tipo válido
     if (additionaldata && additionaldata.type) {
         content.push(additionaldata);
     }
-
+    
     return {
         user: {
-            name: data.uniqueId, // Keep uniqueId for potential use
-            nickname: data.nickname, // Add nickname here too if needed elsewhere
-            photo: data.profilePictureUrl,
-            // 'value' might not be needed here, user data is separate from displayed content
-            userBadges: data.userBadges || [], // Make sure badges are included
-            data: data, // Keep raw data if needed
-            // ...data // Avoid spreading raw data directly unless necessary
+            name: getUserData(data, 'uniqueId'),
+            nickname: getUserData(data, 'nickname'),
+            photo: getUserData(data, 'profilePictureUrl'),
+            userBadges: getUserData(data, 'userBadges') || [],
+            data: data // Mantener datos originales si son necesarios
         },
         content: content,
         containerClass: 'grid-layout'
     };
 }
+
 
 /**
  * Creates data structure for a gift event message.
