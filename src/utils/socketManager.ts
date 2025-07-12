@@ -86,7 +86,6 @@ class SocketManager {
 
     this.tiktokLiveEvents.forEach(event => {
       this.socket.on(event, async (data: any) => {
-        setupData(event as EventType,data);
         this.tiktokhandlerdata(event, data);
       });
     });
@@ -176,7 +175,7 @@ class SocketManager {
   private tiktokhandlerdata(event: any, data: any): void {
     logger.log("event", event, data, 'TiktokLive');
     this.TiktokEmitter.emit(event, data);
-    
+    setupData(event as EventType,data);
     // Fix: Use add instead of addItem
     // Get current events array or initialize an empty array
     // Add the new event data
@@ -229,6 +228,8 @@ window.addEventListener('message', (event) => {
       const {eventName,data} = event.data.payload;
       if (!eventName || !data) return;
       socketManager.getTiktokEmitter().emit(eventName, data);
+      localStorageManager.set(eventName, data);
+      setupData(eventName as EventType,data);
     }
 }); 
 
