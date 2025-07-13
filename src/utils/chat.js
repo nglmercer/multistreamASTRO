@@ -310,10 +310,22 @@ function getgiftPictureUrl(data){
         return data.giftPictureUrl;
     }
     const { giftDetails } = data;
-    if (giftDetails?.profilePicture && Array.isArray(giftDetails.profilePicture.url)) {
-        return giftDetails.profilePicture.url[0];
+    if (giftDetails?.giftImage && giftDetails.giftImage.giftPictureUrl) {
+        return giftDetails.giftImage.giftPictureUrl;
     }
     return '/favicon.svg'; // Valor por defecto si no hay imagen
+}
+function getProfilePictureUrl(user) {
+  if (user.profilePictureUrl) {
+    return user.profilePictureUrl;
+  }
+  if (user.userDetails && Array.isArray(user.userDetails.profilePictureUrls) && user.userDetails.profilePictureUrls.length > 0) {
+    return user.userDetails.profilePictureUrls[0];
+  }
+  if (user.profilePicture && Array.isArray(user.profilePicture.urls) && user.profilePicture.urls.length > 0) {
+    return user.profilePicture.urls[0];
+  }
+  return '/favicon.svg'; // Valor por defecto si no hay imagen
 }
 function webcomponentevent(data, additionaldata = {}) {
     // Example: data.label could be "liked the LIVE", "joined", "shared the LIVE"
@@ -333,7 +345,7 @@ function webcomponentevent(data, additionaldata = {}) {
        user: {
            name: data.uniqueId,
            nickname: data.nickname,
-           photo: data.profilePictureUrl,
+           photo: getProfilePictureUrl(data),
             // 'value' might be the label or comment depending on event type
            value: data.label || data.comment || '',
            userBadges: data.userBadges || [],
