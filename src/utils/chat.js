@@ -260,7 +260,7 @@ function webcomponentchat(data, additionaldata = {}) {
         user: {
             name: getUserData(data, 'uniqueId'),
             nickname: getUserData(data, 'nickname'),
-            photo: getUserData(data, 'profilePictureUrl'),
+            photo: getProfilePictureUrl(data),
             userBadges: getUserData(data, 'userBadges') || [],
             data: data // Mantener datos originales si son necesarios
         },
@@ -296,7 +296,7 @@ function webcomponentgift(data, additionaldata = {}) {
         user: {
             name: data.uniqueId,
             nickname: data.nickname,
-            photo: data.profilePictureUrl,
+            photo: getProfilePictureUrl(data),
             value: data.giftName, // Primary value associated with the event
             userBadges: data.userBadges || [],
             data: data,
