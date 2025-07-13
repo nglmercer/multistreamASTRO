@@ -6,6 +6,9 @@ interface User {
   nickname?: string;
   uniqueId?: string;
   profilePictureUrl?: string;
+  profilePicture?: {
+    urls: string[];
+  };
   userDetails?: {
     profilePictureUrls?: string[];
   };
@@ -184,10 +187,7 @@ export class TopViewersList extends LitElement {
     const coinCount = viewerData.coinCount !== undefined ? viewerData.coinCount : 'N/A';
     
     // Determinar la URL de la imagen de perfil
-    const profilePicUrl = user.profilePictureUrl ||
-      (Array.isArray(user.userDetails?.profilePictureUrls) && user.userDetails.profilePictureUrls.length > 0
-        ? user.userDetails.profilePictureUrls[0]
-        : '/favicon.svg');
+    const profilePicUrl = getProfilePictureUrl(user);
 
     const displayName = user.nickname || user.uniqueId || 'Usuario Desconocido';
 
@@ -209,7 +209,18 @@ export class TopViewersList extends LitElement {
     `;
   }
 }
-
+function getProfilePictureUrl(user: User): string {
+  if (user.profilePictureUrl) {
+    return user.profilePictureUrl;
+  }
+  if (user.userDetails && Array.isArray(user.userDetails.profilePictureUrls) && user.userDetails.profilePictureUrls.length > 0) {
+    return user.userDetails.profilePictureUrls[0];
+  }
+  if (user.profilePicture && Array.isArray(user.profilePicture.urls) && user.profilePicture.urls.length > 0) {
+    return user.profilePicture.urls[0];
+  }
+  return '/favicon.svg'; // Valor por defecto si no hay imagen
+}
 // El registro del componente se hace automáticamente con el decorador @customElement
 declare global {
   interface HTMLElementTagNameMap {

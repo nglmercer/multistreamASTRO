@@ -282,7 +282,7 @@ function webcomponentgift(data, additionaldata = {}) {
         { type: 'text', value: ' sent ', class: 'event-action-text' }, // Added "sent" text
         { type: 'text', value: data.giftName, class: 'event-item-name' },
         // Conditionally add gift image only if URL exists
-        ...(data.giftPictureUrl ? [{ type: 'image', value: data.giftPictureUrl, class: 'message-image event-item-icon' }] : []), // Added specific class + base class
+        ...(getgiftPictureUrl(data) ? [{ type: 'image', value: getgiftPictureUrl(data), class: 'message-image event-item-icon' }] : []), // Added specific class + base class
          // Conditionally add repeat count only if > 1 (or always display if needed)
         ...(data.repeatCount > 0 ? [{ type: 'text', value: ` x${data.repeatCount}`, class: 'event-quantity-text' }] : []) // Format as " xN"
     ];
@@ -305,7 +305,16 @@ function webcomponentgift(data, additionaldata = {}) {
         containerClass: 'message-content' // Use standard layout for gift messages
     }
 }
-
+function getgiftPictureUrl(data){
+    if (data.giftPictureUrl) {
+        return data.giftPictureUrl;
+    }
+    const { giftDetails } = data;
+    if (giftDetails?.profilePicture && Array.isArray(giftDetails.profilePicture.url)) {
+        return giftDetails.profilePicture.url[0];
+    }
+    return '/favicon.svg'; // Valor por defecto si no hay imagen
+}
 function webcomponentevent(data, additionaldata = {}) {
     // Example: data.label could be "liked the LIVE", "joined", "shared the LIVE"
     const clearLabel = data.label ? data.label.replace(/{0:user}/i, '').trim() : ''; // Remove {0:user} from label
