@@ -30,8 +30,14 @@ type TiktokEvent =
   | 'availableGifts'
   | 'roomInfo'
   | 'streamEnd';
-
-// Define the type for the local storage manager
+  type KickEvent = 
+  | 'ready'
+  | 'ChatMessage'
+  | 'Subscription'
+  | 'disconnected'
+  | 'connected'
+  | 'login'
+  | 'close';
 interface TiktokEventsStorage {
   // Use specific types if possible, otherwise 'any' or 'object'
   [eventName: string]: any; // Or Record<TiktokEvent, any>
@@ -55,14 +61,14 @@ class SocketManager {
   private maxReconnectAttempts: number = 10; // Limitar intentos (opcional)
   private TiktokEmitter: Emitter;
   private KickEmitter: Emitter;
-  public tiktokLiveEvents: TiktokEvent[] = [
+  public tiktokLiveEvents: TiktokEvent[] | string[] = [
     'chat', 'gift', 'connected', 'disconnected',
     'websocketConnected', 'error', 'member', 'roomUser',
     'like', 'social', 'emote', 'envelope', 'questionNew',
     'subscribe', 'follow', 'share', 'streamEnd',
     'availableGifts', 'roomInfo'
   ];
-  public kickLiveEvents: string[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'connected', 'login','close'];
+  public kickLiveEvents: string[] | KickEvent[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'connected', 'login','close'];
   constructor() {
     this.socket = io(this.baseUrl);
     this.TiktokEmitter = new Emitter();
@@ -246,22 +252,48 @@ function flattenUserDataTSRobust(data: InputData): FlattenedData {
   // Si no hay propiedad 'user', los datos ya están aplanados, así que los devolvemos como están.
   return { ...data };
 }
+function getValidEventName(eventName: string, tiktokEvents:   [], kickEvents: string[]): string {
+  if (!eventName) {
+    return '';
+  }
+
+  // Combinar todos los eventos válidos
+  const allValidEvents = [...tiktokEvents, ...kickEvents];
+  
+  // Buscar si algún evento válido está contenido en el eventName
+  for (const validEvent of allValidEvents) {
+    if (eventName.toLowerCase().includes(validEvent.toLowerCase())) {
+      return validEvent;
+    }
+  }
+
+  // Si no se encuentra coincidencia, retornar string vacío
+  return '';
+}
 
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
-window.addEventListener('message', (event) => {
-    // IMPORTANTE: Verificar el origen por seguridad
-    console.log('Mensaje recibido:', event.data);
-    if (event.data && event.data.payload) {
-      const {eventName,data} = event.data.payload;
-      if (!eventName || !data) return;
-      TiktokEmitter.emit(eventName, flattenUserDataTSRobust(data));
-      localStorageManager.set(eventName, flattenUserDataTSRobust(data));
-      setupData(eventName as EventType,flattenUserDataTSRobust(data));
-    }
-}); 
 export const KickEmitter = socketManager.getKickEmitter();
 export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
 export const kickLiveEvents = socketManager.kickLiveEvents;
+const TypeMessages = ["KICK_LIVE_EVENT","TIKTOK_LIVE_EVENT"];
+window.addEventListener('message', (event) => {
+    // IMPORTANTE: Verificar el origen por seguridad
+    console.log('Mensaje recibido:', event.data);
+    if (!event.data) return;
+    if (event.data.type && event.data.payload) {
+      const {eventName,data} = event.data.payload;
+      if (!eventName || !data) return;  
+      if (TypeMessages[0] === event.data.type) {
+        const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
+        KickEmitter.emit(cleanEventName, data.data ? data.data : data);
+      } else if (TypeMessages[1] === event.data.type) {        
+        TiktokEmitter.emit(eventName, flattenUserDataTSRobust(data));
+        setupData(eventName as EventType,flattenUserDataTSRobust(data));
+      }
+      localStorageManager.set(eventName, flattenUserDataTSRobust(data));
+    }
+}); 
+
 export {localStorageManager,socketManager}
 export default socketManager;
