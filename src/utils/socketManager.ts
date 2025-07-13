@@ -220,8 +220,32 @@ const initializeSocketManager = (): SocketManager => {
   return null as any; 
 };
 const socketManager = initializeSocketManager();
+interface BaseData {
+  user?: any; // 'user' es opcional.
+  [key: string]: any;
+}
 
+// Datos con la estructura aplanada (las propiedades del usuario son opcionales).
+interface FlattenedData {
+  [key: string]: any;
+}
 
+// El tipo de entrada puede ser una u otra estructura.
+type InputData = BaseData | FlattenedData;
+
+function flattenUserDataTSRobust(data: InputData): FlattenedData {
+  // Comprobamos si 'user' existe y es un objeto. 'in' es un type guard.
+  if ('user' in data && typeof data.user === 'object' && data.user !== null) {
+    const { user, ...restOfData } = data;
+    return {
+      ...restOfData,
+      ...user
+    };
+  }
+
+  // Si no hay propiedad 'user', los datos ya están aplanados, así que los devolvemos como están.
+  return { ...data };
+}
 
 export const socket = socketManager.getSocket();
 export const TiktokEmitter = socketManager.getTiktokEmitter();
@@ -231,9 +255,9 @@ window.addEventListener('message', (event) => {
     if (event.data && event.data.payload) {
       const {eventName,data} = event.data.payload;
       if (!eventName || !data) return;
-      TiktokEmitter.emit(eventName, data);
-      localStorageManager.set(eventName, data);
-      setupData(eventName as EventType,data);
+      TiktokEmitter.emit(eventName, flattenUserDataTSRobust(data));
+      localStorageManager.set(eventName, flattenUserDataTSRobust(data));
+      setupData(eventName as EventType,flattenUserDataTSRobust(data));
     }
 }); 
 export const KickEmitter = socketManager.getKickEmitter();
