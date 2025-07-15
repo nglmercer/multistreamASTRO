@@ -109,3 +109,5 @@ El estado de conexión se muestra en la interfaz:
 Abre las herramientas de desarrollador (F12) para ver logs detallados del sistema de eventos y conexiones.
 #### Test de deploy en [/](https://github.com/nglmercer/multistreamASTRO)
 
+### extension support
+recibe datos con una extension en firefox o chrome [https://github.com/nglmercer/scrapper-extension](https://github.com/nglmercer/scrapper-extension)
