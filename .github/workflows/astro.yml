@@ -59,9 +59,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          # Deshabilitar cache si sigue fallando
-          # cache: ${{ steps.detect-package-manager.outputs.manager }}
-          # cache-dependency-path: ${{ steps.detect-package-manager.outputs.lockfile }}
+          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          # Simplificar la ruta del cache
+          cache-dependency-path: ${{ steps.detect-package-manager.outputs.lockfile }}
           
       - name: Setup Pages
         id: pages
