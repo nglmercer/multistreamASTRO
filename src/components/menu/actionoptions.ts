@@ -177,28 +177,14 @@ const initializeSimulator = (): void => {
     console.error('Failed to initialize TikTok Event Simulator:', error);
   }
 };
-function initializeStopSpeaking() {
-  const button = document.getElementById('skip-play-button');
-  if (!button)return;
-  button.addEventListener('click', async () => {
-  try {
-    await nextSpeech();
-    console.log('Stop speaking initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize stop speaking:', error);
-  }
-  }
-  );
-};
+
 // Initialize immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initializeSimulator();
-      initializeStopSpeaking();
     });
   } else {
   initializeSimulator();
-  initializeStopSpeaking();
 }
 
 export { TikTokEventSimulator };

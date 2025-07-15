@@ -4,7 +4,7 @@
  * Interface for TTS provider instances
  */
 interface TTSProvider {
-  speak(text: string, options?: Record<string, any>): Promise<void>;
+  speak(text: string, options?: Record<string, any>): Promise<void | string>;
   stop(): void;
   pause(): void;
   resume(): void;
@@ -62,7 +62,7 @@ class AudioQueue {
   private playedQueue: AudioItem[] = []; // For archive mode - completed items
   private isPlaying: boolean = false;
   private activeProviderName: string | null = null;
-  private currentAudioPromise: Promise<void> | null = null;
+  private currentAudioPromise:  Promise<void | string> | null = null;
   private currentIndex: number = -1; // Current playing index in queue
   private mode: QueueMode;
   private maxHistorySize: number;
@@ -180,7 +180,7 @@ class AudioQueue {
         });
       }
       
-      return Promise.resolve(id);
+      return Promise.resolve(String(this.currentAudioPromise || id));
     } catch (error) {
       console.error(`Immediate playback error with ${providerName}:`, error);
       return Promise.reject(error);
@@ -192,7 +192,7 @@ class AudioQueue {
       this._processQueue();
     }
   }
-  async play(): Promise<boolean> {
+  async play(): Promise<string | void | null> {
     if (this.isPlaying && this.activeProviderName) {
       const providerInfo = this.providers[this.activeProviderName];
       if (providerInfo && providerInfo.instance) {
@@ -203,11 +203,10 @@ class AudioQueue {
           console.error(`Error trying to stop provider ${this.activeProviderName}:`, e);
         }
       }
-      this.currentAudioPromise = null;
     } else {
       console.log("StopCurrentPlayback called, but nothing seems to be playing according to state.");
     }
-    return this.isPlaying;
+    return this.currentAudioPromise;
   }
   /**
    * Processes the next item in the queue if not already playing.
@@ -412,7 +411,10 @@ class AudioQueue {
     if (!this.currentAudioId) return null;
     return this.getAudioById(this.currentAudioId);
   }
-
+  getAudioSource(): string | null {
+    if (!this.currentAudioId) return null;
+    return this.getAudioById(this.currentAudioId)?.text || null;
+  }
   /**
    * Changes queue mode
    */

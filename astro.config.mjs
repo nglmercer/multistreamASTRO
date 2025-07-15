@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import { vite as vidstack } from 'vidstack/plugins';
+
 import lit from '@astrojs/lit';
 import solidJs from '@astrojs/solid-js';
 
@@ -13,7 +13,4 @@ export default defineConfig({
   integrations: [expressiveCode(), lit(), solidJs(), mdx()],
   site: 'https://nglmercer.github.io/multistreamASTRO',
   base: '/',
-  vite: {
-    plugins: [vidstack()],
-  },
 });

@@ -2,7 +2,7 @@
 // type TTSVoice = { name: string, lang?: string, default?: boolean };
 // type TTSSpeakOptions = { voiceName?: string, rate?: number, pitch?: number, volume?: number };
 // --------------------------------------------------------------------
-
+import Emitter from "@utils/Emitter";
 const streamElementsVoices = [
     "Filiz", "Astrid", "Tatyana", "Maxim", "Carmen", "Ines", "Cristiano", "Vitoria",
     "Ricardo", "Maja", "Jan", "Jacek", "Ewa", "Ruben", "Lotte", "Liv", "Seoyeon",
@@ -46,11 +46,12 @@ const streamElementsVoices = [
     "Rizwan", "Lado", "Valluvar", "Linda", "Heather", "Sean", "Michael",
     "Karsten", "Guillaume", "Pattara", "Jakub", "Szabolcs", "Hoda", "Naayf"
 ];
-
+const audioEmitter = new Emitter();
 class TTSProvider {
     constructor(cfg = {}) {
         this.cfg = cfg;
         this.activeAudio = null;
+        this.emitter = audioEmitter;
     }
 
     async init() {
@@ -206,13 +207,13 @@ class StreamElementsProvider extends TTSProvider {
                 rate: audio.playbackRate,
                 preservesPitch: audio.preservesPitch
              });
-
+             this.emitter.emit('play', { audio, audioUrl });
             return new Promise((resolve, reject) => {
                 audio.oncanplaythrough = () => audio.play().catch(reject);
                 audio.onended = () => {
                     console.log(`Audio finished: "${text}"`);
                     this.activeAudio = null;
-                    resolve();
+                    resolve(audioUrl);
                 };
                 audio.onerror = (e) => {
                     console.error(`Error playing audio "${text}":`, e);
@@ -308,7 +309,7 @@ class ResponsiveVoiceProvider extends TTSProvider {
                 onstart: () => console.log("RV started."),
                 onend: () => {
                     console.log(`RV finished: "${text}"`);
-                    resolve();
+                    resolve(window.responsiveVoice.src);
                 },
                 onerror: (err) => {
                     console.error(`RV error for "${text}":`, err);
@@ -463,4 +464,4 @@ class WebSpeechProvider extends TTSProvider {
         }
     }
 }
-export { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeechProvider };
+export { TTSProvider, StreamElementsProvider, ResponsiveVoiceProvider, WebSpeechProvider,audioEmitter };
