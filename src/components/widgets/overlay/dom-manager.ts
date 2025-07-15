@@ -1,6 +1,5 @@
 // src/components/widgets/overlay/dom-manager.ts
 export class DOMManager {
-/*************  ✨ Windsurf Command ⭐  *************/
   /**
    * Get the overlay container, media wrapper and context text element from the DOM.
    * Returns an object with the overlay container, media wrapper and context text element.
@@ -8,7 +7,6 @@ export class DOMManager {
    * are valid.
    * @returns {Object} Object with the overlay container, media wrapper and context text element.
    */
-/*******  eeab9b7c-be0b-4967-ad15-9769bde33f31  *******/
   static getOverlayElements() {
     const overlayContainer = document.getElementById('overlay-container') as HTMLDivElement;
     const mediaWrapper = document.getElementById('media-wrapper') as HTMLDivElement;

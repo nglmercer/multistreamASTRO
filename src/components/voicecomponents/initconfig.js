@@ -199,7 +199,7 @@ function getselectedProviderName(value) {
         }
     }
     if (!selectedProviderName && !value) {
-        return "webSpeech";
+        return "streamElements";
     }
     return selectedProviderName || value;
 }

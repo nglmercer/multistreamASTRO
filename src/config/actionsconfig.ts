@@ -35,16 +35,6 @@ const defaultFormConfig: FormConfig = {
     required: true,
     placeholder: 'Ingresa el nombre de la acción'
   },
-  minecraft_check: { 
-    label: 'Minecraft', 
-    type: 'switch' 
-  },
-  minecraft_command: { 
-    label: 'Comando Minecraft', 
-    type: 'textarea', 
-    placeholder: '/say hola mundo',
-    showIf: { field: 'minecraft_check', value: true } 
-  },
   tts_check: { 
     label: 'Texto-a-Voz', 
     type: 'switch' 
@@ -58,6 +48,14 @@ const defaultFormConfig: FormConfig = {
   overlay_check: { 
     label: 'Superposición', 
     type: 'switch' 
+  },
+  overlay_volume: { 
+    label: 'Volumen (%)', 
+    type: 'range', 
+    min: 0, 
+    max: 100, 
+    step: 1,
+    showIf: { field: 'overlay_check', value: true } 
   },
   overlay_src: { 
     label: 'Fuente(s) (IDs/URLs)', 
@@ -78,28 +76,11 @@ const defaultFormConfig: FormConfig = {
     step: 1,
     showIf: { field: 'overlay_check', value: true } 
   },
-  overlay_volume: { 
-    label: 'Volumen (%)', 
-    type: 'range', 
-    min: 0, 
-    max: 100, 
-    step: 1,
-    showIf: { field: 'overlay_check', value: true } 
-  },
-  keypress_check: { 
-    label: 'Pulsación de Tecla', 
-    type: 'switch' 
-  },
-  keypress_key: { 
-    label: 'Tecla(s)', 
-    type: 'text', 
-    placeholder: 'space, ctrl+c, alt+tab',
-    showIf: { field: 'keypress_check', value: true } 
-  },
   id: { 
     label: 'ID', 
     type: 'text', 
     readonly: true,
+    hidden: true
   },
   type: { 
     hidden: true 
@@ -109,8 +90,6 @@ const defaultData = {
   id: '',
   name: 'Nueva Acción',
   type: 'Action',
-  minecraft_check: false,
-  minecraft_command: '/say hola',
   tts_check: false,
   tts_text: 'Texto de ejemplo',
   overlay_check: false,
@@ -118,8 +97,6 @@ const defaultData = {
   overlay_content: 'Contenido de ejemplo',
   overlay_duration: 60,
   overlay_volume: 50,
-  keypress_check: false,
-  keypress_key: 'space'
 };
 export {
     defaultFormConfig,

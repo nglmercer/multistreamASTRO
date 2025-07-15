@@ -34,7 +34,7 @@ export class ApiManager {
       console.log("Tareas de overlay obtenidas:", tasks);
 
       if (!Array.isArray(tasks)) {
-        console.error("La API no devolvió un array de tareas.");
+        console.error("La API no devolvió un array de tareas.",tasks);
         OverlayDisplay.showError("Error: Respuesta inesperada de la API.");
         this.startPolling(); // Continuar verificando
         return;
