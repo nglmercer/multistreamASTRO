@@ -74,7 +74,12 @@ class TTSProvider {
     async generateAudioUrl(text, opts = {}) {
         throw new Error(`'generateAudioUrl' not implemented in ${this.constructor.name}`);
     }
-
+    pause() {
+        if (this.activeAudio) {
+            console.log(`Pausing audio for ${this.constructor.name}`);
+            this.activeAudio.pause();
+        }
+    }
     stop() {
         if (this.activeAudio) {
             console.log(`Stopping audio for ${this.constructor.name}`);
@@ -84,6 +89,12 @@ class TTSProvider {
             this.activeAudio.onerror = null;
             this.activeAudio.src = '';
             this.activeAudio = null;
+        }
+    }
+    resume(){
+        if (this.activeAudio) {
+            console.log(`Resuming audio for ${this.constructor.name}`);
+            this.activeAudio.play();
         }
     }
 }

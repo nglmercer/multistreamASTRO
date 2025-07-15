@@ -15,7 +15,7 @@ let providerInfo;
 let ttsConfigData;
 let currentProviders = {}; // Para instancias de proveedores
 let selectedProviderName;
-const audioQueue = new AudioQueue(currentProviders, { mode: 'loop'});
+const audioQueue = new AudioQueue(currentProviders, { mode: 'archive'});
 
 function updateStatus(message) {
     logger.log(`Status: ${message}`);
@@ -246,5 +246,6 @@ async function nextSpeech() {
 export {
     playTextwithproviderInfo,
     stopSpeaking,
-    nextSpeech
+    nextSpeech,
+    audioQueue
 }

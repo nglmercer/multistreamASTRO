@@ -1,0 +1,122 @@
+---
+// No se necesita código en el frontmatter de Astro para este componente,
+// ya que toda la lógica interactiva estará en el script del cliente.
+// El HTML se renderiza de forma estática en el servidor.
+---
+<div class="audio-controls-panel">
+  <h3>Panel de Control de Audio</h3>
+  <div class="controls">
+    <button id="play-btn">Reproducir Test</button>
+    <button id="next-btn">Siguiente</button>
+    <button id="prev-btn">Anterior</button>
+    <button id="stop-all-btn">Detener Todo</button>
+  </div>
+  <div class="status">
+    <p>Estado: <span id="status-text">Inactivo</span></p>
+    <p>Cola: <span id="queue-length">0</span></p>
+  </div>
+</div>
+
+<style>
+  .audio-controls-panel {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: sans-serif;
+  }
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background-color: #f0f0f0;
+  }
+  .status p {
+    margin: 0.25rem 0;
+  }
+  #status-text.playing {
+    color: green;
+    font-weight: bold;
+  }
+</style>
+
+<script>
+  // Importamos LA MISMA instancia de audioQueue que usa el resto de la app
+  import { audioQueue } from "@components/voicecomponents/initconfig";
+  // Esperamos a que el DOM esté completamente cargado para asegurar que los elementos existen
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Seleccionamos los elementos del DOM ---
+    const playBtn = document.getElementById('play-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const stopAllBtn = document.getElementById('stop-all-btn');
+    const statusText = document.getElementById('status-text');
+    const queueLengthSpan = document.getElementById('queue-length');
+
+    // --- Función para actualizar la UI ---
+    // Esta función lee el estado actual de la instancia de audioQueue y actualiza el HTML
+    function updateUI() {
+      const isPlaying = audioQueue.isCurrentlyPlaying();
+      const queueCount = audioQueue.getQueueLength();
+
+      if (statusText) {
+        statusText.textContent = isPlaying ? 'Reproduciendo...' : 'Inactivo';
+        statusText.classList.toggle('playing', isPlaying);
+      }
+      if (queueLengthSpan) {
+        queueLengthSpan.textContent = queueCount.toString();
+      }
+    }
+    
+    // --- Añadimos los Event Listeners ---
+    // Cada botón llama a un método de la instancia importada de audioQueue
+
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        audioQueue.play();
+        // Actualizamos la UI inmediatamente después de la acción
+        updateUI();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', async () => {
+        console.log("Botón 'Siguiente' presionado.");
+        await audioQueue.next();
+        updateUI();
+      });
+    }
+    
+    if (prevBtn) {
+      prevBtn.addEventListener('click', async () => {
+        console.log("Botón 'Anterior' presionado.");
+        await audioQueue.previous();
+        updateUI();
+      });
+    }
+
+    if (stopAllBtn) {
+      stopAllBtn.addEventListener('click', () => {
+        console.log("Botón 'Detener Todo' presionado.");
+        audioQueue.stopAll();
+        updateUI();
+      });
+    }
+    
+    // --- Mantener la UI sincronizada ---
+    // Podemos usar un intervalo para sondear el estado y mantener la UI actualizada,
+    // especialmente si el estado puede cambiar por eventos externos.
+    setInterval(updateUI, 500); // Actualiza la UI cada medio segundo
+
+    // Inicializamos la UI al cargar
+    updateUI();
+  });
+</script>

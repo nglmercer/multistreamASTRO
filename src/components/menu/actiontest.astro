@@ -11,6 +11,7 @@ const {
   showDescription = true 
 } = Astro.props;
 import  MiddlewareDemo from '@components/middlewares-demo.astro';
+import AudioControlls from './audioControlls.astro';
 ---
 <div class="tiktok-event-simulator">
 
@@ -35,6 +36,7 @@ import  MiddlewareDemo from '@components/middlewares-demo.astro';
     <button type="button" id="skip-play-button" class="btn btn-secondary">
       <span class="material-symbols-outlined">play_arrow</span>skip
     </button>
+    <AudioControlls></AudioControlls>
   </div>
 </div>
 

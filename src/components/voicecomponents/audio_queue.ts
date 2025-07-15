@@ -6,6 +6,8 @@
 interface TTSProvider {
   speak(text: string, options?: Record<string, any>): Promise<void>;
   stop(): void;
+  pause(): void;
+  resume(): void;
 }
 
 /**
@@ -190,7 +192,23 @@ class AudioQueue {
       this._processQueue();
     }
   }
-
+  async play(): Promise<boolean> {
+    if (this.isPlaying && this.activeProviderName) {
+      const providerInfo = this.providers[this.activeProviderName];
+      if (providerInfo && providerInfo.instance) {
+        console.log(`Stopping current playback by ${this.activeProviderName}.`);
+        try {
+          providerInfo.instance.resume();
+        } catch (e) {
+          console.error(`Error trying to stop provider ${this.activeProviderName}:`, e);
+        }
+      }
+      this.currentAudioPromise = null;
+    } else {
+      console.log("StopCurrentPlayback called, but nothing seems to be playing according to state.");
+    }
+    return this.isPlaying;
+  }
   /**
    * Processes the next item in the queue if not already playing.
    */
@@ -419,7 +437,7 @@ class AudioQueue {
       if (providerInfo && providerInfo.instance) {
         console.log(`Stopping current playback by ${this.activeProviderName}.`);
         try {
-          providerInfo.instance.stop();
+          providerInfo.instance.pause();
         } catch (e) {
           console.error(`Error trying to stop provider ${this.activeProviderName}:`, e);
         }
