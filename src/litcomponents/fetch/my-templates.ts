@@ -9,14 +9,14 @@ export const simpleTextTemplate: RequestTemplate = {
   // --- Metadatos de la Plantilla ---
   id: 'text-post',
   name: 'Enviar Texto (POST)',
+  description: 'Una plantilla para enviar un objeto JSON con un solo campo de texto.\n [AI CHAT](https://github.com/nglmercer/AI-streaming-Backend)',
   icon: 'text_snippet',
-  description: 'Una plantilla para enviar un objeto JSON con un solo campo de texto.[An Internal Link to a Section Heading](/guides/content/editing-an-existing-page#modifying-front-matter)',
 
   // --- Configuración Base (valores por defecto) ---
   baseConfig: {
     name: 'Add Message',
     method: 'POST',
-    url: 'http://localhost:12393/api/messages/add', // Un buen endpoint para probar
+    url: 'http://localhost:12393/api/msg/add', // Un buen endpoint para probar
     headers: [
       // El header Content-Type se añade automáticamente, pero puedes poner otros
       { key: 'Accept', value: 'application/json', enabled: true }
@@ -36,7 +36,7 @@ export const simpleTextTemplate: RequestTemplate = {
      *    Aquí, queremos un objeto con una clave "text" y un valor inicial vacío.
      */
     schema: {
-      text: 'user: {nickname} message: {comment}' 
+      text: 'user: {nickname} content: {comment}' 
     },
 
     /**
@@ -58,10 +58,11 @@ export const simpleTextTemplate: RequestTemplate = {
 export const ArrayTemplate: RequestTemplate = {
     id: 'array-command',
     name: 'Minecraft Commands',
-    description: 'A template for sending an array of Minecraft Commands.',
+    description: 'A template for sending an array of Minecraft Commands.[minecraft SERVER](https://github.com/nglmercer/server-minecraft-dashboard)',
     icon: 'code',
     baseConfig: {
         name: 'Minecraft cmds',
+        url: 'http://localhost:3000/api/servermanager/NombreServidor/sendMultiple',
         method: 'POST',
         headers: [
             { key: 'Accept', value: 'application/json', enabled: true }
@@ -73,9 +74,9 @@ export const ArrayTemplate: RequestTemplate = {
     bodyTemplate: {
         schema: {
             cmds: [
-              'execute at @p run title @a title {\\\"text\\\":\\\"uniqueId\\\",\\\"color\\\":\\\"gold\\\"}',
-              'execute at @p run title @a subtitle {\\\"text\\\":\\\"gifted giftName xrepeatCount\\\",\\\"color\\\":\\\"gold\\\"}',
-              'execute at @p run summon zombie ~ ~ ~ {CustomName:\'{\\\"text\\\":\\\"uniqueId\\\",\\\"color\\\":\\\"red\\\"}\',CustomNameVisible:1b}'
+              'execute at @p run title @a title {"text":"uniqueId","color":"gold"}',
+              'execute at @p run title @a subtitle {"text":"gifted giftName xrepeatCount","color":"gold"}',
+              'execute at @p run summon zombie ~ ~ ~ {CustomName:\'{"text":"uniqueId","color":"red"}\',CustomNameVisible:1b}'
             ]
         },
         editableFields: ['cmds'],
