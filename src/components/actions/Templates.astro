@@ -1,0 +1,40 @@
+---
+import { templates } from "@litcomponents/fetch/my-templates.ts";
+import 'github-markdown-css/github-markdown.css';
+import { marked } from 'marked'; // 1. Importa la librería
+console.log(templates);
+---
+<dialog-container class="modal" id="TemplateModal">
+  <div class="template-container modal__base">
+    {templates?.map((template) => (
+      <div class="template-item">
+        <article class="markdown-body">
+          <div class="rendered-content" set:html={marked.parse(template.description)} >
+          </div>
+        </article>
+        <button class="btn" id={template.id}>
+          <span class="material-symbols-outlined">{template.icon}</span>
+          {template.name}
+        </button>
+      </div>
+    ))}
+  </div>
+</dialog-container>
+<style>
+    /* Para modales de templates */
+.template-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  place-items: center;
+}
+
+.template-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+}
+</style>

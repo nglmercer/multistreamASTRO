@@ -19,6 +19,7 @@
     "astro-expressive-code": "^0.41.2",
     "github-markdown-css": "^5.8.1",
     "lit": "^3.2.1",
+    "marked": "^16.1.2",
     "socket.io-client": "^4.8.1",
     "solid-js": "^1.9.7"
   },

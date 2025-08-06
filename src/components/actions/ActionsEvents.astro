@@ -4,7 +4,7 @@ import ActionsForm from "./Actions.astro";
 import DatabaseSection from "./DatabaseSection.astro";
 import Notify from '@components/notify.astro';
 import { databases } from "@config/idbconfig";
-
+import Templates from "./Templates.astro";
 // Configuración de las secciones de base de datos
 const databaseSections = [
   {
@@ -31,9 +31,10 @@ const databaseSections = [
     <obj-edit-frm id="Action-editor" mode="edit" darkmode></obj-edit-frm>
   </dlg-cont>  
 
-    <div class="flex center navbar-brand p-10">
+    <div class="flex center navbar-brand p-10 center gap-10">
       <span class="material-symbols-outlined brand-icon">dashboard</span>
       <h2>Gestión de Acciones</h2>
+      <button type="button" id="ActionTemplates" class="btn"><span class="material-symbols-outlined">temp_preferences_custom</span> Integraciones</button>
     </div>
     {databaseSections.map((section) => (
       <DatabaseSection
@@ -48,6 +49,7 @@ const databaseSections = [
     <Events></Events>
   <ActionsForm/>
   <Notify></Notify>
+      <Templates></Templates>
 </div>
 
 <script src="/src/components/actionsjs/actionstable.ts"></script>

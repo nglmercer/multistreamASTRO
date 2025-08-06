@@ -10,12 +10,13 @@ import { actionEmitter } from "@components/actionsjs/actionemitter.ts";
 import { seleccionarYParsearJSON } from "@utils/jsonbackups/import.ts";
 import { exportarJSON } from "@utils/jsonbackups/export.ts";
 import { safeParse } from "@utils/jsonutils/safeparse.ts";
+import { ArrayTemplate,getTemplate,templates } from "@litcomponents/fetch/my-templates.ts";
 // Elementos DOM globales con validación
 const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
 const ActionsDBButton = document.getElementById("ActionsDBButton");
 const ActionModal = document.getElementById("ActionModal") as DialogContainer;
-
+const TemplateModal = document.getElementById("TemplateModal") as DialogContainer;
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     listenersForm();
@@ -41,12 +42,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("queryObject",queryObject,querydata)
   }
 });
-
 function openModal(): void {
   if (!ActionModal) {
     console.warn("Action modal not found");
     return;
   }
+  console.log("openModal");
   ActionModal.show();
 }
 function closeModal(): void {
@@ -85,6 +86,22 @@ function listenersForm(): void {
       console.error("Error handling form action:", error);
     }
   });
+  const ActionTemplates = document.getElementById("ActionTemplates") as HTMLButtonElement;
+  ActionTemplates?.addEventListener("click", () => {
+    TemplateModal.show();
+  });
+  templates.forEach((template) => {
+    const templateButton = document.getElementById(template.id);
+    if (templateButton) {
+      templateButton.addEventListener("click", () => {
+        const TemplateData = getTemplate(template.id);
+        console.log("template",TemplateData);
+        configForm.changeTemplate(TemplateData);
+        openModal();
+        TemplateModal.hide();
+      });
+    }
+  })
 }
 const actionsEvents = {
   reset: ()=>{
@@ -156,8 +173,8 @@ function getFormData(): Record<string, any> | null {
 
     // Obtener elementos adicionales con validación
     const fetchForm = document.querySelector("#fetchForm_check") as HTMLInputElement;
-    const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
-    const fetchConfigValue = fetchConfig ? (fetchConfig.getConfig() || fetchConfig.value) : {};
+    const fetchConfig = configForm;
+    const fetchConfigValue = fetchConfig ? (fetchConfig.getConfig() || fetchConfig.config) : {};
 
     return {
       ...data,
@@ -233,7 +250,7 @@ function resetForm(): void {
       fetchForm.setVal(false);
     }
 
-    const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
+    const fetchConfig = configForm;
     if (fetchConfig) {
       fetchConfig.reset();
     }
