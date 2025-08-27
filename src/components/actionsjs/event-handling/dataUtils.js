@@ -18,6 +18,7 @@ export function polifyfillEvalueKick(data) {
     const Mapdata = {
         "comment": removeEmotes(data.content),
         "uniqueId": data.sender.username,
+        "nickname": data.sender.slug,
         ...data
     }
     return Mapdata;
@@ -29,8 +30,9 @@ export function polifyfillEvalueTWITCH(data) {
     username: "string",
     */
     const Mapdata = {
-        "comment": removeEmotes(data.message),
-        "uniqueId": data.username,
+        "nickname": data.displayName || data.username,
+        "comment": removeEmotes(data.message) || removeEmotes(data.msg) || data.message || data.msg,
+        "uniqueId": data.username || data.displayName,
         ...data
     }
     return Mapdata;

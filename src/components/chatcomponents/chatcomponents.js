@@ -21,7 +21,7 @@
   }
 ]
  */
-import { webcomponentevent, appendMessage, handlechat, handlegift, mapEvent, arrayevents,lastElement,handlekickChat } from 'src/utils/chat.js';
+import { handlechat, handlegift, mapEvent, arrayevents,lastElement,handlekickChat,handleTwitchChat } from 'src/utils/chat.js';
 
 import { TiktokEmitter, socket, KickEmitter,socketManager  } from 'src/utils/socketManager';
 import { openPopup, returnexploreroptions, setPopupOptions,returnOptions } from 'src/components/menu/menuutils.js';
@@ -52,10 +52,11 @@ KickEmitter.onAny((event, data) => {
     acc[curr] = curr;
     return acc;
   }, {});
-  if (event === obj.ChatMessage || event === "message") {
+  if (event === obj.ChatMessage) {
     console.log("KickEmitter.onAny ChatMessage",data);
     handlekickChat(data);
-  } else {
+  } else if(event === "message")  {
+    handleTwitchChat(data);
     console.log("KickEmitter.onAny else",event, data);
   }
 });

@@ -68,7 +68,8 @@ class SocketManager {
     'subscribe', 'follow', 'share', 'streamEnd',
     'availableGifts', 'roomInfo'
   ];
-  public kickLiveEvents: string[] | KickEvent[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'connected', 'login','close'];
+  public kickLiveEvents: string[] | KickEvent[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'connected', 'login','close','message'];
+  public twitchLiveEvents: string[] = ['message']; // Placeholder for Twitch events
   constructor() {
     this.socket = io(this.baseUrl);
     this.TiktokEmitter = new Emitter();
@@ -283,7 +284,7 @@ window.addEventListener('message', (event) => {
     if (event.data.type && event.data.payload) {
       const {eventName,data} = event.data.payload;
       if (!eventName || !data) return;  
-      console.log('Mensaje recibido:', {eventName,data});
+      console.log('Mensaje recibido:', {eventName,data},event.data.type);
       if (TypeMessages[0] === event.data.type) {
         const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
         socketManager.kickhandlerdata(cleanEventName, data.data ? data.data : data);

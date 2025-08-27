@@ -33,7 +33,7 @@ const eventEvaluators = {
 export async function switcheventDb(event:string, eventData:any, platform:string) {
     const targetDB = dbEventMapping[event as keyof typeof dbEventMapping];
     const evaluator = eventEvaluators[event as keyof typeof eventEvaluators];
-
+    console.log("switcheventDb: Event received", event, eventData, platform);
     if (targetDB && evaluator) {
         try {
             const rulesArray = await getAllDataFromDatabase(targetDB);

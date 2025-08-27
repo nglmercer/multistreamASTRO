@@ -1,3 +1,4 @@
+import { polifyfillEvalueTWITCH,polifyfillEvalueKick } from "@components/actionsjs/event-handling/dataUtils";
 console.log("Chat Loaded");
 function mapEvent(eventType, eventData) {
 
@@ -218,6 +219,11 @@ const handlekickChat = async (data, aditionaldata = { type: "text", value: timeN
     const newhtml = webcomponentchat(parsedata, aditionaldata);
     appendMessage(newhtml, "chatcontainer");
 }
+const handleTwitchChat = async (data, aditionaldata = { type: "text", value: timeNow(), class: "absolute bottom-0 right-0" }) => {
+    const parsedata = polifyfillEvalueTWITCH(data);
+    const newhtml = webcomponentchat(parsedata, aditionaldata);
+    appendMessage(newhtml, "chatcontainer");
+}
 // Función helper para obtener datos de usuario con compatibilidad
 function getUserData(data, field) {
     // Primero intenta obtener el dato directamente de data
@@ -375,5 +381,6 @@ export {
     mapEvent,
     arrayevents,
     lastElement,
-    handlekickChat
+    handlekickChat,
+    handleTwitchChat
 }
