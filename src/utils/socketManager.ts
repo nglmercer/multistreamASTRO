@@ -279,11 +279,11 @@ export const kickLiveEvents = socketManager.kickLiveEvents;
 const TypeMessages = ["KICK_LIVE_EVENT","TIKTOK_LIVE_EVENT"];
 window.addEventListener('message', (event) => {
     // IMPORTANTE: Verificar el origen por seguridad
-    console.log('Mensaje recibido:', event.data);
     if (!event.data) return;
     if (event.data.type && event.data.payload) {
       const {eventName,data} = event.data.payload;
       if (!eventName || !data) return;  
+      console.log('Mensaje recibido:', {eventName,data});
       if (TypeMessages[0] === event.data.type) {
         const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
         socketManager.kickhandlerdata(cleanEventName, data.data ? data.data : data);
