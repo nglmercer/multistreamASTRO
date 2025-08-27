@@ -178,7 +178,7 @@ class SocketManager {
     }, delay);
   }
 
-  private tiktokhandlerdata(event: any, data: any): void {
+  tiktokhandlerdata(event: any, data: any): void {
     logger.log("event", event, data, 'TiktokLive');
     this.TiktokEmitter.emit(event, data);
     setupData(event as EventType,data);
@@ -188,7 +188,7 @@ class SocketManager {
     // Store back to localStorage
     localStorageManager.set(event, data);
   }
-  private kickhandlerdata(event: any, data: any): void {
+  kickhandlerdata(event: any, data: any): void {
     logger.log("event", event, data, 'KickLive');
     this.KickEmitter.emit(event, data);
     localStorageManager.set(event, data);
@@ -286,10 +286,9 @@ window.addEventListener('message', (event) => {
       if (!eventName || !data) return;  
       if (TypeMessages[0] === event.data.type) {
         const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
-        KickEmitter.emit(cleanEventName, data.data ? data.data : data);
+        socketManager.kickhandlerdata(cleanEventName, data);
       } else if (TypeMessages[1] === event.data.type) {        
-        TiktokEmitter.emit(eventName, flattenUserDataTSRobust(data));
-        setupData(eventName as EventType,flattenUserDataTSRobust(data));
+        socketManager.tiktokhandlerdata(eventName, flattenUserDataTSRobust(data));
       }
       localStorageManager.set(eventName, flattenUserDataTSRobust(data));
     }
