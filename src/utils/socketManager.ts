@@ -286,7 +286,7 @@ window.addEventListener('message', (event) => {
       if (!eventName || !data) return;  
       if (TypeMessages[0] === event.data.type) {
         const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
-        socketManager.kickhandlerdata(cleanEventName, data);
+        socketManager.kickhandlerdata(cleanEventName, data.data ? data.data : data);
       } else if (TypeMessages[1] === event.data.type) {        
         socketManager.tiktokhandlerdata(eventName, flattenUserDataTSRobust(data));
       }
