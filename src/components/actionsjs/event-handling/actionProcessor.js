@@ -6,6 +6,7 @@ import { executeHttpRequest } from "src/fetch/executor";
 import { taskApi } from 'src/fetch/fetchapi.js';
 import { socket } from '@utils/socketManager.ts'; // Asumiendo que socketManager exporta 'socket'
 import { ReplacesValues } from './dataUtils.js';
+import  { SpamCleaner, createCleaner, quickClean } from './spam-cleaner.js';
 import { nextSpeech } from '@components/voicecomponents/initconfig';
 import {
     COMPARATORS,
@@ -91,13 +92,13 @@ const actionExecutionConfig = {
         verify: ["check", "text"],
         callback: (actionData, fullAction, eventData, eventType) => {
             let playnow = false;
-            console.log("tts", actionData, fullAction, eventData, eventType);
             if (eventData.emotes && eventData.emotes.length >= 1) { // Usar eventData para emotes
                 return;
             }
             if (eventData.giftId || eventData.giftName) playnow = true; // Usar eventData
-            console.log("playnow", playnow);
-            playTextwithproviderInfo(ReplacesValues(actionData.text, eventData), undefined, playnow);
+            const cleanText = quickClean(ReplacesValues(actionData.text, eventData));
+            console.log("cleanText", {cleanText,playnow,fullAction,eventType});
+            playTextwithproviderInfo(cleanText, undefined, playnow);
         }
     },
     "overlay": {
