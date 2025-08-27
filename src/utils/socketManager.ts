@@ -276,7 +276,7 @@ export const TiktokEmitter = socketManager.getTiktokEmitter();
 export const KickEmitter = socketManager.getKickEmitter();
 export const tiktokLiveEvents = socketManager.tiktokLiveEvents;
 export const kickLiveEvents = socketManager.kickLiveEvents;
-const TypeMessages = ["KICK_LIVE_EVENT","TIKTOK_LIVE_EVENT"];
+const TypeMessages = ["KICK_LIVE_EVENT","TIKTOK_LIVE_EVENT","TWITCH_LIVE_EVENT"];
 window.addEventListener('message', (event) => {
     // IMPORTANTE: Verificar el origen por seguridad
     if (!event.data) return;
@@ -289,6 +289,11 @@ window.addEventListener('message', (event) => {
         socketManager.kickhandlerdata(cleanEventName, data.data ? data.data : data);
       } else if (TypeMessages[1] === event.data.type) {        
         socketManager.tiktokhandlerdata(eventName, flattenUserDataTSRobust(data));
+      } else if (TypeMessages[2] === event.data.type) {
+        // NOT IMPLEMENTED YET, ONLY TEST TYPE eventName "message"
+        /* data = {message,displayName,username} */
+        socketManager.kickhandlerdata(eventName, data.data ? data.data : data);
+
       }
       localStorageManager.set(eventName, flattenUserDataTSRobust(data));
     }

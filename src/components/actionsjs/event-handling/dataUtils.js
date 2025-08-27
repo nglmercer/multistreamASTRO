@@ -22,6 +22,19 @@ export function polifyfillEvalueKick(data) {
     }
     return Mapdata;
 }
+export function polifyfillEvalueTWITCH(data) {
+    /*
+    displayName: "string",
+    message: "string",
+    username: "string",
+    */
+    const Mapdata = {
+        "comment": removeEmotes(data.message),
+        "uniqueId": data.username,
+        ...data
+    }
+    return Mapdata;
+}
 function removeEmotes(message) {
     if (!message || typeof message !== 'string') return message;    
     // Regex pattern to match [emote:number:string] format

@@ -22,7 +22,8 @@ const logger = new BrowserLogger('ruleEngine')
     .setLevel(LogLevel.LOG); // Habilitar debug para más información
 // Configuración de reglas para diferentes tipos de eventos
 const platformEventTypeMap: Record<string, string> = {
-    'ChatMessage': 'chat'
+    'ChatMessage': 'chat',
+    'message': 'chat', // Twitch chat message
 };
 // @ts-ignore
 // Asumiendo que tienes los tipos definidos como antes:

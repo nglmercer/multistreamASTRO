@@ -1,7 +1,7 @@
 // src/event-handling/eventDispatcher.js
 import { getAllDataFromDatabase, databases } from '@utils/idb.js';
 import { processMatchedItems } from './actionProcessor.js';
-import { polifyfillEvalueKick } from './dataUtils.js';
+import { polifyfillEvalueKick,polifyfillEvalueTWITCH } from './dataUtils.js';
 import { evalueChat, evalueGift, evalueBits, evalueLikes, evalueFollow } from './ruleEngine.ts';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
 const logger = new BrowserLogger('eventdispatcher')
@@ -16,10 +16,12 @@ const dbEventMapping = {
     "likes": databases.likesEventsDB,
     "follow": databases.followEventsDB,
     "ChatMessage": databases.commentEventsDB, // Kick's chat message
+    "message": databases.commentEventsDB, // Twitch chat message
 };
 
 const eventEvaluators = {
-    'ChatMessage': (array, data, platform) => evalueChat(array, polifyfillEvalueKick(data), platform),
+    'ChatMessage': (array:any[], data:any, platform:string) => evalueChat(array, polifyfillEvalueKick(data), platform,'ChatMessage'),
+    'message': (array:any[], data:any, platform:string) => evalueChat(array, polifyfillEvalueTWITCH(data), platform,'message'),
     'chat': evalueChat,
     'gift': evalueGift,
     'bits': evalueBits,
@@ -28,9 +30,9 @@ const eventEvaluators = {
     'follow': evalueFollow,
 };
 
-export async function switcheventDb(event, eventData, platform) {
-    const targetDB = dbEventMapping[event];
-    const evaluator = eventEvaluators[event];
+export async function switcheventDb(event:string, eventData:any, platform:string) {
+    const targetDB = dbEventMapping[event as keyof typeof dbEventMapping];
+    const evaluator = eventEvaluators[event as keyof typeof eventEvaluators];
 
     if (targetDB && evaluator) {
         try {
