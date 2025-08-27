@@ -16,11 +16,18 @@ export function polifyfillEvalueKick(data) {
     ​​​
     type: "message"*/
     const Mapdata = {
-        "comment": data.content,
+        "comment": removeEmotes(data.content),
         "uniqueId": data.sender.username,
         ...data
     }
     return Mapdata;
+}
+function removeEmotes(message) {
+    if (!message || typeof message !== 'string') return message;    
+    // Regex pattern to match [emote:number:string] format
+    const emotePattern = /\[emote:\d+:[^\]]+\]/g;
+    
+    return message.replace(emotePattern, '').trim();
 }
 
 export function ReplacesValues(input, data) {
