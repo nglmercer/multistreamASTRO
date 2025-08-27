@@ -52,7 +52,7 @@ KickEmitter.onAny((event, data) => {
     acc[curr] = curr;
     return acc;
   }, {});
-  if (event === obj.ChatMessage){
+  if (event === obj.ChatMessage || event === "message") {
     console.log("KickEmitter.onAny ChatMessage",data);
     handlekickChat(data);
   } else {

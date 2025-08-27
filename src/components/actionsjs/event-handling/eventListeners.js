@@ -2,7 +2,7 @@
 import { TiktokEmitter, tiktokLiveEvents, KickEmitter, kickLiveEvents } from '@utils/socketManager.ts';
 import { saveEventData } from './eventSaver.js';
 import { switcheventDb } from './eventDispatcher.js';
-import { polifyfillEvalueKick } from './dataUtils.js';
+import { polifyfillEvalueKick,polifyfillEvalueTWITCH } from './dataUtils.js';
 import { BrowserLogger, LogLevel } from '@utils/Logger.ts';
 
 const logger = new BrowserLogger('eventlisteners').setLevel(LogLevel.LOG);
@@ -95,8 +95,13 @@ export function setupPlatformEventListeners() {
                 const polifyedData = polifyfillEvalueKick(data);
                 switcheventDb(event, polifyedData, platformNames.kick);
                 
+                eventBuffer.addEvent(platformNames.kick, event, polifyedData);
+            }else if(event === "message"){
+                const polifyedData = polifyfillEvalueTWITCH(data);
+                switcheventDb(event, polifyedData, platformNames.kick);
+                
                 // Guardar los datos originales, no los polyfilled
-                eventBuffer.addEvent(platformNames.kick, event, data);
+                eventBuffer.addEvent(platformNames.kick, event, polifyedData);
             } else {
                 switcheventDb(event, data, platformNames.kick);
                 eventBuffer.addEvent(platformNames.kick, event, data);
