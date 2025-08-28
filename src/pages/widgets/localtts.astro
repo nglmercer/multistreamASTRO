@@ -1,0 +1,237 @@
+---
+// src/components/widgets/OverlayWidget.astro
+import Layout from '@layouts/Layout.astro';
+import '@components/widgets/overlay/styles.css';
+//  @import '/overlay/styles.css'; 
+
+---
+<Layout>
+  <div id="media-container">
+    <div id="text-display"></div>
+    <div id="progress-bar-container">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+    import { WsClient } from "src/socket/ws-adapter";
+    import { AudioQueue } from "@components/voicecomponents/audio_queue";
+    interface TTSProvider {
+        speak(text: string, options?: Record<string, any>): Promise<void | string>;
+        stop(): void;
+        pause(): void;
+        resume(): void;
+    }
+    class SimpleTTSProvider implements TTSProvider {
+        private currentAudio: HTMLAudioElement | null = null;
+        private onEndedCallback: (() => void) | null = null;
+        private onPlayingCallback: (() => void) | null = null;
+        private onStoppedCallback: (() => void) | null = null;
+        private onProgressCallback: ((audio: HTMLAudioElement) => void) | null = null; // Nueva línea
+
+
+
+    constructor(onPlaying?: () => void, onEnded?: () => void, onStopped?: () => void, onProgress?: (audio: HTMLAudioElement) => void) { // Modificado
+        this.onPlayingCallback = onPlaying || null;
+        this.onEndedCallback = onEnded || null;
+        this.onStoppedCallback = onStopped || null;
+        this.onProgressCallback = onProgress || null; // Nueva línea
+    }
+
+        async speak(text: string): Promise<void | string> {
+            const fetchAudio = async (text: string): Promise<string> => {
+                const response = await fetch(`http://${urlbase}/api/tts?text=${encodeURIComponent(text)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const json = await response.json();
+                const audioBase64 = json.audioData;
+                const audioBytes = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+                const audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' });
+                return URL.createObjectURL(audioBlob);
+            };
+
+            try {
+                const audioUrl = await fetchAudio(text);
+                this.currentAudio = new Audio(audioUrl);
+
+                return new Promise<void>((resolve, reject) => {
+                    if (this.currentAudio) {
+                        this.currentAudio.addEventListener("ended", () => {
+                            if (this.onEndedCallback) this.onEndedCallback();
+                            this.currentAudio = null;
+                            resolve();
+                        });
+                        this.currentAudio.addEventListener("play", () => {
+                            if (this.onPlayingCallback) this.onPlayingCallback();
+                        });
+                        // Nueva línea: listener para actualizar el progreso
+                        this.currentAudio.addEventListener("timeupdate", () => {
+                            if (this.onProgressCallback && this.currentAudio) {
+                                this.onProgressCallback(this.currentAudio);
+                            }
+                        });
+                        this.currentAudio.addEventListener("error", (e) => {
+                            console.error('Error during audio playback:', e);
+                            if (this.onEndedCallback) this.onEndedCallback();
+                            this.currentAudio = null;
+                            reject(new Error(`Error during audio playback: ${e}`));
+                        });
+
+                        this.currentAudio.play().catch(reject);
+                    } else {
+                        reject(new Error("Audio element not initialized."));
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching or playing audio:', error);
+                if (this.onEndedCallback) this.onEndedCallback(); // Asegurarse de que el estado visual se reinicie
+                this.currentAudio = null;
+                throw error;
+            }
+        }
+
+        stop(): void {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio.currentTime = 0;
+                this.currentAudio = null;
+                if (this.onStoppedCallback) this.onStoppedCallback();
+            }
+        }
+        pause(): void {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+            }
+        }
+        resume(): void {
+            if (this.currentAudio) {
+                this.currentAudio.play().catch(e => console.error("Error resuming audio:", e));
+            }
+        }
+    }
+
+    const urlbase = "localhost:9001";
+    const socket = new WsClient({ id: 'tts-widget', name: '/ttswidget', url: `ws://${urlbase}/ws` });
+
+    const textDisplay = document.getElementById('text-display');
+    const progressBar = document.getElementById('progress-bar');
+    const mediaContainer = document.getElementById('media-container');
+
+    let currentText = ''; // Variable para almacenar el texto actual
+    let progressInterval: number | null = null;
+
+    const updateProgressBar = (audio: HTMLAudioElement) => {
+        if (progressBar) {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+    };
+
+    const handleAudioPlaying = () => {
+        if (textDisplay) {
+            mediaContainer?.classList.add('playing'); // Añade clase para indicar que está activo
+        }
+        if (progressBar) {
+            progressBar.style.width = '0%';
+
+        }
+    };
+
+    const handleAudioEnded = () => {
+        if (textDisplay) {
+            mediaContainer?.classList.remove('playing'); // Elimina la clase de activo
+        }
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+    };
+
+    const simpleTTSInstance = new SimpleTTSProvider(handleAudioPlaying, handleAudioEnded, handleAudioEnded,updateProgressBar ); // Pasa los callbacks
+    
+    const newQueue = new AudioQueue({ 
+        default: { 
+            instance: simpleTTSInstance, // Usa la instancia con callbacks
+            initialized: true 
+        },
+    },{ mode: 'archive'});
+    socket.connect();
+    socket.on('connect', () => {
+        console.log('Connected to WebSocket server');
+    });
+
+    socket.on('message', (rawData) => {
+        const {type, data} = rawData;
+        if (data && typeof data === 'string' && data.trim() !== '') {
+            console.log('Received message:', {type, data});
+            textDisplay!.textContent = data;
+            newQueue.enqueue(data, "default");
+        }
+    });
+</script>
+<style>
+    #media-container {
+    position: absolute;
+    bottom: 20px; /* Ajusta la posición según necesites */
+    left: 20px;
+    width: 300px; /* Ancho del reproductor */
+    background-color: rgba(0, 0, 0, 0.7); /* Fondo semi-transparente */
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    opacity: 0; /* Por defecto oculto */
+    transition: opacity 0.3s ease-in-out;
+}
+
+#media-container.playing {
+    opacity: 1; /* Visible cuando está reproduciendo */
+}
+
+#text-display {
+    font-size: 1.1em;
+    min-height: 2em; /* Para mantener el espacio aunque no haya texto */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    word-wrap: break-word; /* Para que el texto largo se ajuste */
+}
+
+#progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: #4CAF50; /* Color de la barra de progreso */
+    border-radius: 4px;
+    transition: width 0.1s linear; /* Transición suave para el progreso */
+}
+
+/* Opcional: Estilos para una pequeña animación de "hablando" */
+#media-container.playing #text-display::after {
+    content: '...';
+    animation: typing 1s infinite alternate;
+}
+
+@keyframes typing {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
