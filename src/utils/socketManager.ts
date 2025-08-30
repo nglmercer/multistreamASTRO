@@ -58,7 +58,7 @@ function getData(data: any): any {
   return data;
 }
 class SocketManager {
-  private baseUrl: string = 'http://localhost:8081/ws';
+  private baseUrl: string = 'https://server-production-c0b1.up.railway.app/ws';
   public wsBaseUrl: string = wsUrl;
   private socket: WsClient;
   private ws: WebSocket | null = null; // Para WebSocket nativo, inicializar a null
