@@ -338,6 +338,10 @@ export async function evaluateRules(
 // Los evaluadores específicos ahora deben pasar 'platform'
 // Esto requiere que 'switcheventDb' les pase 'platform'
 export async function evalueChat(array: any[], data: any, platform: string, originalEventName: string) {
+    if (!data || (!data.comment && !data.message)) {
+        logger.warn('evalueChat called with invalid data:', data);
+        return new Map(); // Retorna un Map vacío si los datos no son válidos
+    }
     return await evaluateRules(array, data, 'chat', platform, originalEventName);
 }
 

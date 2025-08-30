@@ -4,7 +4,7 @@ import { customElement, property, state, query } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { socket } from '@utils/socketManager';
+import socketManager, { socket } from '@utils/socketManager';
 // Types
 export interface PlatformTheme {
   color: string;
@@ -517,7 +517,7 @@ export class UserProfileComponent extends LitElement {
   async connect(username: string) {
     console.log('Connecting to:', username, 'on platform:', this._state.platform);
     this.dispatchEvent(new UserConnectEvent({username,platform:this.platform}));
-    socket.emit('join-platform', { uniqueId: username, platform: this.platform });
+    socketManager.joinplatform({ platform: this._state.platform, uniqueId:username });
     // Simulate async connection
     await new Promise(resolve => setTimeout(resolve, 500));
     this.updateState({

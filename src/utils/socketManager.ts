@@ -1,8 +1,8 @@
-import { io, Socket } from 'socket.io-client';
 import Emitter, { emitter } from './Emitter';
 import { BrowserLogger, LogLevel } from './Logger.ts'
 import LocalStorageManager from './LocalStorageManager'
 import {setupData,type EventType} from './userdata/UserProcessor.ts';
+import { WsClient } from 'src/socket/ws-adapter.ts';
 const logger = new BrowserLogger('socket')
   .setLevel(LogLevel.DISABLED);
 interface JoinPlatformparams {
@@ -50,10 +50,17 @@ interface TiktokEventsStorage {
 const localStorageManager = new LocalStorageManager<TiktokEventsStorage>('TiktokEvents');
 const apiKey = localStorage.getItem('tiktok_apiKey')
 const wsUrl = `wss://ws.eulerstream.com?uniqueId=tv_asahi_news&apiKey=`;
+function getData(data: any): any {
+  // Desanidar recursivamente hasta que no haya más 'data'
+  while (data && typeof data === 'object' && 'data' in data) {
+    data = data.data;
+  }
+  return data;
+}
 class SocketManager {
-  private baseUrl: string = 'http://localhost:9001';
+  private baseUrl: string = 'http://localhost:8081/ws';
   public wsBaseUrl: string = wsUrl;
-  private socket: Socket;
+  private socket: WsClient;
   private ws: WebSocket | null = null; // Para WebSocket nativo, inicializar a null
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay: number = 5000; // 5 segundos
@@ -71,15 +78,18 @@ class SocketManager {
   public kickLiveEvents: string[] | KickEvent[] = ['ready', 'ChatMessage', 'Subscription', 'disconnected', 'connected', 'login','close','message'];
   public twitchLiveEvents: string[] = ['message']; // Placeholder for Twitch events
   constructor() {
-    this.socket = io(this.baseUrl);
+    this.socket = new WsClient({
+      id: 'socket-io-client',
+      url: this.baseUrl
+    })
     this.TiktokEmitter = new Emitter();
     this.KickEmitter = new Emitter();
     this.ws = new WebSocket(this.wsBaseUrl);
     
     logger.log("event", 'Socket Manager Loaded', this.baseUrl, this.socket);
-    
+    this.socket.connect();
     this.initializeSocketEvents();
-    this.connectWebSocket(apiKey); // Conectar al WebSocket con la clave de API
+    //this.connectWebSocket(apiKey); // Conectar al WebSocket con la clave de API
     // temporal test joinplatform
   //  this.joinplatform({ uniqueId: 'ju44444n._', platform: 'tiktok' });
   //  this.getRoomInfo({ uniqueId: 'ju44444n._', platform: 'tiktok' });
@@ -90,16 +100,18 @@ class SocketManager {
     this.socket.on('connect', () => {
       logger.log("event", 'Connected to server');
     });
-
+    this.socket.on('message', (data: any) => {
+      console.log("event", 'Received message from server:', data);
+    });
     this.tiktokLiveEvents.forEach(event => {
       this.socket.on(event, async (data: any) => {
-        this.tiktokhandlerdata(event, data);
+        this.tiktokhandlerdata(event, getData(data));
       });
     });
     this.kickLiveEvents.forEach(event => {
       logger.log("event", `Listening for Kick event: ${event} on KickEmitter`);
       this.socket.on(event, (data: any) => {
-        this.kickhandlerdata(event, data);
+        this.kickhandlerdata(event, getData(data));
       });
     });
   }
@@ -174,9 +186,9 @@ class SocketManager {
 
     logger.log("event", `Scheduling WebSocket reconnect attempt #${this.reconnectAttempts} in ${delay / 1000} seconds...`);
 
-    this.reconnectTimeoutId = setTimeout(() => {
+/*     this.reconnectTimeoutId = setTimeout(() => {
       this.connectWebSocket(localStorage.getItem('tiktok_apiKey')); // Intentar conectar de nuevo
-    }, delay);
+    }, delay); */
   }
 
   tiktokhandlerdata(event: any, data: any): void {
@@ -195,7 +207,14 @@ class SocketManager {
     localStorageManager.set(event, data);
   }
   public joinplatform(data: JoinPlatformparams): void {
+    console.log("joinplatform", data);
     this.socket.emit('join-platform', data);
+    if (data.platform === 'tiktok') {
+      this.socket.send({
+        event:'live:tiktok',
+        data: data.uniqueId
+      })
+    }
   }
   public getRoomInfo(data: JoinPlatformparams): void {
     this.socket.emit('getRoomInfo', data);
@@ -203,7 +222,7 @@ class SocketManager {
   public getAvailableGifts(data: JoinPlatformparams): void {
     this.socket.emit('getAvailableGifts', data);
   }
-  public getSocket(): Socket {
+  public getSocket(): WsClient {
     return this.socket;
   }
 
@@ -287,13 +306,13 @@ window.addEventListener('message', (event) => {
       console.log('Mensaje recibido:', {eventName,data},event.data.type);
       if (TypeMessages[0] === event.data.type) {
         const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
-        socketManager.kickhandlerdata(cleanEventName, data.data ? data.data : data);
+        socketManager.kickhandlerdata(cleanEventName, getData(data));
       } else if (TypeMessages[1] === event.data.type) {        
         socketManager.tiktokhandlerdata(eventName, flattenUserDataTSRobust(data));
       } else if (TypeMessages[2] === event.data.type) {
         // NOT IMPLEMENTED YET, ONLY TEST TYPE eventName "message"
         /* data = {message,displayName,username} */
-        socketManager.kickhandlerdata(eventName, data.data ? data.data : data);
+        socketManager.kickhandlerdata(eventName, getData(data));
 
       }
       localStorageManager.set(eventName, flattenUserDataTSRobust(data));
