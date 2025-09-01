@@ -227,7 +227,6 @@ class IndexedDBManager {
 
     // Verificar si se proporcionó un ID explícito
     const hasExplicitId = this.isValidId(data.id);
-    //console.log("hasExplicitId", hasExplicitId, data,this.normalizeId(data.id as string | number));
     if (hasExplicitId) {
       targetId = this.normalizeId(data.id as string | number);
       isUpdate = await this.idExists(targetId);
@@ -236,9 +235,10 @@ class IndexedDBManager {
       targetId = await this.generateNextId();
       isUpdate = false;
     }
-
     const newData: DatabaseItem = { ...data, id: targetId } as DatabaseItem;
     const actionType = isUpdate ? "update" : "save";
+/*     console.log("hasExplicitId", hasExplicitId, data,this.normalizeId(data.id as string | number),actionType);
+    return newData; */
 
     return this.executeTransaction(
       this.dbConfig.store,

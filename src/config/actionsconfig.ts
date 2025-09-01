@@ -89,7 +89,6 @@ const defaultFormConfig: FormConfig = {
   id: { 
     label: 'ID', 
     type: 'number',
-    hidden: true
   },
   type: { 
     hidden: true 
