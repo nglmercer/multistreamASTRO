@@ -34,31 +34,57 @@ setConfig(config: RequestConfig) {
 
   private applyTemplate() {
     if (!this.template) return;
+  const requiredHeaders = this.template.requiredHeaders;
 
-    // Aplicar configuración base del template
-    if (this.template.baseConfig) {
-      this.config = { ...this.config, ...this.template.baseConfig };
-    }
+  if (requiredHeaders && requiredHeaders.length > 0) {
+    // 1. Normalizar los headers existentes para ASEGURAR que sean un array de KeyValue.
+    // Esta función convierte un objeto {key: value} a un array [{key, value, enabled}].
+    const normalizeHeaders = (headers: any): KeyValue[] => {
+      if (Array.isArray(headers)) {
+        // Asegurarse de que cada header tenga 'enabled'
+        return headers.map(h => ({
+          key: h.key,
+          value: h.value,
+          enabled: typeof h.enabled === 'boolean' ? h.enabled : true
+        }));
+      }
+      if (headers && typeof headers === 'object' && !Array.isArray(headers)) {
+        // Es un objeto, convertirlo al formato de array esperado.
+        return Object.entries(headers).map(([key, value]) => ({
+          key,
+          value: String(value),
+          enabled: true
+        }));
+      }
+      // Si es null, undefined, o cualquier otra cosa, devolver un array vacío.
+      return [];
+    };
 
-    // Aplicar headers requeridos
-    if (this.template.requiredHeaders) {
-      // 🔥 CAMBIO: Filtrar headers que no son del template antes de agregar los nuevos
-      const existingCustomHeaders = this.config.headers.filter(h => 
-        !this.template?.requiredHeaders?.some(rh => rh.key === h.key)
-      );
-      
-      // Combinar headers custom con los requeridos del template
-      this.config.headers = [
-        ...existingCustomHeaders,
-        ...this.template.requiredHeaders.map(header => ({ ...header }))
-      ];
-    }
+    const currentHeaders = normalizeHeaders(this.config.headers);
 
-    // Aplicar body template
-    if (this.template.bodyTemplate) {
-      this.config.body = JSON.stringify(this.template.bodyTemplate.schema, null, 2);
-      this.config.bodyType = 'json'; // Forzar tipo JSON para templates
-    }
+    // 2. Filtrar los headers actuales (custom) que NO están en el template.
+    // Esta parte ahora es 100% segura porque 'currentHeaders' es un array garantizado.
+    console.log("currentHeaders",currentHeaders)
+    const customHeadersToKeep = currentHeaders.filter(header => 
+      !requiredHeaders.some(requiredHeader => requiredHeader.key === header.key)
+    );
+
+    // 3. Crear copias de los headers del template, asegurando que tengan 'enabled'.
+    const templateHeaders = requiredHeaders.map(header => ({ ...header, enabled: true }));
+
+    // 4. Combinar y asignar el resultado final.
+    this.config.headers = [
+      ...customHeadersToKeep,
+      ...templateHeaders
+    ];
+  }
+
+  // --- LÓGICA DEL BODY (sin cambios) ---
+  if (this.template.bodyTemplate) {
+    this.config.body = JSON.stringify(this.template.bodyTemplate.schema, null, 2);
+    this.config.bodyType = 'json'; // Forzar tipo JSON para templates
+  }
+
   }
   public changeTemplate(newTemplate: RequestTemplate | undefined) {
   const currentConfig = { ...this.config };

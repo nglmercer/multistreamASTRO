@@ -88,8 +88,7 @@ const defaultFormConfig: FormConfig = {
   },
   id: { 
     label: 'ID', 
-    type: 'text', 
-    readonly: true,
+    type: 'number',
     hidden: true
   },
   type: { 

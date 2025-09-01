@@ -123,11 +123,14 @@ class IndexedDBManager {
     return Math.max(...numericIds) + 1;
   }
 
-  // Método mejorado para verificar si un valor es un ID válido
   private isValidId(id: any): id is string | number {
-    if (id === null || id === undefined) return false;
+    if (id === null || id === undefined) {
+      return false;
+    }
     
     if (typeof id === "string") {
+      // Simplificado: Cualquier string que no esté vacío después de trim() es válido.
+      // Esto ya incluye "0", "abc", "-1", etc.
       return id.trim() !== "";
     }
     
@@ -224,7 +227,7 @@ class IndexedDBManager {
 
     // Verificar si se proporcionó un ID explícito
     const hasExplicitId = this.isValidId(data.id);
-
+    //console.log("hasExplicitId", hasExplicitId, data,this.normalizeId(data.id as string | number));
     if (hasExplicitId) {
       targetId = this.normalizeId(data.id as string | number);
       isUpdate = await this.idExists(targetId);

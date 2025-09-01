@@ -117,6 +117,7 @@ const actionsEvents = {
     if (typeof formData.id === "string"){
       formData.id = parseInt(formData.id, 10);
     }
+    //console.log("Submitting form data:", formData);
     // Operación async con manejo de errores
     const result = await actionDatabase.saveData(formData);
     if (result){
@@ -175,11 +176,12 @@ function getFormData(): Record<string, any> | null {
     const fetchForm = document.querySelector("#fetchForm_check") as HTMLInputElement;
     const fetchConfig = configForm;
     const fetchConfigValue = fetchConfig ? (fetchConfig.getConfig() || fetchConfig.config) : {};
-
+    console.log("actionFormElements")
     return {
       ...data,
       fetchForm_check: fetchForm?.value || "",
       fetchForm_value: fetchConfigValue || {},
+      id: data.id, // Convertir a número si es posible
     };
   } catch (error) {
     console.error("Error getting form data:", error);

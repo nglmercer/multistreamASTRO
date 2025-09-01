@@ -140,7 +140,7 @@ const actionExecutionConfig = {
              const result = await executeHttpRequest({
                  url: processedUrl,
                  method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
+                 headers: [{ 'Content-Type': 'application/json' }],
                  body: JSON.stringify({ event: eventType, data: eventData })
              });
              console.log("webhook result processedUrl", result, processedUrl);
