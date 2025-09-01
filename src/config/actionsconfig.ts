@@ -76,6 +76,16 @@ const defaultFormConfig: FormConfig = {
     step: 1,
     showIf: { field: 'overlay_check', value: true } 
   },
+  webhook_check: { 
+    label: 'Webhook', 
+    type: 'switch'
+  },
+  webhook_url: { 
+    label: 'URL del Webhook',
+    type: 'text',
+    placeholder: 'https://example.com/webhook',
+    showIf: { field: 'webhook_check', value: true } 
+  },
   id: { 
     label: 'ID', 
     type: 'text', 

@@ -5,8 +5,10 @@ export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'er
 export interface Message {
   id: string;
   type: 'sent' | 'received';
-  data: string | object;
+  data: any;
   timestamp: number;
+  event?: string;
+  eventName?: string;
 }
 
 export interface ConnectionOptions {
@@ -29,6 +31,44 @@ export interface ConnectionState {
   status: ConnectionStatus;
 }
 
+function getData(data: any): { data: any; event: string; eventName: string } {
+  let lastEvent: string | undefined;
+  let lastEventType: string | undefined;
+  let current = data;
+
+  // Función auxiliar para validar y asignar los eventos encontrados
+  const checkAndSetEvent = (obj: any) => {
+    // Nos aseguramos que el objeto es válido antes de acceder a sus propiedades
+    if (obj && typeof obj === 'object') {
+      if (typeof obj.eventType === 'string' && obj.eventType.length > 0) {
+        lastEventType = obj.eventType;
+      }
+      if (typeof obj.event === 'string' && obj.event.length > 0) {
+        lastEvent = obj.event;
+      }
+    }
+  };
+
+  // 1. Recorremos la estructura anidada mientras exista `current.data`
+  while (current && typeof current === 'object' && 'data' in current) {
+    checkAndSetEvent(current);
+    current = current.data;
+  }
+
+  // 2. Comprobamos el último nivel (cuando el bucle termina)
+  checkAndSetEvent(current);
+
+  // 3. Determinamos el evento final de forma segura
+  // Prioridad: lastEventType -> lastEvent -> valor por defecto
+  const finalEvent = lastEventType || lastEvent || 'unknown';
+
+  return {
+    data: current,
+    event: finalEvent,
+    eventName: finalEvent, // Se asigna el mismo valor seguro
+  };
+}
+
 export class WsClient extends Emitter {
   public readonly id: string;
   public readonly name?: string;
@@ -38,7 +78,7 @@ export class WsClient extends Emitter {
   private state: ConnectionState;
   private options: ConnectionOptions;
 
-  private reconnectAttempts = 3; // NEW
+  private reconnectAttempts = 0; // FIXED: Initialize to 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null; // NEW
 
   constructor(options: ConnectionOptions) {
@@ -140,21 +180,25 @@ export class WsClient extends Emitter {
   }
 
   private handleMessage(event: MessageEvent): void {
-    let data: string | object;
+    let parsedData: any;
     try {
-      data = JSON.parse(event.data);
+      parsedData = JSON.parse(event.data);
     } catch (e) {
-      data = event.data;
+      parsedData = event.data;
     }
+
+    const { data: unwrappedData, event: msgEvent, eventName: msgEventName } = getData(parsedData);
 
     const receivedMessage: Message = {
       id: crypto.randomUUID(),
       type: 'received',
-      data,
+      data: unwrappedData,
       timestamp: Date.now(),
+      event: msgEvent,
+      eventName: msgEventName,
     };
 
-    this.emit('message', receivedMessage);
+    this.emit(msgEvent||msgEventName, receivedMessage);
     this.options.onMessage?.(receivedMessage, this);
   }
 

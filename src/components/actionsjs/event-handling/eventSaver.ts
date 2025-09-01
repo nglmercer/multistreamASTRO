@@ -73,7 +73,7 @@ async function initializeEventSaver(eventsToLog: EventDefinition[]): Promise<voi
  * @param data Los datos del evento a guardar
  */
 export async function saveEventData<TEventData extends Record<string, any>>(
-  platform: 'tiktok' | 'kick',
+  platform: 'tiktok' | 'kick' | string,
   eventName: string,
   data: TEventData
 ): Promise<void> {

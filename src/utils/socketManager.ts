@@ -50,12 +50,42 @@ interface TiktokEventsStorage {
 const localStorageManager = new LocalStorageManager<TiktokEventsStorage>('TiktokEvents');
 const apiKey = localStorage.getItem('tiktok_apiKey')
 const wsUrl = `wss://ws.eulerstream.com?uniqueId=tv_asahi_news&apiKey=`;
-function getData(data: any): any {
-  // Desanidar recursivamente hasta que no haya más 'data'
-  while (data && typeof data === 'object' && 'data' in data) {
-    data = data.data;
+function getData(data: any): { data: any; event: string; eventName: string } {
+  let lastEvent: string | undefined;
+  let lastEventType: string | undefined;
+  let current = data;
+
+  // Función auxiliar para validar y asignar los eventos encontrados
+  const checkAndSetEvent = (obj: any) => {
+    // Nos aseguramos que el objeto es válido antes de acceder a sus propiedades
+    if (obj && typeof obj === 'object') {
+      if (typeof obj.eventType === 'string' && obj.eventType.length > 0) {
+        lastEventType = obj.eventType;
+      }
+      if (typeof obj.event === 'string' && obj.event.length > 0) {
+        lastEvent = obj.event;
+      }
+    }
+  };
+
+  // 1. Recorremos la estructura anidada mientras exista `current.data`
+  while (current && typeof current === 'object' && 'data' in current) {
+    checkAndSetEvent(current);
+    current = current.data;
   }
-  return data;
+
+  // 2. Comprobamos el último nivel (cuando el bucle termina)
+  checkAndSetEvent(current);
+
+  // 3. Determinamos el evento final de forma segura
+  // Prioridad: lastEventType -> lastEvent -> valor por defecto
+  const finalEvent = lastEventType || lastEvent || 'unknown';
+
+  return {
+    data: current,
+    event: finalEvent,
+    eventName: finalEvent, // Se asigna el mismo valor seguro
+  };
 }
 class SocketManager {
   private baseUrl: string = 'https://server-production-c0b1.up.railway.app/ws';
@@ -104,14 +134,16 @@ class SocketManager {
       console.log("event", 'Received message from server:', data);
     });
     this.tiktokLiveEvents.forEach(event => {
-      this.socket.on(event, async (data: any) => {
-        this.tiktokhandlerdata(event, getData(data));
+      this.socket.on(event, async (rawData: any) => {
+        const {eventName,data} = getData(rawData);
+        this.tiktokhandlerdata(eventName, data);
       });
     });
     this.kickLiveEvents.forEach(event => {
       logger.log("event", `Listening for Kick event: ${event} on KickEmitter`);
-      this.socket.on(event, (data: any) => {
-        this.kickhandlerdata(event, getData(data));
+      this.socket.on(event, (rawData: any) => {
+        const {eventName,data} = getData(rawData);
+        this.kickhandlerdata(eventName, data);
       });
     });
   }
@@ -306,13 +338,13 @@ window.addEventListener('message', (event) => {
       console.log('Mensaje recibido:', {eventName,data},event.data.type);
       if (TypeMessages[0] === event.data.type) {
         const cleanEventName = getValidEventName(eventName,[],socketManager.kickLiveEvents);
-        socketManager.kickhandlerdata(cleanEventName, getData(data));
+        socketManager.kickhandlerdata(cleanEventName, data);
       } else if (TypeMessages[1] === event.data.type) {        
         socketManager.tiktokhandlerdata(eventName, flattenUserDataTSRobust(data));
       } else if (TypeMessages[2] === event.data.type) {
         // NOT IMPLEMENTED YET, ONLY TEST TYPE eventName "message"
         /* data = {message,displayName,username} */
-        socketManager.kickhandlerdata(eventName, getData(data));
+        socketManager.kickhandlerdata(eventName, data);
 
       }
       localStorageManager.set(eventName, flattenUserDataTSRobust(data));

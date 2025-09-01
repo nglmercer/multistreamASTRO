@@ -131,6 +131,22 @@ const actionExecutionConfig = {
             }
         }
     },
+    "webhook":{
+        verify: ["check", "url"],
+        callback: async (actionData, fullAction, eventData, eventType) => {
+         const { url, check } = actionData;
+         if (check && url) {
+             const processedUrl = ReplacesValues(url, eventData);
+             const result = await executeHttpRequest({
+                 url: processedUrl,
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ event: eventType, data: eventData })
+             });
+             console.log("webhook result processedUrl", result, processedUrl);
+         } 
+        },
+    },
     "windowApi":{
         verify: ["check", "value"],
         callback: async ()=>{
