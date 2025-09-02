@@ -333,7 +333,8 @@ window.addEventListener('message', (event) => {
     // IMPORTANTE: Verificar el origen por seguridad
     if (!event.data) return;
     if (event.data.type && event.data.payload) {
-      const {eventName,data} = event.data.payload;
+      const rawData = event.data.payload;
+      const {eventName,data} = getData(rawData);
       if (!eventName || !data) return;  
       console.log('Mensaje recibido:', {eventName,data},event.data.type);
       if (TypeMessages[0] === event.data.type) {
