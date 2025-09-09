@@ -3,7 +3,7 @@ import { pagesConfigA, pagesConfigB } from '../config/pages';
 import Actiontest from '@components/menu/actiontest.astro';
 import UserLogin from '@components/user/userLogin.astro';
 import Dialog from '@components/Dialog.astro'
-import {DialogManagerSolid} from '@components/DialogManagerSolid.tsx';
+import DialogManagerVue from '@components/vue/DialogManagerVue.vue';
 interface Props {
   title?: string;
   activeConfig?: 'A' | 'B';
@@ -126,7 +126,7 @@ const currentConfig = activeConfig === 'A' ? pagesConfigA : pagesConfigB;
           </div>
         </dialog-container>
         <Dialog></Dialog>
-        <DialogManagerSolid client:only="solid-js"/>
+        <DialogManagerVue client:only="vue"/>
   </body>
 </html>
 <style is:global>
