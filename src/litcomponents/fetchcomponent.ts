@@ -83,8 +83,8 @@ setConfig(config: RequestConfig) {
   if (this.template.bodyTemplate) {
     this.config.body = JSON.stringify(this.template.bodyTemplate.schema, null, 2);
     this.config.bodyType = 'json'; // Forzar tipo JSON para templates
+    this.config.method = this.template.baseConfig.method || this.config.method;
   }
-
   }
   public changeTemplate(newTemplate: RequestTemplate | undefined) {
   const currentConfig = { ...this.config };

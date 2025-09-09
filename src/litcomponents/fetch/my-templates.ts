@@ -85,7 +85,31 @@ export const ArrayTemplate: RequestTemplate = {
         }
     }
 }
-export const templates = [simpleTextTemplate, ArrayTemplate];
+export const OverlyId: RequestTemplate = {
+  id: 'overlay-id',
+  name: 'Overlay by ID',
+  description: 'A template for sending an overlay by its ID. [Overlay System]()',
+  icon: 'image',
+  baseConfig: {
+      name: 'Overlay by ID',
+      url: 'http://localhost:54422/api/trigger/emit',
+      method: 'POST',
+      headers: []
+  },
+  constraints: {
+      method: { type: 'readonly' },
+  },
+  bodyTemplate: {
+      schema: {
+          id: 'stringID'
+      },
+      editableFields: ['id'],
+      fieldTypes: {
+          id: 'string'
+      }
+  }
+}
+export const templates = [simpleTextTemplate, ArrayTemplate, OverlyId];
 export function getTemplate(id: string): RequestTemplate | undefined {
   return templates.find(template => template.id === id);
 }

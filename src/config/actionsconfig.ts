@@ -45,37 +45,6 @@ const defaultFormConfig: FormConfig = {
     placeholder: 'Texto que será leído en voz alta',
     showIf: { field: 'tts_check', value: true } 
   },
-  overlay_check: { 
-    label: 'Superposición', 
-    type: 'switch' 
-  },
-  overlay_volume: { 
-    label: 'Volumen (%)', 
-    type: 'range', 
-    min: 0, 
-    max: 100, 
-    step: 1,
-    showIf: { field: 'overlay_check', value: true } 
-  },
-  overlay_src: { 
-    label: 'Fuente(s) (IDs/URLs)', 
-    type: 'text', 
-    placeholder: 'https://example.com/image.png',
-    showIf: { field: 'overlay_check', value: true } 
-  },
-  overlay_content: { 
-    label: 'Texto Contenido', 
-    type: 'text', 
-    placeholder: 'Texto a mostrar en la superposición',
-    showIf: { field: 'overlay_check', value: true } 
-  },
-  overlay_duration: { 
-    label: 'Duración (segundos)', 
-    type: 'number', 
-    min: 1, 
-    step: 1,
-    showIf: { field: 'overlay_check', value: true } 
-  },
   webhook_check: { 
     label: 'Webhook', 
     type: 'switch'
@@ -99,12 +68,7 @@ const defaultData = {
   name: 'Nueva Acción',
   type: 'Action',
   tts_check: false,
-  tts_text: 'Texto de ejemplo',
-  overlay_check: false,
-  overlay_src: 'https://example.com/image.png',
-  overlay_content: 'Contenido de ejemplo',
-  overlay_duration: 60,
-  overlay_volume: 50,
+  tts_text: 'Texto de ejemplo'
 };
 export {
     defaultFormConfig,
