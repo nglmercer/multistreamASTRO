@@ -11,8 +11,10 @@ import { seleccionarYParsearJSON } from "@utils/jsonbackups/import.ts";
 import { exportarJSON } from "@utils/jsonbackups/export.ts";
 import { safeParse } from "@utils/jsonutils/safeparse.ts";
 import { ArrayTemplate,getTemplate,templates } from "@litcomponents/fetch/my-templates.ts";
+import { vueFormAdapter } from "@components/form/VueFormAdapter.ts";
 // Elementos DOM globales con validación
 const configForm = document.getElementById("fetchForm_config") as HttpRequestConfig;
+console.log("configForm",configForm)
 const actionDatabase = new IndexedDBManager(databases.ActionsDB);
 const ActionsDBButton = document.getElementById("ActionsDBButton");
 const ActionModal = document.getElementById("ActionModal") as DialogContainer;
@@ -43,19 +45,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 function openModal(): void {
-  if (!ActionModal) {
-    console.warn("Action modal not found");
-    return;
-  }
-  console.log("openModal");
-  ActionModal.show();
+  vueFormAdapter.openModal();
 }
+
 function closeModal(): void {
-  if (!ActionModal) {
-    console.warn("Action modal not found");
-    return;
-  }
-  ActionModal.hide();
+  vueFormAdapter.closeModal();
 }
 function listenersForm(): void {
   const actionsContainer = document.querySelector<HTMLElement>(".form-actions");
@@ -105,11 +99,11 @@ function listenersForm(): void {
 }
 const actionsEvents = {
   reset: ()=>{
-    resetForm();
+    vueFormAdapter.resetForm();
     console.log("Form reset");
   },
   submit:async ()=>{
-    const formData = getFormData();
+    const formData = vueFormAdapter.getFormData();
     if (!formData) {
       console.error("No form data found");
       return;
@@ -117,150 +111,33 @@ const actionsEvents = {
     if (typeof formData.id === "string"){
       formData.id = parseInt(formData.id, 10);
     }
-    //console.log("Submitting form data:", formData);
     // Operación async con manejo de errores
     const result = await actionDatabase.saveData(formData);
     if (result){
-      closeModal();
+      vueFormAdapter.closeModal();
       console.log("Form submitted successfully:", result);
       actionEmitter.emit("actionFormSubmit", result);
-
     }
   },
   export:async ()=>{
-    const formData = getFormData();
-    if (!formData) {
-      console.error("No form data found");
-      return;
-    }
-    if (typeof formData.id === "string"){
-      formData.id = parseInt(formData.id, 10);
-    }
-    const result = await exportarJSON(formData,{mode:'download',filename:formData.name})
-    console.log("exportcallback result",formData)
+    await vueFormAdapter.handleExport(vueFormAdapter.getFormData() as any);
   },
   import: async()=>{
-    const result =await seleccionarYParsearJSON()
-    console.log("importcallback",result);
-    if (!result)return;
-    setFormData(result)
+    await vueFormAdapter.handleImport();
   },
 }
 
 
 function getFormData(): Record<string, any> | null {
-  try {
-    const actionFormElements = document.querySelector("#actionForm");
-    if (!actionFormElements) {
-      console.warn("Action form not found");
-      return null;
-    }
-
-    const allFields = actionFormElements.getElementsByTagName("c-input");
-    if (allFields.length === 0) {
-      console.warn("No input fields found");
-      return null;
-    }
-
-    const data: Record<string, any> = {};
-
-    // Usar Array.from() en lugar de Object.entries() para HTMLCollection
-    Array.from(allFields).forEach((field:CInput) => {
-      const fieldName = field.getAttribute("data-field-name");
-      if (fieldName) {
-        data[fieldName] = (field).value;
-      }
-    });
-
-    // Obtener elementos adicionales con validación
-    const fetchForm = document.querySelector("#fetchForm_check") as HTMLInputElement;
-    const fetchConfig = configForm;
-    const fetchConfigValue = fetchConfig ? (fetchConfig.getConfig() || fetchConfig.config) : {};
-    console.log("actionFormElements")
-    return {
-      ...data,
-      fetchForm_check: fetchForm?.value || "",
-      fetchForm_value: fetchConfigValue || {},
-      id: data.id, // Convertir a número si es posible
-    };
-  } catch (error) {
-    console.error("Error getting form data:", error);
-    return null;
-  }
+  return vueFormAdapter.getFormData();
 }
 
 function setFormData(data: Record<string, any>): void {
-  if (!data || Object.keys(data).length === 0) {
-    console.warn("No data provided to setFormData");
-    return;
-  }
-
-  try {
-    const actionFormElements = document.querySelector("#actionForm");
-    if (!actionFormElements) {
-      console.warn("Action form not found");
-      return;
-    }
-
-    const allFields = actionFormElements.getElementsByTagName("c-input");
-
-    // Usar Array.from() correctamente
-    Array.from(allFields).forEach((field:CInput) => {
-      const fieldName = field.getAttribute("data-field-name");
-      if (fieldName && data[fieldName] !== undefined) {
-        (field).setVal(data[fieldName]);
-      }
-    });
-
-    console.log("Setting form data:", data);
-
-    // Configurar elementos adicionales con validación
-    const fetchForm = document.querySelector("#fetchForm_check") as CInput;
-    if (fetchForm) {
-      fetchForm.setVal(data.fetchForm_check);
-    }
-
-    const fetchConfig = document.querySelector("#fetchForm_config") as HttpRequestConfig;
-    if (fetchConfig) {
-      fetchConfig.setConfig(data.fetchForm_value || {});
-    }
-
-    console.log("Form data set successfully");
-  } catch (error) {
-    console.error("Error setting form data:", error);
-  }
+  vueFormAdapter.setFormData(data);
 }
 
 function resetForm(): void {
-  try {
-    const actionFormElements = document.querySelector("#actionForm");
-    if (!actionFormElements) {
-      console.warn("Action form not found");
-      return;
-    }
-
-    const allFields = actionFormElements.getElementsByTagName("c-input");
-
-    // Usar Array.from() correctamente
-    Array.from(allFields).forEach((field:CInput) => {
-      (field).reset();
-    });
-
-    // Reset elementos adicionales con validación
-    const fetchForm = document.querySelector("#fetchForm_check") as CInput;
-    if (fetchForm) {
-      fetchForm.setVal(false);
-    }
-
-    const fetchConfig = configForm;
-    if (fetchConfig) {
-      fetchConfig.reset();
-    }
-
-    console.log("Form reset successfully");
-  } catch (error) {
-    console.error("Error resetting form:", error);
-  }
+  vueFormAdapter.resetForm();
 }
 async function test() {
   const config = {

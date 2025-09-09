@@ -211,7 +211,7 @@ const emit = defineEmits<{
 }>();
 
 // --- ESTADO REACTIVO ---
-const theme = ref<'auto' | 'light' | 'dark'>('auto');
+const theme = ref<'light' | 'dark'>('dark');
 const activeTab = ref<'params' | 'headers' | 'auth' | 'body'>('params');
 const showSensitive = ref(false);
 const errors = reactive<Record<string, string>>({});
@@ -317,7 +317,7 @@ defineExpose({ validate, reset });
 
 // --- LÓGICA AUXILIAR ---
 const toggleTheme = () => {
-  const themes: ('auto' | 'light' | 'dark')[] = ['auto', 'light', 'dark'];
+  const themes: ('light' | 'dark')[] = ['light', 'dark'];
   const currentIndex = themes.indexOf(theme.value);
   theme.value = themes[(currentIndex + 1) % themes.length];
 };

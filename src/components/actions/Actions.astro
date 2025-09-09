@@ -1,9 +1,18 @@
 ---
 import ActionsFormCsomponent from "./ActionsForm.astro";
-import SwitchE from "@components/switchE.astro";
+import SwitchEV from "@components/switchEV.vue";
+import MainForm from "@components/form/MainForm.vue";
 ---
 <dialog-container class="ActionModal" id="ActionModal">    
-    <ActionsFormCsomponent id="actionForm">
+      <MainForm 
+      client:only="vue"
+      formId="actionForm"
+      title="Configurar Acción"
+      description="Configure los parámetros de la acción"
+    >
+    </MainForm>
+<!--    
+     <ActionsFormCsomponent id="actionForm">
       <div slot="fields">
         <SwitchE
         id="fetchForm"
@@ -26,6 +35,6 @@ import SwitchE from "@components/switchE.astro";
           Guardar
         </button>
       </div>
-    </ActionsFormCsomponent>
+    </ActionsFormCsomponent> -->
 </dialog-container>
 <script src="/src/components/actions/actions.js"></script>
