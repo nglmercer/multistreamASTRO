@@ -4,7 +4,7 @@ import { socket } from '@utils/socketManager.ts';
 import { onUserInteraction, hasUserInteracted } from "@utils/user/userInt"
 // Uso básico
 
-const logger = new BrowserLogger('userConnect.tsx')
+const logger = new BrowserLogger('userConnect')
    .setLevel(LogLevel.LOG);
 const kiklogin = document.querySelector(".kicklogin") as UserProfileComponent;
 const tiktoklogin = document.querySelector(".tiktoklogin") as UserProfileComponent;

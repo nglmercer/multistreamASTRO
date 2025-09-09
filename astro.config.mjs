@@ -8,9 +8,11 @@ import mdx from '@astrojs/mdx';
 
 import expressiveCode from 'astro-expressive-code';
 
+import vue from '@astrojs/vue';
+
 // https://astro.build/config
 export default defineConfig({
-  integrations: [expressiveCode(), lit(), solidJs(), mdx()],
+  integrations: [expressiveCode(), lit(), solidJs(), mdx(), vue()],
   site: 'https://nglmercer.github.io/multistreamASTRO',
   base: '/',
 });

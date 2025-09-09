@@ -1,7 +1,7 @@
 ---
 import SidebarLayout from '../layouts/SidebarLayout.astro';
 // Importa el componente SolidJS
-import ReplacerConfigForm from '../components/replace/ReplacerConfig.jsx';
+import ReplaceConfig from '@components/vue/ReplaceConfig.vue';
 import SystemHealth from '@components/SystemHealth.astro';
 import Newconfig from '@components/replace/newitem/newconfig.astro';
 ---
@@ -15,10 +15,11 @@ import Newconfig from '@components/replace/newitem/newconfig.astro';
       Renderiza el componente SolidJS aquí, pasando los datos iniciales como props.
       client:only="solid-js" asegura que el componente se renderice e hidrate en el cliente.
     */}
-    <ReplacerConfigForm 
-      client:only="solid-js"
+    <ReplaceConfig 
+      client:only="vue"
 
     />
+    
     <Newconfig />
     <SystemHealth/>
 	</div>

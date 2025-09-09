@@ -53,7 +53,7 @@ interface ReplacementResult {
 type ProcessableInput = string | number | boolean | null | undefined | ProcessableInput[] | { [key: string]: ProcessableInput };
 
 class ConfigurableReplacer {
-  public config: Config; // Hecho público para acceso/modificación desde ReplacerConfig.jsx
+  public config: Config;
 
   constructor(options: ConfigOptions = {}) {
     // Primero establece los valores predeterminados y luego carga desde localStorage si está habilitado.
@@ -73,7 +73,7 @@ class ConfigurableReplacer {
     }
   }
 
-  // Hecho público para que ReplacerConfig.jsx pueda acceder a los reemplazos por defecto
+  // acceder a los reemplazos por defecto
   public getDefaultReplacements(): ReplacementConfig {
     return {
       uniqueId: { dataKey: "uniqueId", defaultValue: "testUser" },

@@ -1,9 +1,9 @@
 ---
-import ButtonDropdownSolid from "@components/solid/ButtonDropdownSolid";
+import ButtonDropdown from "@components/vue/ButtonDropdown.vue";
 ---
 <script src="src/components/user/litsrc.js">
 </script>
-<ButtonDropdownSolid client:only="solid-js" buttonText="Login">
+<ButtonDropdown client:only="vue" buttonText="Login">
   <user-profile 
   platform="tiktok" 
   class="tiktoklogin"
@@ -17,4 +17,4 @@ group-id="kick-group"
 minimal
 ></user-profile>
 
-</ButtonDropdownSolid>
+</ButtonDropdown>
